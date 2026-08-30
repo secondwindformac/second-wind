@@ -62,11 +62,19 @@ fi
 # --- Toshy (Mac keyboard engine), pinned to the verified commit ---
 if [ "$NEED_TOSHY" = 1 ]; then
   info "${MSG[m15_toshy]}"
-  # `yes |` answers Toshy's interactive consent prompts ("[y/n]") — headless
-  # runs hung on them until timeout (first clean-machine VM rehearsal).
-  if clone_pinned "$TOSHY_REPO" "$SW_CACHE/toshy" "$TOSHY_SHA" \
-     && ( cd "$SW_CACHE/toshy" && export PATH="$HOME/.local/bin:$PATH" \
-          && yes | timeout 900 python3 setup_toshy.py install >>"$SW_LOGDIR/toshy-install.log" 2>&1 ); then
+  # Toshy's installer is interactive BY DESIGN: it resets sudo (sudo -k) and
+  # asks its own [y/n] + password on the tty. With a terminal, let it talk to
+  # the human (that's the firstboot UX); headless, best-effort with `yes |`.
+  TOSHY_RUN() {
+    cd "$SW_CACHE/toshy" && export PATH="$HOME/.local/bin:$PATH"
+    if ui_has_tty; then
+      info "${MSG[m15_toshy_tty]}"
+      timeout 900 python3 setup_toshy.py install 2>&1 | tee -a "$SW_LOGDIR/toshy-install.log"
+    else
+      yes | timeout 900 python3 setup_toshy.py install >>"$SW_LOGDIR/toshy-install.log" 2>&1
+    fi
+  }
+  if clone_pinned "$TOSHY_REPO" "$SW_CACHE/toshy" "$TOSHY_SHA" && ( TOSHY_RUN ); then
     if systemctl --user list-unit-files 'toshy*' 2>/dev/null | grep -q toshy; then
       mf note "toshy-installed-by-secondwind"
       export HAVE_TOSHY=1
