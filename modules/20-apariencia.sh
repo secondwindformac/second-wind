@@ -11,14 +11,17 @@ clone_pinned "$MACTAHOE_ICON_REPO" "$MCL_CACHE/MacTahoe-icon-theme" "$MACTAHOE_I
 if [ "$DRY_RUN" = 1 ]; then
   info "HARÍA: instalar tema GTK+shell MacTahoe (claro y oscuro), iconos, cursores, fondos de pantalla y fuente Inter"
 else
-  info "Instalando tema de ventanas y paneles (esto tarda ~1 minuto)…"
+  info "Instalando tema de ventanas y paneles (esto tarda 1-2 minutos)…"
   # Nota: sin --silent-mode (ese flag es solo para instalaciones como root).
+  # Se instalan las variantes translúcida (normal) y opaca (solid); se APLICA la
+  # solid: GNOME no desenfoca lo que hay detrás de los menús, así que la
+  # translúcida deja los menús casi ilegibles.
   ( cd "$MCL_CACHE/MacTahoe-gtk-theme" \
-    && ./install.sh -c light -c dark -o normal --shell >/dev/null 2>&1 ) \
+    && ./install.sh -c light -c dark -o normal -o solid --shell >/dev/null 2>&1 ) \
     || warn "El instalador del tema GTK devolvió un error; se continúa (revisa el registro)"
   # Vínculo libadwaita: apps GTK4 modernas toman el tema desde ~/.config/gtk-4.0
   ( cd "$MCL_CACHE/MacTahoe-gtk-theme" \
-    && ./install.sh -l -c light >/dev/null 2>&1 ) \
+    && ./install.sh -l -c light -o solid >/dev/null 2>&1 ) \
     || warn "No se pudo crear el vínculo libadwaita"
   mf note "libadwaita-instalado"
 
@@ -54,7 +57,7 @@ else
 fi
 
 info "Aplicando la apariencia…"
-gset_track org.gnome.desktop.interface gtk-theme "'MacTahoe-Light'"
+gset_track org.gnome.desktop.interface gtk-theme "'MacTahoe-Light-solid'"
 gset_track org.gnome.desktop.interface icon-theme "'MacTahoe'"
 gset_track org.gnome.desktop.interface cursor-theme "'MacTahoe-cursors'"
 gset_track org.gnome.desktop.interface color-scheme "'default'"

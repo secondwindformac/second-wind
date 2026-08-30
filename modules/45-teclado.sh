@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 # 45-teclado — teclado estilo Mac.
+#
+# Cmd+Tab como en macOS: cambia entre APLICACIONES de TODOS los escritorios y
+# pantallas (Ubuntu separa Alt+Tab como "ventanas del escritorio actual", y el
+# remapeador emite Alt+Tab: se unifican ambos atajos al selector global de apps).
+gset_track org.gnome.desktop.wm.keybindings switch-applications "['<Alt>Tab', '<Super>Tab']"
+gset_track org.gnome.desktop.wm.keybindings switch-applications-backward "['<Shift><Alt>Tab', '<Shift><Super>Tab']"
+gset_track org.gnome.desktop.wm.keybindings switch-windows "[]"
+gset_track org.gnome.desktop.wm.keybindings switch-windows-backward "[]"
+gset_track org.gnome.shell.app-switcher current-workspace-only false
+gset_track org.gnome.shell.window-switcher current-workspace-only false
 # Estrategia: Toshy (ya instalado en este equipo) hace el trabajo pesado
 # (Cmd+C/V/Q… según cada aplicación). Aquí lo REPARAMOS y lo hacemos INVISIBLE:
 #   1. La extensión Xremap (módulo 30) le devuelve la detección de la app activa.

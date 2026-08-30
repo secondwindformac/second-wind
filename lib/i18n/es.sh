@@ -18,9 +18,13 @@ Todo se puede revertir después con ./uninstall.sh"
 
   [confirmar]="¿Comenzamos? Se hará primero el respaldo y luego se aplicarán los cambios. Solo tendrás que confirmar una vez."
   [cancelado]="Instalación cancelada. No se cambió nada."
-  [preg_hardware]="¿Incluir los arreglos de hardware para MacBook (cámara FaceTime HD, ventilador, teclas F)?
+  [preg_hardware]="¿Incluir los pasos que piden tu contraseña de administrador?
 
-Es el único paso que pedirá tu contraseña de administrador."
+  • Arreglos de hardware del MacBook (cámara FaceTime HD, ventilador, teclas F)
+  • Pantalla de inicio de sesión con look macOS"
+  [preg_chrome]="Para vestir Chrome como Mac (botones rojo/amarillo/verde a la izquierda) hay que cerrarlo un momento. Tus pestañas se recuperan al reabrirlo con normalidad.
+
+¿Cierro Chrome ahora?"
   [no_root]="No ejecutes este programa como root/sudo. Ábrelo con tu usuario normal; la contraseña se pedirá solo cuando haga falta."
   [modo_prueba]="MODO PRUEBA (--dry-run): no se cambiará nada; solo se muestra lo que se haría."
 
@@ -30,7 +34,9 @@ Es el único paso que pedirá tu contraseña de administrador."
   [mod_40]="Barra superior y comportamiento de ventanas"
   [mod_45]="Teclado estilo Mac"
   [mod_50]="Spotlight (buscador con Cmd+Espacio)"
+  [mod_55]="Navegadores con look Mac (Chrome/Firefox)"
   [mod_60]="Hardware de MacBook (cámara, ventilador, teclas F)"
+  [mod_65]="Pantalla de inicio de sesión estilo macOS"
   [mod_70]="Aplicaciones estilo Mac"
   [mod_90]="Verificación tras el próximo inicio de sesión"
 

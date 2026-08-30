@@ -93,6 +93,15 @@ if [ "$NECESITA_SUDO" = 1 ]; then
         /usr/lib/firmware/facetimehd*)
           sudo rm -rf /usr/lib/firmware/facetimehd
           ok "Firmware de cámara eliminado" ;;
+        /usr/share/gnome-shell/theme/Yaru/gnome-shell-theme.gresource)
+          if [ -f "$MCL_BACKUP/gnome-shell-theme.gresource.yaru" ]; then
+            sudo cp "$MCL_BACKUP/gnome-shell-theme.gresource.yaru" "$ruta"
+            sudo rm -f "$ruta.bak"
+            ok "Pantalla de inicio de sesión restaurada a la original de Ubuntu"
+          elif [ -f "$ruta.bak" ]; then
+            sudo mv "$ruta.bak" "$ruta"
+            ok "Pantalla de inicio de sesión restaurada desde el respaldo .bak"
+          fi ;;
       esac
     done < <(python3 -c "import json,sys; [print(x['ruta']) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get sistema)")
 
@@ -108,6 +117,34 @@ if [ "$NECESITA_SUDO" = 1 ]; then
     done < <(python3 -c "import json,sys; [print(x) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get paquetes_apt)")
   else
     warn "Sin permisos de administrador: los cambios de hardware quedaron sin revertir (repite luego ./uninstall.sh)."
+  fi
+fi
+
+# Chrome: reponer su preferencia de ventana (solo si lo tocamos y está cerrado)
+if python3 lib/manifest.py has-note "chrome-parchado" 2>/dev/null; then
+  if pgrep -x chrome >/dev/null 2>&1; then
+    warn "Chrome está abierto: su preferencia de ventana no se pudo revertir (ciérralo y repite ./uninstall.sh)"
+  elif [ -f "$MCL_STATE/chrome-prefs-antes.json" ]; then
+    python3 - "$HOME/.config/google-chrome/Default/Preferences" "$MCL_STATE/chrome-prefs-antes.json" <<'PY'
+import json, os, sys
+prefs_p, antes_p = sys.argv[1], sys.argv[2]
+try:
+    with open(prefs_p) as f:
+        d = json.load(f)
+    with open(antes_p) as f:
+        antes = json.load(f).get("custom_chrome_frame", "__ausente__")
+    if antes == "__ausente__":
+        d.get("browser", {}).pop("custom_chrome_frame", None)
+    else:
+        d.setdefault("browser", {})["custom_chrome_frame"] = antes
+    tmp = prefs_p + ".macconlinux.tmp"
+    with open(tmp, "w") as f:
+        json.dump(d, f)
+    os.replace(tmp, prefs_p)
+    print("  Chrome: preferencia de ventana restaurada")
+except FileNotFoundError:
+    pass
+PY
   fi
 fi
 

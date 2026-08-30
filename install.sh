@@ -64,12 +64,12 @@ info "Registro completo: $LOG"
 source modules/00-preflight.sh
 source modules/10-backup.sh
 
-MODULES=(20-apariencia 30-extensiones 35-dock 40-panel 45-teclado 50-spotlight)
-[ "$CON_HARDWARE" = 1 ] && MODULES+=(60-hardware)
+MODULES=(20-apariencia 30-extensiones 35-dock 40-panel 45-teclado 50-spotlight 55-navegadores)
+[ "$CON_HARDWARE" = 1 ] && MODULES+=(60-hardware 65-gdm)
 MODULES+=(70-apps 90-postlogin)
 
 if [ ${#MODULOS_SOLO[@]} -gt 0 ]; then
-  TODOS=(20-apariencia 30-extensiones 35-dock 40-panel 45-teclado 50-spotlight 60-hardware 70-apps 90-postlogin)
+  TODOS=(20-apariencia 30-extensiones 35-dock 40-panel 45-teclado 50-spotlight 55-navegadores 60-hardware 65-gdm 70-apps 90-postlogin)
   MODULES=()
   for m in "${TODOS[@]}"; do
     for pedido in "${MODULOS_SOLO[@]}"; do
