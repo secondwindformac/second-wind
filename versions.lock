@@ -25,6 +25,9 @@ EXT_BMS_SHA256=4b82a0a0be4f2f917bff88e0952fab4d6c347d1128e7d8487caef240b699a910
 EXT_XREMAP_UUID=xremap@k0kubun.com
 EXT_XREMAP_TAG=69781                                              # v15 — repara los keymaps por app de Toshy
 EXT_XREMAP_SHA256=9f81d40ecc23810c704f0e6e6d9cc69c25e7c5528c24576a4972056b5b7d6d5a
+EXT_LOGO_UUID=logomenu@aryan_k
+EXT_LOGO_TAG=70010                                                # v41 — menú superior izquierdo estilo Mac
+EXT_LOGO_SHA256=669ea05161df08c3bec6c81c1abe565ac34c17802263cd75658252a76c2fac81
 
 # --- Fuente del sistema (sustituto libre de SF Pro) ---
 INTER_URL=https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
