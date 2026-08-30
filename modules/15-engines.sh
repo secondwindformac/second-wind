@@ -8,6 +8,11 @@
 NEED_WIFI=0
 NEED_UL=0
 NEED_TOSHY=0
+NEED_GIR=0
+
+# Native toolkit bindings for the Second Wind Apps store (GTK4/libadwaita);
+# present wherever gnome-tweaks lives, absent on some stock desktops.
+python3 -c "import gi; gi.require_version('Adw','1')" 2>/dev/null || NEED_GIR=1
 
 # Broadcom chips that need the proprietary `wl` driver (BCM4360 family, etc.)
 # Note: read /proc/modules directly — `lsmod | grep -q` under pipefail gives
@@ -19,7 +24,7 @@ fi
 command -v ulauncher >/dev/null 2>&1 || NEED_UL=1
 systemctl --user list-unit-files 'toshy*' 2>/dev/null | grep -q toshy || NEED_TOSHY=1
 
-if [ "$NEED_WIFI$NEED_UL$NEED_TOSHY" = "000" ]; then
+if [ "$NEED_WIFI$NEED_UL$NEED_TOSHY$NEED_GIR" = "0000" ]; then
   ok "${MSG[m15_all_ok]}"
   return 0
 fi
@@ -46,6 +51,11 @@ if [ "$NEED_WIFI" = 1 ]; then
   info "${MSG[m15_wifi]}"
   apt_track_install "linux-headers-$(uname -r)" build-essential dkms broadcom-sta-dkms \
     && sudo modprobe wl 2>/dev/null || warn "${MSG[m15_wifi_err]}"
+fi
+
+# --- Store toolkit (GTK4/libadwaita python bindings) ---
+if [ "$NEED_GIR" = 1 ]; then
+  apt_track_install gir1.2-adw-1 python3-gi || true
 fi
 
 # --- Ulauncher (Spotlight engine), pinned .deb ---

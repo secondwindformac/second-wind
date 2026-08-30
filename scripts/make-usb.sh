@@ -103,8 +103,92 @@ write_usb() {
 EOF
 }
 
+# Root-only core used by the GUI via pkexec: assumes the seed is staged and
+# every confirmation already happened. NO prompts here.
+write_core() {
+  local DEV="$1"
+  [ "$(id -u)" -eq 0 ] || die "--write-core runs as root (pkexec)"
+  [ -b "$DEV" ] || die "not a block device: $DEV"
+  lsblk -nrpo NAME,MOUNTPOINT "$DEV" | awk '$2 != "" {print $1}' \
+    | while read -r p; do umount "$p" || true; done
+  dd if="$ISO" of="$DEV" bs=4M conv=fsync status=none
+  sync
+  sgdisk -e "$DEV" >/dev/null
+  sgdisk -n 0:0:+512MiB -t 0:0700 -c 0:CIDATA "$DEV" >/dev/null
+  partprobe "$DEV"; sleep 2
+  local PART MNT
+  PART="$(lsblk -nrpo NAME "$DEV" | tail -1)"
+  mkfs.vfat -n CIDATA "$PART" >/dev/null
+  MNT="$(mktemp -d)"
+  mount "$PART" "$MNT"
+  cp -r "$STAGE"/. "$MNT"/
+  sync
+  umount "$MNT"; rmdir "$MNT"
+  echo "WRITE_CORE_OK"
+}
+
+# Zenity GUI: the no-terminal path once launched from its icon.
+gui() {
+  local Z=(zenity --title "Second Wind USB Creator")
+  if [ "${LANG:-en}" != "${LANG#es}" ]; then
+    local T_INTRO="Se creará un pendrive que instala la \"Mac nueva\" completa.\n\n• Necesitas un pendrive de 8 GB o más\n• El pendrive se BORRA por completo\n• La primera vez se descargan ~6 GB (Ubuntu oficial verificado)"
+    local T_NOUSB="No se detectó ningún pendrive. Conéctalo y vuelve a abrir el creador."
+    local T_PICK="Elige el pendrive (se borrará entero):"
+    local T_SURE="¿BORRAR COMPLETO este dispositivo y convertirlo en el instalador?\n\n%s\n\nEsta acción no tiene vuelta atrás."
+    local T_PREP="Preparando Ubuntu oficial y la semilla (primera vez: varios minutos)…"
+    local T_WRITE="Escribiendo el pendrive (varios minutos; no lo desconectes)…"
+    local T_DONE="¡Pendrive listo! 🎉\n\nEn el Mac a revivir: enciéndelo manteniendo la tecla Option (⌥), elige \"EFI Boot\" y sigue las 4 pantallas.\n\nGuía completa: docs/es (o pregunta a Claude)."
+    local T_FAIL="Algo falló al escribir. Revisa el registro usb-creator.log y reintenta."
+  else
+    local T_INTRO="This will create a USB stick that installs the full \"new Mac\".\n\n• You need an 8 GB or larger stick\n• The stick is COMPLETELY ERASED\n• First run downloads ~6 GB (verified official Ubuntu)"
+    local T_NOUSB="No USB stick detected. Plug one in and open the creator again."
+    local T_PICK="Choose the stick (it will be fully erased):"
+    local T_SURE="COMPLETELY ERASE this device and turn it into the installer?\n\n%s\n\nThere is no undo."
+    local T_PREP="Preparing official Ubuntu and the seed (first time: several minutes)…"
+    local T_WRITE="Writing the stick (several minutes; do not unplug)…"
+    local T_DONE="USB ready! 🎉\n\nOn the Mac to revive: power it on holding the Option (⌥) key, pick \"EFI Boot\" and follow the 4 screens.\n\nFull guide: docs/ (or ask Claude)."
+    local T_FAIL="Something failed while writing. Check usb-creator.log and retry."
+  fi
+
+  "${Z[@]}" --info --width 420 --text "$T_INTRO" || exit 0
+
+  mkdir -p "$SW_STATE/logs"
+  ( build > "$SW_STATE/logs/usb-creator.log" 2>&1 ) &
+  local BPID=$!
+  ( while kill -0 $BPID 2>/dev/null; do echo 50; sleep 1; done; echo 100 ) \
+    | "${Z[@]}" --progress --pulsate --auto-close --no-cancel --width 420 --text "$T_PREP"
+  wait $BPID || { "${Z[@]}" --error --width 380 --text "$T_FAIL"; exit 1; }
+
+  local ROWS DEV
+  ROWS="$(lsblk -dnro NAME,SIZE,MODEL,RM | awk '$NF==1 {printf "FALSE\n/dev/%s\n%s — %s\n", $1, $2, ($3=="" ? "USB" : $3)}')"
+  [ -n "$ROWS" ] || { "${Z[@]}" --error --width 380 --text "$T_NOUSB"; exit 1; }
+  DEV=$(echo "$ROWS" | "${Z[@]}" --list --radiolist --width 480 --height 300 \
+        --text "$T_PICK" --column "" --column "Device" --column "Detail") || exit 0
+  [ -n "$DEV" ] || exit 0
+  local DETAIL
+  DETAIL="$(lsblk -dnro SIZE,MODEL "$DEV")"
+  # shellcheck disable=SC2059
+  "${Z[@]}" --question --default-cancel --width 440 \
+    --text "$(printf "$T_SURE" "$DEV — $DETAIL")" || exit 0
+
+  ( pkexec bash "$SW_ROOT/scripts/make-usb.sh" --write-core "$DEV" \
+      >> "$SW_STATE/logs/usb-creator.log" 2>&1; echo "RC=$?" > "$SW_STATE/logs/usb-creator.rc" ) &
+  local WPID=$!
+  ( while kill -0 $WPID 2>/dev/null; do echo 50; sleep 2; done; echo 100 ) \
+    | "${Z[@]}" --progress --pulsate --auto-close --no-cancel --width 420 --text "$T_WRITE"
+  wait $WPID
+  if [ "$(sed -n 's/^RC=//p' "$SW_STATE/logs/usb-creator.rc" 2>/dev/null)" = "0" ]; then
+    "${Z[@]}" --info --width 440 --text "$T_DONE"
+  else
+    "${Z[@]}" --error --width 380 --text "$T_FAIL"
+    exit 1
+  fi
+}
+
 case "${1:-}" in
   --write) shift; [ $# -ge 1 ] || die "--write needs the device (e.g. /dev/sdb)"; build; write_usb "$1" ;;
+  --write-core) shift; write_core "$1" ;;
+  --gui) gui ;;
   ""|--build) build ;;
   *) die "Unknown option: $1" ;;
 esac
