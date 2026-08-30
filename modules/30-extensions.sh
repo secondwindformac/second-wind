@@ -17,18 +17,21 @@ ext_install_pinned "$EXT_LOGO_UUID" "$EXT_LOGO_TAG" "$EXT_LOGO_SHA256" \
 
 # Panel theme, pre-configured (the extension reads it when it loads).
 # SecondWind derived theme = MacTahoe solid + our polish (see 20-look).
-dconf_track /org/gnome/shell/extensions/user-theme/name "'SecondWind-Light'"
+dconf_track /org/gnome/shell/extensions/user-theme/name "'SecondWind-$SW_SHELL_VARIANT'"
 
 # Mac-style top-left menu (Logo Menu): our own ⌘ command-symbol icon (no Apple
 # trademarks), with About, Settings, Lock, Power…; hides the Activities pill
 # (the overview stays on the hot corner and the 3-finger gesture).
+# The icon matches the bar: white strokes on the dark bar, dark on the light one.
+LOGO_ICON="command-symbolic.svg"
+[ "$SW_SHELL_VARIANT" = "Dark" ] && LOGO_ICON="command-symbolic-white.svg"
 if [ "$DRY_RUN" != 1 ]; then
   install -d "$SW_SHARE"
-  cp "$SW_ROOT/assets/command-symbolic.svg" "$SW_SHARE/command-symbolic.svg"
+  cp "$SW_ROOT/assets/command-symbolic.svg" "$SW_ROOT/assets/command-symbolic-white.svg" "$SW_SHARE/"
   track_new_file "$SW_SHARE"
 fi
 dconf_track /org/gnome/shell/extensions/Logo-menu/use-custom-icon true
-dconf_track /org/gnome/shell/extensions/Logo-menu/custom-icon-path "'$SW_SHARE/command-symbolic.svg'"
+dconf_track /org/gnome/shell/extensions/Logo-menu/custom-icon-path "'$SW_SHARE/$LOGO_ICON'"
 dconf_track /org/gnome/shell/extensions/Logo-menu/menu-button-icon-size 18
 dconf_track /org/gnome/shell/extensions/Logo-menu/show-power-options true
 dconf_track /org/gnome/shell/extensions/Logo-menu/show-lockscreen true

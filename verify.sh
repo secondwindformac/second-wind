@@ -32,7 +32,7 @@ chk "${MSG[v_icons]}"         eq org.gnome.desktop.interface icon-theme "'MacTah
 chk "${MSG[v_cursor]}"        eq org.gnome.desktop.interface cursor-theme "'MacTahoe-cursors'"
 chk "${MSG[v_font]}"          eq org.gnome.desktop.interface font-name "'Inter 11'"
 chk "${MSG[v_theme_dir]}"     test -d "$HOME/.themes/MacTahoe-Light-solid/gnome-shell"
-chk "${MSG[v_theme_derived]}" test -d "$HOME/.themes/SecondWind-Light/gnome-shell"
+chk "${MSG[v_theme_derived]}" test -d "$HOME/.themes/SecondWind-$SW_SHELL_VARIANT/gnome-shell"
 chk "${MSG[v_font_files]}"    test -f "$HOME/.local/share/fonts/Inter/Inter-Regular.ttf"
 chk "${MSG[v_wallp]}"         test -f "$HOME/.local/share/backgrounds/MacTahoe/MacTahoe-day.jpeg"
 chk "${MSG[v_libadw]}"        test -f "$HOME/.config/gtk-4.0/gtk.css"
@@ -60,7 +60,7 @@ if [ "$MODE" = "--all" ]; then
   for uuid in "$EXT_USER_THEME_UUID" "$EXT_BMS_UUID" "$EXT_XREMAP_UUID" "$EXT_LOGO_UUID"; do
     chk "${MSG[v_ext_active]} ${uuid%%@*}" bash -c "LC_ALL=C gnome-extensions info '$uuid' 2>/dev/null | grep -qE 'State: (ACTIVE|ENABLED)'"
   done
-  chk "${MSG[v_panel_theme]}"  bash -c "[ \"\$(dconf read /org/gnome/shell/extensions/user-theme/name)\" = \"'SecondWind-Light'\" ]"
+  chk "${MSG[v_panel_theme]}"  bash -c "[ \"\$(dconf read /org/gnome/shell/extensions/user-theme/name)\" = \"'SecondWind-$SW_SHELL_VARIANT'\" ]"
   chk "${MSG[v_xremap_dbus]}"  busctl --user introspect org.gnome.Shell /com/k0kubun/Xremap
 
   echo "${MSG[v_sec_brow]}"

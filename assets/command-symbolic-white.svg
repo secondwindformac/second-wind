@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Command symbol (⌘, U+2318), white variant for the dark top bar.
+       Original drawing (MIT); the symbol itself is free to use — no Apple
+       trademarks involved. -->
+  <g fill="none" stroke="#f5f5f7" stroke-width="1.4" stroke-linecap="round">
+    <circle cx="4.4" cy="4.4" r="2.3"/>
+    <circle cx="11.6" cy="4.4" r="2.3"/>
+    <circle cx="4.4" cy="11.6" r="2.3"/>
+    <circle cx="11.6" cy="11.6" r="2.3"/>
+    <path d="M6 6h4v4H6z"/>
+  </g>
+</svg>
