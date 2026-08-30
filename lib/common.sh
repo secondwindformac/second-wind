@@ -237,6 +237,24 @@ PY
   dconf reset -f "$base" 2>/dev/null || true
 }
 
+# favorite_add APP_DESKTOP — pin an app to the dock (idempotent, tracked once).
+favorite_add() {
+  local app="$1"
+  [ "$DRY_RUN" = 1 ] && { printf 'DRY-RUN: pin %s to the dock\n' "$app"; return 0; }
+  local cur
+  cur="$(gsettings get org.gnome.shell favorite-apps)"
+  mf record-gsettings org.gnome.shell favorite-apps "$cur"
+  python3 - "$app" <<'PY'
+import ast, subprocess, sys
+app = sys.argv[1]
+out = subprocess.check_output(['gsettings', 'get', 'org.gnome.shell', 'favorite-apps']).decode().strip()
+cur = [] if out.startswith('@as') else ast.literal_eval(out)
+if app not in cur:
+    cur.append(app)
+    subprocess.check_call(['gsettings', 'set', 'org.gnome.shell', 'favorite-apps', str(cur)])
+PY
+}
+
 # --- language ---
 # Installer strings follow the system language; English is the default.
 case "${LC_ALL:-${LC_MESSAGES:-${LANG:-en}}}" in
