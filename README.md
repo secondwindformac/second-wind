@@ -44,7 +44,15 @@ Opciones útiles:
 
 **¿Puedo volver atrás?** Sí, siempre: `./uninstall.sh` restaura cada ajuste a su valor original usando el respaldo que se guardó antes de empezar.
 
+**Algunas apps no tienen los botones rojo/amarillo/verde.** Las aplicaciones que dibujan su propia ventana (Chrome, y las hechas con Electron, como muchas apps de escritorio modernas) no usan los botones del sistema. Para Chrome, MacConLinux activa su opción de "barra de título del sistema" y queda con botones Mac; en las apps Electron depende de cada aplicación y no se puede forzar.
+
+**Los menús del sistema no son idénticos a los de macOS.** El panel y sus menús son de GNOME: MacConLinux los viste (colores, formas, tipografía, variante opaca legible), pero su estructura interna es la de Ubuntu.
+
+**El App Center de Ubuntu se ve distinto.** Esa tienda no usa la tecnología de temas del sistema (GTK) y no se puede vestir.
+
 **Firefox u otras apps de Snap no toman el tema.** Limitación conocida de los Snaps de Ubuntu; se aborda en la Etapa 1.
+
+**¿Y la batería?** MacConLinux usa la gestión de energía propia de Ubuntu (perfiles de energía + `thermald`) y añade `mbpfan` para que el ventilador responda de verdad en MacBooks, más el ahorro automático al quedar poca batería. Se descartó TLP a propósito: choca con el selector de energía de GNOME. El mayor consumo suele venir de las aplicaciones abiertas, no del sistema.
 
 **La cámara no se activó.** El driver de la cámara FaceTime HD es de terceros y se compila para tu kernel; si falla, el instalador lo revierte solo y lo deja documentado en `docs/camara.md`. Puedes reintentar tras una actualización con `./install.sh --solo hardware`.
 

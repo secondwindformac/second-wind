@@ -24,11 +24,11 @@ chk() {
 eq() { [ "$(gsettings get "$1" "$2" 2>/dev/null)" = "$3" ]; }
 
 echo "— Apariencia —"
-chk "Tema de ventanas MacTahoe-Light"          eq org.gnome.desktop.interface gtk-theme "'MacTahoe-Light'"
+chk "Tema de ventanas MacTahoe (solid, menús legibles)" eq org.gnome.desktop.interface gtk-theme "'MacTahoe-Light-solid'"
 chk "Iconos MacTahoe"                          eq org.gnome.desktop.interface icon-theme "'MacTahoe'"
 chk "Cursor MacTahoe"                          eq org.gnome.desktop.interface cursor-theme "'MacTahoe-cursors'"
 chk "Fuente del sistema Inter"                 eq org.gnome.desktop.interface font-name "'Inter 11'"
-chk "Tema instalado en ~/.themes"              test -d "$HOME/.themes/MacTahoe-Light/gnome-shell"
+chk "Tema instalado en ~/.themes"              test -d "$HOME/.themes/MacTahoe-Light-solid/gnome-shell"
 chk "Fuente Inter instalada"                   test -f "$HOME/.local/share/fonts/Inter/Inter-Regular.ttf"
 chk "Fondos de pantalla MacTahoe"              test -f "$HOME/.local/share/backgrounds/MacTahoe/MacTahoe-day.jpeg"
 chk "Libadwaita (apps modernas) con tema"      test -f "$HOME/.config/gtk-4.0/gtk.css"
@@ -42,6 +42,9 @@ chk "Ventanas nuevas centradas"                eq org.gnome.mutter center-new-wi
 
 echo "— Teclado y Spotlight —"
 chk "Sin doble remapeo XKB"                    eq org.gnome.desktop.input-sources xkb-options "@as []"
+chk "Cmd+Tab entre apps de todos los escritorios" eq org.gnome.shell.app-switcher current-workspace-only "false"
+chk "Cmd+Tab unificado al selector de apps"    bash -c "gsettings get org.gnome.desktop.wm.keybindings switch-applications | grep -q '<Alt>Tab'"
+chk "Ahorro de batería automático al quedar poca" eq org.gnome.settings-daemon.plugins.power power-saver-profile-on-low-battery "true"
 chk "Servicio de teclado Mac (Toshy) activo"   systemctl --user is-active toshy-config.service
 chk "Icono de Toshy oculto"                    bash -c '! test -e "$HOME/.config/autostart/Toshy_Tray.desktop"'
 chk "Ulauncher (Spotlight) en ejecución"       pgrep -x ulauncher
@@ -53,8 +56,20 @@ if [ "$MODE" = "--todo" ]; then
   for uuid in "$EXT_USER_THEME_UUID" "$EXT_BMS_UUID" "$EXT_XREMAP_UUID"; do
     chk "Extensión activa: ${uuid%%@*}" bash -c "LC_ALL=C gnome-extensions info '$uuid' 2>/dev/null | grep -qE 'State: (ACTIVE|ENABLED)'"
   done
-  chk "Tema del panel MacTahoe aplicado"       bash -c "[ \"\$(dconf read /org/gnome/shell/extensions/user-theme/name)\" = \"'MacTahoe-Light'\" ]"
+  chk "Tema del panel MacTahoe aplicado"       bash -c "[ \"\$(dconf read /org/gnome/shell/extensions/user-theme/name)\" = \"'MacTahoe-Light-solid'\" ]"
   chk "Teclado por aplicación operativo (D-Bus)" busctl --user introspect org.gnome.Shell /com/k0kubun/Xremap
+
+  echo "— Navegadores y pantalla de acceso (si se aplicaron) —"
+  if python3 lib/manifest.py has-note "chrome-parchado" 2>/dev/null; then
+    chk "Chrome con ventana estilo Mac" bash -c "python3 -c \"import json;d=json.load(open('$HOME/.config/google-chrome/Default/Preferences'));exit(0 if d.get('browser',{}).get('custom_chrome_frame') is False else 1)\""
+  else
+    echo "  (Chrome aún no vestido — ejecuta ./install.sh --solo navegadores con Chrome cerrado)"
+  fi
+  if python3 lib/manifest.py has-note "gdm-instalado" 2>/dev/null; then
+    chk "Pantalla de acceso con tema Mac (respaldo .bak presente)" test -f "/usr/share/gnome-shell/theme/Yaru/gnome-shell-theme.gresource.bak"
+  else
+    echo "  (pantalla de acceso aún no aplicada — ./install.sh --solo gdm)"
+  fi
 
   echo "— Hardware (si se instaló ese módulo) —"
   if [ -f /etc/modprobe.d/macconlinux-hid_apple.conf ]; then

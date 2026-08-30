@@ -13,8 +13,9 @@ ext_install_pinned "$EXT_BMS_UUID" "$EXT_BMS_TAG" "$EXT_BMS_SHA256" \
 ext_install_pinned "$EXT_XREMAP_UUID" "$EXT_XREMAP_TAG" "$EXT_XREMAP_SHA256" \
   || { warn "Xremap no se pudo instalar (el teclado por aplicación quedará pendiente)"; FALLOS=$((FALLOS+1)); }
 
-# El tema del panel se deja configurado por adelantado (la extensión lo leerá al cargar).
-dconf_track /org/gnome/shell/extensions/user-theme/name "'MacTahoe-Light'"
+# El tema del panel se deja configurado por adelantado (la extensión lo leerá al
+# cargar). Variante solid: menús del panel legibles (ver nota en 20-apariencia).
+dconf_track /org/gnome/shell/extensions/user-theme/name "'MacTahoe-Light-solid'"
 
 [ "$FALLOS" -lt 3 ] || return 1
 info "Las extensiones quedarán activas al cerrar sesión y volver a entrar."

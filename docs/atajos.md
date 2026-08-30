@@ -12,7 +12,11 @@ servicio Toshy, que corre invisible de fondo):
 | `Cmd + T` | Nueva pestaña |
 | `Cmd + W` | Cerrar pestaña/ventana |
 | `Cmd + Q` | Salir de la aplicación |
-| `Cmd + Tab` | Cambiar de aplicación |
+| `Cmd + Tab` | Cambiar de aplicación (entre TODAS las apps de todos los escritorios, como en Mac) |
+| `Cmd + H` | Minimizar/ocultar la ventana |
+| `Cmd + Shift + 3` | Captura de pantalla completa |
+| `Cmd + Shift + 4` | Captura de la ventana activa |
+| `Cmd + Shift + 5` | Captura con opciones (seleccionar zona, grabar…) |
 | `Cmd + ,` | Preferencias de la app (donde exista) |
 | En la Terminal: `Cmd + C` | Copia texto (Ctrl+C sigue interrumpiendo programas, como en Mac) |
 
