@@ -17,8 +17,14 @@
    (`~/snap/firefox/common/.mozilla`).
 5. **English docs for everything user-visible in GNOME** and more languages
    for installer strings (the i18n scaffolding is in `lib/i18n/`).
-6. **Mac model detection via DMI** to enable per-model fixes (each model has
-   its quirks: sensors, WiFi, camera).
+6. **Per-model module (`16-model-quirks`)**: DMI-gated fixes per Mac model,
+   driven by the [compatibility matrix](compatibility.md). First target:
+   MacBook Pro 2016–2017 (`MacBookPro13,x`/`14,x`) — keyboard/trackpad already
+   work out of the box (`applespi` is in-tree), what's missing is the
+   BCM43602 `brcmfmac` firmware fix (5 GHz/country-code defects; never install
+   `wl` there) and the `apple-ib-tb` DKMS for the Touch Bar. Code is ready to
+   write; validation blocked on access to a physical unit. T2 Macs (2018+)
+   stay out of v1 by design.
 7. **GNOME 47/48 support** (Ubuntu 24.10+/26.04) by re-pinning
    `versions.lock` per release, LTS-first policy.
 8. **Evaluate the Kiwi + Kiwi Menu extension pair** as an upgrade over Logo
