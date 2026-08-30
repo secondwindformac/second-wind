@@ -1,0 +1,71 @@
+/* MacTahoe Light — réplica visual de Spotlight (macOS) para Ulauncher.
+ * CSS propio de MacConLinux (MIT). Hereda la base del tema "light" de
+ * Ulauncher vía @import (no se copia código GPL). */
+@import url("/usr/share/ulauncher/themes/light/theme.css");
+
+/* Paleta */
+@define-color bg_color rgba(240, 240, 243, 0.96);
+@define-color window_bg @bg_color;
+@define-color window_border_color rgba(0, 0, 0, 0.14);
+@define-color window_shadow rgba(0, 0, 0, 0.35);
+@define-color selected_bg_color #007aff;
+@define-color selected_fg_color #ffffff;
+@define-color input_color #1d1d1f;
+@define-color caret_color #007aff;
+@define-color item_name #1d1d1f;
+@define-color item_text #6e6e73;
+@define-color item_box_selected #007aff;
+@define-color item_text_selected rgba(255, 255, 255, 0.85);
+@define-color item_name_selected #ffffff;
+@define-color item_shortcut_color #86868b;
+@define-color item_shortcut_shadow transparent;
+@define-color item_shortcut_color_sel rgba(255, 255, 255, 0.9);
+@define-color item_shortcut_shadow_sel transparent;
+
+.app {
+    background-color: @window_bg;
+    border: 1px solid @window_border_color;
+    border-radius: 14px;
+    box-shadow: 0 18px 50px @window_shadow;
+    font-family: "Inter", "Ubuntu Sans", sans-serif;
+}
+
+.input {
+    color: @input_color;
+    font-size: 200%;
+    font-weight: 300;
+    padding: 8px 4px 8px 10px;
+}
+
+.item-name {
+    color: @item_name;
+    font-size: 110%;
+}
+.item-text {
+    color: @item_text;
+}
+
+.selected.item-box {
+    background-color: @item_box_selected;
+    border-radius: 10px;
+    border-left: none;
+    border-right: none;
+}
+.selected.item-box .item-name {
+    color: @item_name_selected;
+}
+.selected.item-box .item-text {
+    color: @item_text_selected;
+}
+.item-shortcut {
+    color: @item_shortcut_color;
+    text-shadow: none;
+}
+.selected.item-box .item-shortcut {
+    color: @item_shortcut_color_sel;
+    text-shadow: none;
+}
+
+.prefs-btn {
+    opacity: 0;
+}
