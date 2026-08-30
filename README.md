@@ -66,6 +66,8 @@ Useful options:
 
 **The fan roars when I watch YouTube.** Two causes, both addressed: the fan finally *works* (mbpfan — before, it idled while the CPU cooked), and YouTube serves VP9/AV1 video these old chips must decode in software. Second Wind enables hardware H.264 decoding in Chrome's launcher and installs the VA-API driver; install the [enhanced-h264ify](https://chromewebstore.google.com/detail/enhanced-h264ify/omkfmpieigblcllmkgbflkikinpkodlk) extension so YouTube serves H.264, then fully restart Chrome. Result: cool, quiet video.
 
+**How do I install Spotify, Office and other apps without commands?** Run `./install.sh --only apps`: a checkbox picker installs a curated pack from official sources only — Spotify and OnlyOffice (opens Word/Excel/PowerPoint) from their publishers' store entries, VLC, official Zoom, and **Quick Look** (preview any file with the Space bar, like a Mac). Apps that don't exist on Linux (WhatsApp, Office 365, Netflix) are installed as **web apps**: their own window and dock icon, feeling native. Stage 1 adds the Flathub catalog with a graphical store.
+
 ## Project status
 
 **Stage 0** (this): one-click installer for Ubuntu 24.04/GNOME 46, tested on the reference machine.
