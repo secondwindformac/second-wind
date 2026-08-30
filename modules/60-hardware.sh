@@ -59,7 +59,9 @@ if [ ! -f "$CONF" ]; then
 fi
 
 # --- 3) FaceTime HD camera ---
-if [ -e /dev/video0 ]; then
+if ! lspci -n 2>/dev/null | grep -q '14e4:1570'; then
+  info "${MSG[m60_cam_na]}"
+elif [ -e /dev/video0 ]; then
   ok "${MSG[m60_cam_already]}"
 else
   info "${MSG[m60_cam_prep]}"
