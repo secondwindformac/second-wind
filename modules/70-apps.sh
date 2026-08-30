@@ -19,7 +19,7 @@ cat > "$DESK" <<EOF
 Type=Application
 Name=${MSG[store_name]}
 Comment=${MSG[store_comment]}
-Exec=$SW_ROOT/apps/second-wind-apps.sh
+Exec=$SW_ROOT/apps/second-wind-apps.py
 Icon=$SW_SHARE/second-wind-apps.svg
 Terminal=false
 Categories=System;Utility;

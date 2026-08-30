@@ -55,6 +55,10 @@ if python3 lib/manifest.py has-note "libadwaita-installed"; then
   ok "${MSG[un_libadw_ok]}"
 fi
 
+# News heartbeat: disable before its unit files are removed with the manifest
+systemctl --user disable --now second-wind-news.timer >/dev/null 2>&1 || true
+systemctl --user daemon-reload 2>/dev/null || true
+
 # Ulauncher: stop it if we left it running (its autostart entry is already gone)
 pgrep -x ulauncher >/dev/null 2>&1 && pkill -x ulauncher 2>/dev/null || true
 
