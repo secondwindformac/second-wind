@@ -33,7 +33,9 @@ cd second-wind
 ./install.sh
 ```
 
-The installer explains what it will do, asks for **a single confirmation**, saves the backup and applies everything. At the end it asks you to log out and back in (needed for the panel theme and the per-app keyboard). The administrator password is only requested for the hardware fixes and the login screen.
+The installer explains what it will do, asks for **a single confirmation**, saves the backup and applies everything — including, on clean machines, the engines it configures (Mac keyboard, Spotlight search, Broadcom WiFi driver), all version-pinned. The administrator password is requested once, for the privileged steps (engines, hardware fixes, battery care, login screen).
+
+The only steps no installer can do for you, by design: typing your own password (a Linux security rule, same as macOS), one click to add the [enhanced-h264ify](https://chromewebstore.google.com/detail/enhanced-h264ify/omkfmpieigblcllmkgbflkikinpkodlk) browser extension (browsers only accept extensions from a human click), and logging out / rebooting when asked.
 
 Useful options:
 

@@ -32,6 +32,17 @@ Disable automatic login to fix it? (You will type your password at startup, like
   [dry_run_notice]="TEST MODE (--dry-run): nothing will be changed; only showing what would be done."
   [log_at]="Full log:"
 
+  [mod_15]="Engines for keyboard, search and WiFi (clean machines)"
+  [m15_all_ok]="All engines already present (Mac keyboard, search, WiFi)"
+  [m15_dry]="WOULD DO: install the missing engines (Toshy keyboard / Ulauncher search / Broadcom WiFi driver)"
+  [m15_no_sudo]="No administrator permission; missing engines stay pending (retry with ./install.sh --only engines)."
+  [m15_wifi]="Broadcom WiFi: installing the official driver (needs a wired or phone-tethered connection)…"
+  [m15_wifi_err]="Could not install the WiFi driver; see the log"
+  [m15_ul]="Installing Ulauncher (the Spotlight engine)…"
+  [m15_ul_err]="Could not install Ulauncher; Spotlight stays pending"
+  [m15_toshy]="Installing Toshy (the Mac keyboard engine; 2-4 minutes)…"
+  [m15_toshy_err]="Toshy could not be installed; Mac shortcuts stay pending (log: toshy-install.log)"
+
   [mod_20]="macOS look (theme, icons, cursor, fonts, wallpaper)"
   [mod_30]="Desktop extensions (panel theme, blur, keyboard)"
   [mod_35]="macOS-style dock"

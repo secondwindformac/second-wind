@@ -31,6 +31,7 @@ EOF
 # Spanish module aliases (kept so older docs/commands keep working)
 map_alias() {
   case "$1" in
+    motores) echo engines ;;
     apariencia) echo look ;;
     extensiones) echo extensions ;;
     teclado) echo keyboard ;;
@@ -78,12 +79,14 @@ info "${MSG[log_at]} $LOG"
 source modules/00-preflight.sh
 source modules/10-backup.sh
 
-MODULES=(20-look 30-extensions 35-dock 40-panel 45-keyboard 50-spotlight 55-browsers)
+MODULES=()
+[ "$WITH_HARDWARE" = 1 ] && MODULES+=(15-engines)
+MODULES+=(20-look 30-extensions 35-dock 40-panel 45-keyboard 50-spotlight 55-browsers)
 [ "$WITH_HARDWARE" = 1 ] && MODULES+=(60-hardware 62-power 65-gdm)
 MODULES+=(70-apps 90-postlogin)
 
 if [ ${#ONLY_MODULES[@]} -gt 0 ]; then
-  ALL=(20-look 30-extensions 35-dock 40-panel 45-keyboard 50-spotlight 55-browsers 60-hardware 62-power 65-gdm 70-apps 90-postlogin)
+  ALL=(15-engines 20-look 30-extensions 35-dock 40-panel 45-keyboard 50-spotlight 55-browsers 60-hardware 62-power 65-gdm 70-apps 90-postlogin)
   MODULES=()
   for m in "${ALL[@]}"; do
     for wanted in "${ONLY_MODULES[@]}"; do

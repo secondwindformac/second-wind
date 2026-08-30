@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# 15-engines — installs, on clean machines, the engines that later modules
+# only configure: Toshy (per-app Mac keyboard), Ulauncher (Spotlight) and the
+# Broadcom WiFi driver common on Intel Macs. On machines that already have
+# them (like the reference MacBook) this module is a silent no-op and never
+# asks for a password. Runs only when the user consented to admin steps.
+
+NEED_WIFI=0
+NEED_UL=0
+NEED_TOSHY=0
+
+# Broadcom chips that need the proprietary `wl` driver (BCM4360 family, etc.)
+# Note: read /proc/modules directly — `lsmod | grep -q` under pipefail gives
+# false negatives (grep -q closes the pipe early → SIGPIPE → non-zero).
+if lspci -n 2>/dev/null | grep -qE '14e4:(43a0|4331|432b|4353|43a9|43ba)' \
+   && ! grep -qE '^(wl|brcmfmac) ' /proc/modules; then
+  NEED_WIFI=1
+fi
+command -v ulauncher >/dev/null 2>&1 || NEED_UL=1
+systemctl --user list-unit-files 'toshy*' 2>/dev/null | grep -q toshy || NEED_TOSHY=1
+
+if [ "$NEED_WIFI$NEED_UL$NEED_TOSHY" = "000" ]; then
+  ok "${MSG[m15_all_ok]}"
+  return 0
+fi
+
+if [ "$DRY_RUN" = 1 ]; then
+  info "${MSG[m15_dry]}"
+  return 0
+fi
+
+info "${MSG[m60_sudo]}"
+if ! sudo -v; then
+  warn "${MSG[m15_no_sudo]}"
+  return 1
+fi
+sudo apt-get update -qq 2>/dev/null || warn "${MSG[m60_apt_warn]}"
+
+# --- WiFi (needs a wired/tethered connection to download the driver) ---
+if [ "$NEED_WIFI" = 1 ]; then
+  info "${MSG[m15_wifi]}"
+  apt_track_install "linux-headers-$(uname -r)" build-essential dkms broadcom-sta-dkms \
+    && sudo modprobe wl 2>/dev/null || warn "${MSG[m15_wifi_err]}"
+fi
+
+# --- Ulauncher (Spotlight engine), pinned .deb ---
+if [ "$NEED_UL" = 1 ]; then
+  info "${MSG[m15_ul]}"
+  if download_cached "$ULAUNCHER_DEB_URL" "$SW_CACHE/ulauncher.deb" "$ULAUNCHER_DEB_SHA256" \
+     && sudo apt-get install -y "$SW_CACHE/ulauncher.deb" >/dev/null 2>&1; then
+    mf apt-installed ulauncher
+  else
+    warn "${MSG[m15_ul_err]}"
+  fi
+fi
+
+# --- Toshy (Mac keyboard engine), pinned to the verified commit ---
+if [ "$NEED_TOSHY" = 1 ]; then
+  info "${MSG[m15_toshy]}"
+  if clone_pinned "$TOSHY_REPO" "$SW_CACHE/toshy" "$TOSHY_SHA" \
+     && ( cd "$SW_CACHE/toshy" && timeout 600 python3 setup_toshy.py install >>"$SW_LOGDIR/toshy-install.log" 2>&1 ); then
+    if systemctl --user list-unit-files 'toshy*' 2>/dev/null | grep -q toshy; then
+      mf note "toshy-installed-by-secondwind"
+      export HAVE_TOSHY=1
+      ok "Toshy OK"
+    else
+      warn "${MSG[m15_toshy_err]}"
+    fi
+  else
+    warn "${MSG[m15_toshy_err]}"
+  fi
+fi

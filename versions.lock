@@ -32,3 +32,10 @@ EXT_LOGO_SHA256=669ea05161df08c3bec6c81c1abe565ac34c17802263cd75658252a76c2fac81
 # --- System font (free SF Pro substitute) ---
 INTER_URL=https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
 INTER_SHA256=9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e
+
+# --- Engines auto-installed on clean machines (module 15) ---
+# Toshy pinned to the exact commit proven on the reference machine.
+TOSHY_REPO=https://github.com/RedBearAK/toshy.git
+TOSHY_SHA=e9bfcd238726becf257d02539a20fb2a7a558191                # 2026-07-26 line, verified working
+ULAUNCHER_DEB_URL=https://github.com/Ulauncher/Ulauncher/releases/download/5.16.0/ulauncher_5.16.0_all.deb
+ULAUNCHER_DEB_SHA256=cf6bd30462d20fcd1eab046e3446e017c8d9add63f350cb8d28f1c66cad0ce43

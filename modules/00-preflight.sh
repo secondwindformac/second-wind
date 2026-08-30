@@ -34,4 +34,6 @@ HAVE_TOSHY=0
 systemctl --user list-unit-files 'toshy*' 2>/dev/null | grep -q toshy && HAVE_TOSHY=1
 export HAVE_DOCK HAVE_TOSHY
 
-ok "${MSG[pre_ok]} (dock: $HAVE_DOCK, toshy: $HAVE_TOSHY)"
+SW_MODEL="$(cat /sys/class/dmi/id/product_name 2>/dev/null || echo PC)"
+export SW_MODEL
+ok "${MSG[pre_ok]} — $SW_MODEL (dock: $HAVE_DOCK, toshy: $HAVE_TOSHY)"

@@ -2,9 +2,11 @@
 
 ## Stage 1 — pending items, ordered by impact
 
-1. **Install what today is only configured**: Toshy (keyboard) and Ulauncher
-   (Spotlight) must install automatically when missing, version-pinned, so the
-   installer works on clean machines.
+1. ~~Install what today is only configured~~ **DONE (module 15-engines)**:
+   Toshy, Ulauncher and the Broadcom WiFi driver now install automatically
+   when missing, version-pinned. Remaining validation: a full run on a clean
+   machine/another Mac model (the reference machine already had them, so only
+   the already-present path is field-tested).
 2. **Coordinated light/dark mode**: MacTahoe Light and Dark are both
    installed; Ubuntu's dark-mode switch should change theme+icons+shell
    together (via `color-scheme` + a dynamic user-theme).
