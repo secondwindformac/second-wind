@@ -84,6 +84,12 @@ if [ "$MODE" = "--all" ]; then
   else
     echo "${MSG[v_hw_none]}"
   fi
+  if command -v vainfo >/dev/null 2>&1; then
+    chk "${MSG[v_vaapi]}" bash -c "vainfo 2>/dev/null | grep -qiE 'H264|AVC'"
+  fi
+  if [ -f /etc/systemd/logind.conf.d/secondwind.conf ]; then
+    chk "${MSG[v_hib]}" bash -c "grep -q suspend-then-hibernate /etc/systemd/logind.conf.d/secondwind.conf && grep -q 'resume=' /etc/default/grub.d/secondwind-hibernate.cfg"
+  fi
   chk "${MSG[v_thermald]}" systemctl is-active thermald
 fi
 
