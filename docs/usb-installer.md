@@ -40,8 +40,16 @@ lsblk -d                             # find your stick, e.g. /dev/sdb
   into `/usr/local/share/second-wind` and arms a one-shot autostart for every
   created user; on first login it waits for connectivity and opens the normal
   bilingual installer.
-- Validated end-to-end in a QEMU/OVMF (EFI) virtual machine before real
-  hardware. Rebuild the seed any time — the ISO stays cached.
+- **Validated end-to-end in a QEMU/OVMF (EFI) virtual machine** (2026-08-30):
+  official ISO boot → seed consumed (account screen pre-filled, 8 of 12 wizard
+  pages skipped, automatic disk wipe) → 13/13 modules → relogin → ⌘ menu, dark
+  bar, MacTahoe dock, Mac login screen; verify: 31 passed, 5 "failures" all
+  being hardware the VM does not have. The rehearsal caught and fixed four
+  real product bugs before any human hit them: missing curl/git on stock
+  installs, Toshy's interactive prompts (now tty-attached), pointless camera
+  build on non-Mac machines, and the dock defaulting to the left.
+- Rebuild the seed any time — the ISO stays cached. Never yank the USB before
+  the "remove medium and press ENTER" prompt (the live system still needs it).
 
 ## Current limits (v0)
 
