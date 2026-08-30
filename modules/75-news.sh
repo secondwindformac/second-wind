@@ -23,6 +23,21 @@ cat > "$NEWS_DIR/second-wind-news.sh" <<'EOF'
 # Second Wind news heartbeat (weekly). Self-contained; respects opt-out.
 SW_STATE="$HOME/.local/state/second-wind"
 NEWS="$SW_STATE/news"
+
+# --test: show the sample support notice (no state changes) — used by the
+# "Try the notice now" row in Second Wind Apps.
+if [ "${1:-}" = "--test" ]; then
+  case "${LANG:-en}" in
+    es*) B="Tu Mac lleva un mes de segunda vida 💨 ¿Nos ayudas a revivir un millón más? (esto es una PRUEBA)"; S="Apoyar"; N="Cerrar" ;;
+    *)   B="Your Mac has enjoyed a month of second life 💨 Help us revive a million more? (this is a TEST)"; S="Support"; N="Close" ;;
+  esac
+  DONATE_URL="https://github.com/arancibiamartin/second-wind"
+  [ -f "$SW_STATE/links.conf" ] && . "$SW_STATE/links.conf"
+  R=$(notify-send -a "Second Wind" -i emblem-favorite -A support="$S" -A close="$N" "Second Wind" "$B" 2>/dev/null)
+  [ "$R" = "support" ] && xdg-open "$DONATE_URL" &
+  exit 0
+fi
+
 [ -f "$SW_STATE/news-optout" ] && exit 0
 
 DONATE_URL="https://github.com/arancibiamartin/second-wind"

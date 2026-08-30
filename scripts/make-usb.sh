@@ -111,7 +111,7 @@ write_core() {
   [ -b "$DEV" ] || die "not a block device: $DEV"
   lsblk -nrpo NAME,MOUNTPOINT "$DEV" | awk '$2 != "" {print $1}' \
     | while read -r p; do umount "$p" || true; done
-  dd if="$ISO" of="$DEV" bs=4M conv=fsync status=none
+  dd if="$ISO" of="$DEV" bs=4M conv=fsync status=progress
   sync
   sgdisk -e "$DEV" >/dev/null
   sgdisk -n 0:0:+512MiB -t 0:0700 -c 0:CIDATA "$DEV" >/dev/null
