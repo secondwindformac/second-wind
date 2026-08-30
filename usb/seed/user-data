@@ -1,0 +1,71 @@
+#cloud-config
+# ============================================================
+# Second Wind — autoinstall seed for Ubuntu Desktop 24.04 LTS.
+# Lives on the USB stick in a small volume labeled CIDATA
+# (cloud-init NoCloud); the official Ubuntu ISO is untouched.
+#
+# ⚠ THIS SEED WIPES THE ENTIRE TARGET DISK (that is its job).
+# ============================================================
+autoinstall:
+  version: 1
+
+  # The person answers only the personal screens in Ubuntu's own friendly
+  # installer (language, keyboard, WiFi, name/password). Everything else
+  # is automated.
+  interactive-sections:
+    - locale
+    - keyboard
+    - network
+    - identity
+
+  # Defaults, in case any section above runs non-interactively on some
+  # installer build (the interactive screens override them):
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  identity:
+    hostname: second-wind
+    realname: Second Wind
+    username: wind
+    # placeholder password "secondwind" (SHA-512 crypt); the interactive
+    # identity screen replaces it
+    password: "@PASSWORD_HASH@"
+
+  # Wipe the whole disk with the standard direct layout
+  storage:
+    layout:
+      name: direct
+
+  # Third-party drivers (Broadcom WiFi on Intel Macs) and media codecs
+  drivers:
+    install: true
+  codecs:
+    install: true
+
+  timezone: geoip
+  updates: security
+
+  late-commands:
+    # Copy Second Wind from the seed volume into the installed system and
+    # arm the first-login bootstrap for every created user.
+    - |
+      set -x
+      mkdir -p /mnt/swseed
+      mount -o ro /dev/disk/by-label/CIDATA /mnt/swseed \
+        || mount -o ro /dev/disk/by-label/cidata /mnt/swseed || true
+      if [ -f /mnt/swseed/second-wind.tar.gz ]; then
+        mkdir -p /target/usr/local/share
+        tar -xzf /mnt/swseed/second-wind.tar.gz -C /target/usr/local/share
+        install -D -m 0755 /mnt/swseed/firstboot/second-wind-firstboot.sh \
+          /target/usr/local/share/second-wind/firstboot/second-wind-firstboot.sh
+        install -D -m 0644 /mnt/swseed/firstboot/second-wind-firstboot.desktop \
+          /target/etc/skel/.config/autostart/second-wind-firstboot.desktop
+        for H in /target/home/*; do
+          [ -d "$H" ] || continue
+          U="$(basename "$H")"
+          install -D -m 0644 /mnt/swseed/firstboot/second-wind-firstboot.desktop \
+            "$H/.config/autostart/second-wind-firstboot.desktop"
+          chroot /target chown -R "$U:$U" "/home/$U/.config" || true
+        done
+      fi
+      umount /mnt/swseed || true

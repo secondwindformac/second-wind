@@ -70,7 +70,7 @@ Useful options:
 
 **Stage 0** (this): one-click installer for Ubuntu 24.04/GNOME 46, tested on the reference machine.
 **Stage 1**: Mac-style apps + Quick Look, coordinated dark mode, Firefox theme, auto-install of the keyboard/search engines on clean machines, more Mac models.
-**Stage 2**: the total install USB — from a Mac running macOS to a "new Mac" running Ubuntu + Second Wind, without ever seeing a terminal.
+**Stage 2 (v0 shipped)**: the total install USB — official Ubuntu ISO + autoinstall seed; wipe-and-install with only the personal screens asked, Second Wind self-arming at first login. See [docs/usb-installer.md](docs/usb-installer.md). Next: the "create it from macOS in 3 clicks" app.
 
 See [docs/roadmap.md](docs/roadmap.md) for the honest feasibility notes (global menu bar, desktop widgets, and friends).
 

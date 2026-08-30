@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Second Wind (first start)
+Comment=Finishes turning this computer into a Mac-like experience, once
+Exec=/usr/local/share/second-wind/firstboot/second-wind-firstboot.sh
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
+Terminal=false
