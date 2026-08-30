@@ -1,29 +1,32 @@
-# Componentes de terceros
+# Third-party components
 
-MacConLinux (licencia MIT) **no incluye ni redistribuye** estos componentes: el
-instalador los descarga de sus fuentes oficiales, en las versiones exactas
-fijadas en `versions.lock`, y quedan instalados en el equipo del usuario bajo
-sus propias licencias.
+Second Wind (MIT license) does **not** bundle or redistribute these
+components: the installer downloads them from their official sources, at the
+exact versions pinned in `versions.lock`, and they land on the user's machine
+under their own licenses.
 
-| Componente | Uso | Licencia | Fuente |
+| Component | Use | License | Source |
 |---|---|---|---|
-| MacTahoe GTK theme (vinceliuice) | Tema de ventanas y panel | GPL-3.0 | https://github.com/vinceliuice/MacTahoe-gtk-theme |
-| MacTahoe icon theme + cursores (vinceliuice) | Iconos y cursor | GPL-3.0 | https://github.com/vinceliuice/MacTahoe-icon-theme |
-| Inter (rsms) | Fuente del sistema | SIL OFL 1.1 | https://github.com/rsms/inter |
-| User Themes (GNOME) | Activar el tema del panel | GPL-2.0+ | https://extensions.gnome.org/extension/19/user-themes/ |
-| Blur my Shell (aunetx) | Transparencias del panel | GPL-3.0 | https://extensions.gnome.org/extension/3193/blur-my-shell/ |
-| Xremap (k0kubun) | Detección de app activa (teclado por aplicación) | MIT | https://extensions.gnome.org/extension/5060/xremap/ |
-| Logo Menu (aryan_k) | Menú superior izquierdo estilo Mac (con icono ⌘ propio de MacConLinux) | GPL-3.0 | https://extensions.gnome.org/extension/4451/logo-menu/ |
-| facetimehd + facetimehd-firmware (patjak) | Driver de la cámara FaceTime HD | GPL-2.0 (driver) | https://github.com/patjak/facetimehd |
-| mbpfan (linux-on-mac) | Control del ventilador | GPL-3.0 | paquete `mbpfan` de Ubuntu |
-| Toshy (RedBearAK) | Teclado estilo Mac por aplicación | GPL-3.0 | https://github.com/RedBearAK/toshy — MacConLinux lo configura si está presente; su instalación se integrará en la Etapa 1 |
-| Ulauncher | Buscador (Spotlight) | GPL-3.0 | https://ulauncher.io — ídem |
+| MacTahoe GTK theme (vinceliuice) | Window and panel theme | GPL-3.0 | https://github.com/vinceliuice/MacTahoe-gtk-theme |
+| MacTahoe icon theme + cursors (vinceliuice) | Icons and cursor | GPL-3.0 | https://github.com/vinceliuice/MacTahoe-icon-theme |
+| Inter (rsms) | System font | SIL OFL 1.1 | https://github.com/rsms/inter |
+| User Themes (GNOME) | Enables the panel theme | GPL-2.0+ | https://extensions.gnome.org/extension/19/user-themes/ |
+| Blur my Shell (aunetx) | Panel blur | GPL-3.0 | https://extensions.gnome.org/extension/3193/blur-my-shell/ |
+| Xremap (k0kubun) | Focused-app detection (per-app keyboard) | MIT | https://extensions.gnome.org/extension/5060/xremap/ |
+| Logo Menu (aryan_k) | Mac-style top-left menu (with Second Wind's own ⌘ icon) | GPL-3.0 | https://extensions.gnome.org/extension/4451/logo-menu/ |
+| facetimehd + facetimehd-firmware (patjak) | FaceTime HD camera driver | GPL-2.0 (driver) | https://github.com/patjak/facetimehd |
+| mbpfan (linux-on-mac) | Fan control | GPL-3.0 | Ubuntu's `mbpfan` package |
+| Toshy (RedBearAK) | Per-app Mac-style keyboard | GPL-3.0 | https://github.com/RedBearAK/toshy — Second Wind configures it when present; its installation lands in Stage 1 |
+| Ulauncher | Search (Spotlight) | GPL-3.0 | https://ulauncher.io — same as above |
 
-Notas:
+Notes:
 
-- El **firmware de la cámara** pertenece a Apple; el instalador lo extrae
-  localmente de un paquete oficial de Apple en el equipo del usuario
-  (herramienta `facetimehd-firmware`) y **nunca** se redistribuye.
-- El tema CSS de Spotlight para Ulauncher (`assets/ulauncher/user-themes/`)
-  es código propio de MacConLinux (MIT); hereda estilos del tema "light" de
-  Ulauncher por referencia (`@import` a la ruta local), sin copiar su código.
+- The **camera firmware** belongs to Apple; the installer extracts it locally
+  from an official Apple package on the user's machine (the
+  `facetimehd-firmware` tool) and it is **never** redistributed.
+- The Spotlight CSS theme for Ulauncher (`assets/ulauncher/user-themes/`) is
+  Second Wind's own code (MIT); it inherits styles from Ulauncher's "light"
+  theme by reference (`@import` of the local path), without copying its code.
+- The ⌘ command-symbol icon (`assets/command-symbolic.svg`) is an original
+  drawing (MIT). The command symbol itself (U+2318) is a freely usable
+  character; no Apple trademarks are included.

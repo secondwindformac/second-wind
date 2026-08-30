@@ -1,42 +1,56 @@
 #!/usr/bin/env bash
-# MacConLinux — instalador one-click de la experiencia macOS para Ubuntu
-# Uso:  ./install.sh [--dry-run] [--si] [--sin-hardware] [--solo MODULO]...
-#       ./install.sh --verificar | --desinstalar | --help
+# Second Wind — one-click macOS experience installer for Ubuntu.
+# A second wind for your old Mac.
+#
+# Usage:  ./install.sh [--dry-run] [--yes] [--no-hardware] [--only MODULE]...
+#         ./install.sh --verify | --uninstall | --help
+# (Spanish aliases kept for compatibility: --si --sin-hardware --solo
+#  --verificar --desinstalar)
 set -Eeuo pipefail
 cd "$(dirname "$0")"
-MCL_ROOT="$(pwd)"
+SW_ROOT="$(pwd)"
 
 source lib/common.sh
 source versions.lock
-source lib/i18n/es.sh
 source lib/ui.sh
 
-uso() {
+usage() {
   cat <<'EOF'
-MacConLinux — experiencia macOS para Ubuntu (24.04, GNOME 46)
+Second Wind — macOS experience for Ubuntu (24.04, GNOME 46)
 
-  ./install.sh              instalación normal (interactiva)
-  ./install.sh --si         sin preguntas: acepta los valores por defecto
-  ./install.sh --dry-run    muestra qué haría, sin cambiar nada
-  ./install.sh --sin-hardware   omite el módulo que pide contraseña de administrador
-  ./install.sh --solo M     ejecuta solo un módulo (ej: --solo hardware, --solo dock)
-  ./install.sh --verificar  comprueba el estado de la instalación
-  ./install.sh --desinstalar    restaura Ubuntu como estaba
+  ./install.sh                normal (interactive) install
+  ./install.sh --yes          no questions: accept the defaults
+  ./install.sh --dry-run      show what would be done, change nothing
+  ./install.sh --no-hardware  skip the steps that ask for the admin password
+  ./install.sh --only M       run a single module (e.g. --only hardware, --only dock)
+  ./install.sh --verify       check the state of the installation
+  ./install.sh --uninstall    restore Ubuntu as it was
 EOF
 }
 
-MODULOS_SOLO=()
-CON_HARDWARE=1
+# Spanish module aliases (kept so older docs/commands keep working)
+map_alias() {
+  case "$1" in
+    apariencia) echo look ;;
+    extensiones) echo extensions ;;
+    teclado) echo keyboard ;;
+    navegadores) echo browsers ;;
+    *) echo "$1" ;;
+  esac
+}
+
+ONLY_MODULES=()
+WITH_HARDWARE=1
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
-    --si|--yes|-y) ASSUME_YES=1 ;;
-    --sin-hardware) CON_HARDWARE=0 ;;
-    --solo) shift; [ $# -gt 0 ] || die "--solo requiere un nombre de módulo"; MODULOS_SOLO+=("$1") ;;
-    --verificar) exec ./verify.sh --todo ;;
-    --desinstalar) exec ./uninstall.sh ;;
-    -h|--help) uso; exit 0 ;;
-    *) die "Opción desconocida: $1 (mira ./install.sh --help)" ;;
+    --yes|-y|--si) ASSUME_YES=1 ;;
+    --no-hardware|--sin-hardware) WITH_HARDWARE=0 ;;
+    --only|--solo) shift; [ $# -gt 0 ] || die "--only requires a module name"; ONLY_MODULES+=("$1") ;;
+    --verify|--verificar) exec ./verify.sh --all ;;
+    --uninstall|--desinstalar) exec ./uninstall.sh ;;
+    -h|--help) usage; exit 0 ;;
+    *) die "Unknown option: $1 (see ./install.sh --help)" ;;
   esac
   shift
 done
@@ -44,66 +58,66 @@ export DRY_RUN ASSUME_YES
 
 [ "$(id -u)" -eq 0 ] && die "${MSG[no_root]}"
 
-# ---- fase de preguntas (antes de redirigir la salida, para no romper whiptail) ----
-if [ ${#MODULOS_SOLO[@]} -eq 0 ]; then
-  ui_msg "${MSG[bienvenida]}"
-  ui_yesno "${MSG[confirmar]}" || die "${MSG[cancelado]}"
-  if [ "$CON_HARDWARE" = 1 ] && [ "$ASSUME_YES" != 1 ] && ui_has_tty; then
-    ui_yesno "${MSG[preg_hardware]}" || CON_HARDWARE=0
+# ---- question phase (before redirecting output, so whiptail renders fine) ----
+if [ ${#ONLY_MODULES[@]} -eq 0 ]; then
+  ui_msg "${MSG[welcome]}"
+  ui_yesno "${MSG[confirm]}" || die "${MSG[cancelled]}"
+  if [ "$WITH_HARDWARE" = 1 ] && [ "$ASSUME_YES" != 1 ] && ui_has_tty; then
+    ui_yesno "${MSG[ask_hardware]}" || WITH_HARDWARE=0
   fi
 fi
 
-# ---- fase de trabajo: todo queda en el registro ----
-mkdir -p "$MCL_LOGDIR"
-LOG="$MCL_LOGDIR/install-$(date +%Y%m%d-%H%M%S).log"
+# ---- work phase: everything goes to the log ----
+mkdir -p "$SW_LOGDIR"
+LOG="$SW_LOGDIR/install-$(date +%Y%m%d-%H%M%S).log"
 exec > >(tee -a "$LOG") 2>&1
-info "Registro completo: $LOG"
-[ "$DRY_RUN" = 1 ] && warn "${MSG[modo_prueba]}"
+info "${MSG[log_at]} $LOG"
+[ "$DRY_RUN" = 1 ] && warn "${MSG[dry_run_notice]}"
 
-# Módulos críticos: en el shell principal (sus variables persisten; si fallan, se aborta).
+# Critical modules run in the main shell (their variables persist; a failure aborts).
 source modules/00-preflight.sh
 source modules/10-backup.sh
 
-MODULES=(20-apariencia 30-extensiones 35-dock 40-panel 45-teclado 50-spotlight 55-navegadores)
-[ "$CON_HARDWARE" = 1 ] && MODULES+=(60-hardware 65-gdm)
+MODULES=(20-look 30-extensions 35-dock 40-panel 45-keyboard 50-spotlight 55-browsers)
+[ "$WITH_HARDWARE" = 1 ] && MODULES+=(60-hardware 65-gdm)
 MODULES+=(70-apps 90-postlogin)
 
-if [ ${#MODULOS_SOLO[@]} -gt 0 ]; then
-  TODOS=(20-apariencia 30-extensiones 35-dock 40-panel 45-teclado 50-spotlight 55-navegadores 60-hardware 65-gdm 70-apps 90-postlogin)
+if [ ${#ONLY_MODULES[@]} -gt 0 ]; then
+  ALL=(20-look 30-extensions 35-dock 40-panel 45-keyboard 50-spotlight 55-browsers 60-hardware 65-gdm 70-apps 90-postlogin)
   MODULES=()
-  for m in "${TODOS[@]}"; do
-    for pedido in "${MODULOS_SOLO[@]}"; do
-      case "$m" in *"$pedido"*) MODULES+=("$m") ;; esac
+  for m in "${ALL[@]}"; do
+    for wanted in "${ONLY_MODULES[@]}"; do
+      case "$m" in *"$(map_alias "$wanted")"*) MODULES+=("$m") ;; esac
     done
   done
-  [ ${#MODULES[@]} -gt 0 ] || die "Ningún módulo coincide con: ${MODULOS_SOLO[*]}"
+  [ ${#MODULES[@]} -gt 0 ] || die "No module matches: ${ONLY_MODULES[*]}"
 fi
 
 total=${#MODULES[@]}
 i=0
-OMITIDOS=()
+SKIPPED=()
 for m in "${MODULES[@]}"; do
   i=$((i + 1))
-  clave="mod_${m%%-*}"
-  ui_step "$i" "$total" "${MSG[$clave]:-$m}"
+  key="mod_${m%%-*}"
+  ui_step "$i" "$total" "${MSG[$key]:-$m}"
   if ( set -Eeuo pipefail; source "modules/$m.sh" ); then
-    ok "${MSG[$clave]:-$m}: listo"
+    ok "${MSG[$key]:-$m}: ${MSG[mod_done]}"
   else
-    warn "${MSG[$clave]:-$m}: omitido (detalle arriba; el resto continúa)"
-    OMITIDOS+=("$m")
+    warn "${MSG[$key]:-$m}: ${MSG[mod_skipped]}"
+    SKIPPED+=("$m")
   fi
 done
 
 echo
-if [ ${#OMITIDOS[@]} -eq 0 ]; then
-  ok "${MSG[fin_ok]}"
+if [ ${#SKIPPED[@]} -eq 0 ]; then
+  ok "${MSG[final_ok]}"
 else
-  warn "${MSG[fin_avisos]}"
+  warn "${MSG[final_warn]}"
 fi
 
-if [ "$DRY_RUN" != 1 ] && [ ${#MODULOS_SOLO[@]} -eq 0 ]; then
+if [ "$DRY_RUN" != 1 ] && [ ${#ONLY_MODULES[@]} -eq 0 ]; then
   echo
-  if ui_yesno "${MSG[preg_logout]}" --default-no; then
+  if ui_yesno "${MSG[ask_logout]}" --default-no; then
     gnome-session-quit --logout --no-prompt
   else
     info "${MSG[logout_manual]}"

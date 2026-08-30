@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# UI del instalador: whiptail cuando hay terminal interactiva, texto plano si no.
-# Con --si (ASSUME_YES=1) no se pregunta nada: se usan los valores por defecto.
+# Second Wind installer UI: whiptail when there is an interactive terminal,
+# plain text otherwise. With --yes (ASSUME_YES=1) nothing is asked: defaults apply.
 
-UI_TITLE="MacConLinux"
+UI_TITLE="Second Wind"
 
 ui_has_tty() { [ -t 0 ] && [ -t 1 ]; }
 
@@ -10,7 +10,7 @@ ui_use_whiptail() {
   ui_has_tty && [ "$ASSUME_YES" != 1 ] && command -v whiptail >/dev/null 2>&1
 }
 
-# ui_msg TEXTO — pantalla informativa.
+# ui_msg TEXT — informational screen.
 ui_msg() {
   if ui_use_whiptail; then
     whiptail --backtitle "$UI_TITLE" --title "$UI_TITLE" --msgbox "$1" 22 76
@@ -19,8 +19,8 @@ ui_msg() {
   fi
 }
 
-# ui_yesno PREGUNTA [--default-no] → 0 sí / 1 no.
-# Sin terminal o con --si: responde el valor por defecto (sí, salvo --default-no).
+# ui_yesno QUESTION [--default-no] → 0 yes / 1 no.
+# Without a terminal or with --yes: returns the default (yes, unless --default-no).
 ui_yesno() {
   local q="$1" defno="${2:-}"
   if [ "$ASSUME_YES" = 1 ] || ! ui_has_tty; then
@@ -32,8 +32,8 @@ ui_yesno() {
     whiptail --backtitle "$UI_TITLE" --title "$UI_TITLE" "${extra[@]}" --yesno "$q" 14 76
   else
     local ans
-    read -r -p "$q [s/n] " ans
-    [[ "$ans" =~ ^[sS] ]]
+    read -r -p "$q [y/n] " ans
+    [[ "$ans" =~ ^[yYsS] ]]
   fi
 }
 

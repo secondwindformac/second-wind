@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
-# 10-backup — respaldo prístino de la configuración actual. Solo la PRIMERA vez:
-# re-ejecutar el instalador nunca pisa el respaldo original.
+# 10-backup — pristine backup of the current settings. FIRST run only:
+# re-running the installer never overwrites the original backup.
 
 if [ "$DRY_RUN" = 1 ]; then
-  info "HARÍA: respaldo completo de tu configuración en $MCL_BACKUP"
+  info "${MSG[bk_dry]} $SW_BACKUP"
   return 0
 fi
 
-if [ -f "$MCL_BACKUP/dconf-full.ini" ]; then
-  ok "El respaldo original ya existe (se conserva intacto): $MCL_BACKUP"
+if [ -f "$SW_BACKUP/dconf-full.ini" ]; then
+  ok "${MSG[bk_exists]} $SW_BACKUP"
 else
-  info "Guardando un respaldo completo de tu configuración…"
-  mkdir -p "$MCL_BACKUP"
-  dconf dump / > "$MCL_BACKUP/dconf-full.ini"
-  gnome-extensions list > "$MCL_BACKUP/extensiones.txt" 2>/dev/null || true
-  apt-mark showmanual > "$MCL_BACKUP/paquetes-manual.txt" 2>/dev/null || true
-  dpkg -l > "$MCL_BACKUP/dpkg-l.txt" 2>/dev/null || true
-  [ -d "$HOME/.config/gtk-3.0" ] && cp -a "$HOME/.config/gtk-3.0" "$MCL_BACKUP/gtk-3.0"
-  [ -d "$HOME/.config/gtk-4.0" ] && cp -a "$HOME/.config/gtk-4.0" "$MCL_BACKUP/gtk-4.0"
-  ls -la "$HOME/.config/autostart" > "$MCL_BACKUP/autostart.txt" 2>/dev/null || true
-  cat /etc/gdm3/custom.conf > "$MCL_BACKUP/gdm-custom.conf" 2>/dev/null || true
-  cat /sys/module/hid_apple/parameters/fnmode > "$MCL_BACKUP/fnmode.txt" 2>/dev/null || true
+  info "${MSG[bk_making]}"
+  mkdir -p "$SW_BACKUP"
+  dconf dump / > "$SW_BACKUP/dconf-full.ini"
+  gnome-extensions list > "$SW_BACKUP/extensions.txt" 2>/dev/null || true
+  apt-mark showmanual > "$SW_BACKUP/packages-manual.txt" 2>/dev/null || true
+  dpkg -l > "$SW_BACKUP/dpkg-l.txt" 2>/dev/null || true
+  [ -d "$HOME/.config/gtk-3.0" ] && cp -a "$HOME/.config/gtk-3.0" "$SW_BACKUP/gtk-3.0"
+  [ -d "$HOME/.config/gtk-4.0" ] && cp -a "$HOME/.config/gtk-4.0" "$SW_BACKUP/gtk-4.0"
+  ls -la "$HOME/.config/autostart" > "$SW_BACKUP/autostart.txt" 2>/dev/null || true
+  cat /etc/gdm3/custom.conf > "$SW_BACKUP/gdm-custom.conf" 2>/dev/null || true
+  cat /sys/module/hid_apple/parameters/fnmode > "$SW_BACKUP/fnmode.txt" 2>/dev/null || true
   {
-    for par in \
+    for pair in \
       "org.gnome.desktop.interface gtk-theme" \
       "org.gnome.desktop.interface icon-theme" \
       "org.gnome.desktop.interface cursor-theme" \
@@ -35,10 +35,10 @@ else
       "org.gnome.shell.keybindings toggle-overview" \
       "org.gnome.shell favorite-apps"; do
       # shellcheck disable=SC2086
-      echo "$par = $(gsettings get $par 2>/dev/null)"
+      echo "$pair = $(gsettings get $pair 2>/dev/null)"
     done
-  } > "$MCL_BACKUP/valores-previos.txt"
-  ok "Respaldo guardado en $MCL_BACKUP"
+  } > "$SW_BACKUP/previous-values.txt"
+  ok "${MSG[bk_done]} $SW_BACKUP"
 fi
 
 mf init

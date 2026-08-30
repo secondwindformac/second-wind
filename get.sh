@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# MacConLinux — arranque en una línea (cuando el repositorio sea público):
-#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/USUARIO/MacConLinux/main/get.sh)"
-# Descarga el repositorio completo y ejecuta el instalador local (conserva la terminal).
+# Second Wind — one-line bootstrap (once the repository is public):
+#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/USER/second-wind/main/get.sh)"
+# Downloads the full repository and runs the local installer (keeps the TTY).
 set -euo pipefail
 
-REPO="${MACCONLINUX_REPO:-https://github.com/USUARIO/MacConLinux.git}"   # se fija al publicar
-REF="${MACCONLINUX_REF:-main}"                                            # usar un tag estable al publicar
-DEST="$HOME/.local/share/macconlinux/app"
+REPO="${SECOND_WIND_REPO:-https://github.com/USER/second-wind.git}"   # set at publish time
+REF="${SECOND_WIND_REF:-main}"                                        # use a stable tag when released
+DEST="$HOME/.local/share/second-wind/app"
 
 command -v git >/dev/null 2>&1 || {
-  echo "Falta git. Instálalo con:  sudo apt install -y git"
+  echo "git is missing. Install it with:  sudo apt install -y git"
   exit 1
 }
 

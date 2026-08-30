@@ -1,29 +1,30 @@
 #!/usr/bin/env bash
-# 60-hardware — arreglos de hardware para MacBooks Intel. ÚNICO módulo con sudo.
-#   1. mbpfan: control inteligente del ventilador (los Mac con Linux suelen
-#      quedarse con el ventilador al mínimo aunque la CPU esté caliente).
-#   2. Persistencia del modo de las teclas F (hid_apple fnmode).
-#   3. Cámara FaceTime HD: driver DKMS de terceros + firmware extraído de Apple.
-#      Con rollback total: si no compila con este kernel, se limpia y el resto
-#      de la instalación no se ve afectado.
-#   4. Opcional: desactivar el autologin para que el llavero no moleste.
+# 60-hardware — hardware fixes for Intel MacBooks. Needs sudo.
+#   1. mbpfan: smart fan control (Macs on Linux tend to idle the fan even
+#      with a hot CPU).
+#   2. Persist the Apple keyboard F-key mode (hid_apple fnmode).
+#   3. FaceTime HD camera: third-party DKMS driver + firmware extracted from
+#      Apple's own update package, locally. Full rollback: if it does not
+#      build for this kernel, everything camera-related is cleaned up and the
+#      rest of the install is unaffected.
+#   4. Optional: disable autologin so the keyring stops nagging.
 
 if [ "$DRY_RUN" = 1 ]; then
-  info "HARÍA: instalar mbpfan, persistir el modo de las teclas F y activar la cámara FaceTime HD (con sudo)"
+  info "${MSG[m60_dry]}"
   return 0
 fi
 
-info "Este paso necesita tu contraseña de administrador."
+info "${MSG[m60_sudo]}"
 if ! sudo -v; then
-  warn "No hay permisos de administrador; el módulo de hardware se omite (puedes repetirlo luego con ./install.sh --solo hardware)."
+  warn "${MSG[m60_no_sudo]}"
   return 1
 fi
-# Mantener sudo vivo mientras dura el módulo
+# Keep sudo alive while the module runs
 ( while sleep 50; do sudo -n true 2>/dev/null || exit; done ) &
-MCL_SUDO_KEEPALIVE=$!
-trap 'kill "$MCL_SUDO_KEEPALIVE" 2>/dev/null || true' EXIT
+SW_SUDO_KEEPALIVE=$!
+trap 'kill "$SW_SUDO_KEEPALIVE" 2>/dev/null || true' EXIT
 
-# Instala un paquete solo si falta, y lo registra para poder desinstalarlo.
+# Install a package only if missing, recording it for uninstall.
 apt_track_install() {
   local p
   for p in "$@"; do
@@ -31,57 +32,62 @@ apt_track_install() {
     if sudo apt-get install -y "$p" >/dev/null 2>&1; then
       mf apt-installed "$p"
     else
-      warn "No se pudo instalar el paquete $p"
+      warn "Could not install package $p"
       return 1
     fi
   done
 }
 
-sudo apt-get update -qq 2>/dev/null || warn "No se pudo refrescar la lista de paquetes; se sigue con lo disponible"
+sudo apt-get update -qq 2>/dev/null || warn "${MSG[m60_apt_warn]}"
 
-# --- 1) Ventilador ---
-info "Ventilador: instalando control inteligente (mbpfan)…"
+# --- 1) Fan ---
+info "${MSG[m60_fan]}"
 if apt_track_install mbpfan; then
   sudo systemctl enable --now mbpfan >/dev/null 2>&1 \
-    && ok "mbpfan activo: el ventilador ahora responde a la temperatura real" \
-    || warn "mbpfan instalado pero su servicio no arrancó (revisa 'systemctl status mbpfan')"
+    && ok "${MSG[m60_fan_ok]}" \
+    || warn "${MSG[m60_fan_err1]}"
 else
-  warn "Sin mbpfan: el ventilador seguirá en modo automático básico"
+  warn "${MSG[m60_fan_err2]}"
 fi
 
-# --- 2) Teclas F persistentes ---
+# --- 2) Persistent F-keys ---
 FN="$(cat /sys/module/hid_apple/parameters/fnmode 2>/dev/null || echo 3)"
-CONF=/etc/modprobe.d/macconlinux-hid_apple.conf
+CONF=/etc/modprobe.d/secondwind-hid_apple.conf
+OLD_CONF=/etc/modprobe.d/macconlinux-hid_apple.conf
+if [ -f "$OLD_CONF" ] && [ ! -f "$CONF" ]; then
+  sudo mv "$OLD_CONF" "$CONF"    # pre-rename migration
+  mf system-file "$CONF"
+fi
 if [ ! -f "$CONF" ]; then
-  info "Teclas F: fijando el comportamiento actual (fnmode=$FN) para que sobreviva a los reinicios…"
-  sed "s/@FNMODE@/$FN/" "$MCL_ROOT/assets/modprobe/macconlinux-hid_apple.conf.tpl" \
+  info "${MSG[m60_fn]}"
+  sed "s/@FNMODE@/$FN/" "$SW_ROOT/assets/modprobe/secondwind-hid_apple.conf.tpl" \
     | sudo tee "$CONF" >/dev/null
   mf system-file "$CONF"
-  sudo update-initramfs -u >/dev/null 2>&1 || warn "update-initramfs falló (no crítico: el ajuste aplica igual al cargar el módulo)"
+  sudo update-initramfs -u >/dev/null 2>&1 || warn "${MSG[m60_initramfs_warn]}"
 fi
 
-# --- 3) Cámara FaceTime HD ---
+# --- 3) FaceTime HD camera ---
 if [ -e /dev/video0 ]; then
-  ok "La cámara ya funciona; no se toca."
+  ok "${MSG[m60_cam_already]}"
 else
-  info "Cámara FaceTime HD: preparando el driver (3-6 minutos)…"
+  info "${MSG[m60_cam_prep]}"
   if apt_track_install "linux-headers-$(uname -r)" build-essential dkms; then
     CAM_OK=0
-    if clone_pinned "$FTHD_FW_REPO" "$MCL_CACHE/facetimehd-firmware" "$FTHD_FW_SHA" \
-       && clone_pinned "$FTHD_REPO" "$MCL_CACHE/facetimehd" "$FTHD_SHA"; then
+    if clone_pinned "$FTHD_FW_REPO" "$SW_CACHE/facetimehd-firmware" "$FTHD_FW_SHA" \
+       && clone_pinned "$FTHD_REPO" "$SW_CACHE/facetimehd" "$FTHD_SHA"; then
 
-      # Firmware: se extrae de un paquete oficial de Apple, localmente (no se redistribuye)
-      if ( cd "$MCL_CACHE/facetimehd-firmware" && make >/dev/null 2>&1 \
+      # Firmware: extracted locally from an official Apple package (never redistributed)
+      if ( cd "$SW_CACHE/facetimehd-firmware" && make >/dev/null 2>&1 \
            && sudo make install >/dev/null 2>&1 ); then
         mf system-file /usr/lib/firmware/facetimehd/firmware.bin
 
-        # Driver vía DKMS (se recompila solo con cada kernel nuevo)
+        # Driver via DKMS (rebuilds itself with every new kernel)
         VER="0.1"
-        [ -f "$MCL_CACHE/facetimehd/dkms.conf" ] \
-          && VER="$(sed -n 's/^PACKAGE_VERSION="\?\([^"]*\)"\?/\1/p' "$MCL_CACHE/facetimehd/dkms.conf" | head -1)"
+        [ -f "$SW_CACHE/facetimehd/dkms.conf" ] \
+          && VER="$(sed -n 's/^PACKAGE_VERSION="\?\([^"]*\)"\?/\1/p' "$SW_CACHE/facetimehd/dkms.conf" | head -1)"
         [ -n "$VER" ] || VER="0.1"
         SRC="/usr/src/facetimehd-$VER"
-        sudo rsync -a --delete --exclude=.git "$MCL_CACHE/facetimehd/" "$SRC/"
+        sudo rsync -a --delete --exclude=.git "$SW_CACHE/facetimehd/" "$SRC/"
         if [ ! -f "$SRC/dkms.conf" ]; then
           printf 'PACKAGE_NAME="facetimehd"\nPACKAGE_VERSION="%s"\nBUILT_MODULE_NAME[0]="facetimehd"\nDEST_MODULE_LOCATION[0]="/extra"\nAUTOINSTALL="yes"\nMAKE[0]="make KDIR=/lib/modules/${kernelver}/build"\nCLEAN="make clean"\n' "$VER" \
             | sudo tee "$SRC/dkms.conf" >/dev/null
@@ -93,38 +99,37 @@ else
           sleep 2
           mf dkms-installed "facetimehd/$VER"
           if [ -e /dev/video0 ]; then
-            ok "¡Cámara FaceTime HD activada! (/dev/video0)"
-            CAM_OK=1
+            ok "${MSG[m60_cam_ok]}"
           else
-            warn "Driver de cámara instalado; se activará tras reiniciar el equipo"
-            CAM_OK=1
+            warn "${MSG[m60_cam_reboot]}"
           fi
+          CAM_OK=1
         else
-          warn "El driver de la cámara no compiló con el kernel $(uname -r). Se revierte todo lo de la cámara; el resto no se ve afectado (detalles en docs/camara.md)."
+          warn "${MSG[m60_cam_fail]}"
           sudo dkms remove -m facetimehd -v "$VER" --all >/dev/null 2>&1 || true
           sudo rm -rf "$SRC"
         fi
       else
-        warn "No se pudo extraer el firmware de la cámara (¿sin internet a los servidores de Apple?). La cámara queda pendiente."
+        warn "${MSG[m60_fw_fail]}"
       fi
     else
-      warn "No se pudieron descargar las fuentes del driver de cámara."
+      warn "${MSG[m60_src_fail]}"
     fi
-    [ "$CAM_OK" = 1 ] || mf note "camara-pendiente"
+    [ "$CAM_OK" = 1 ] || mf note "camera-pending"
   else
-    warn "Faltan herramientas de compilación; la cámara queda pendiente."
+    warn "${MSG[m60_tools_fail]}"
   fi
 fi
 
-# --- 4) Autologin / llavero (solo si hay terminal y el autologin está activo) ---
+# --- 4) Autologin / keyring (asked only interactively, when autologin is on) ---
 if [ "$ASSUME_YES" != 1 ] && ui_has_tty \
    && grep -q '^AutomaticLoginEnable\s*=\s*[Tt]rue' /etc/gdm3/custom.conf 2>/dev/null; then
-  if ui_yesno "${MSG[preg_autologin]}" --default-no; then
+  if ui_yesno "${MSG[ask_autologin]}" --default-no; then
     sudo sed -i 's/^\(AutomaticLoginEnable\s*=\s*\)[Tt]rue/\1false/' /etc/gdm3/custom.conf
     mf system-file /etc/gdm3/custom.conf
-    ok "Inicio de sesión automático desactivado (respaldo del archivo original guardado)"
+    ok "${MSG[m60_autologin_ok]}"
   fi
 fi
 
-kill "$MCL_SUDO_KEEPALIVE" 2>/dev/null || true
+kill "$SW_SUDO_KEEPALIVE" 2>/dev/null || true
 trap - EXIT

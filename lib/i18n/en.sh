@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# Second Wind — English strings (canonical). Keys must match lib/i18n/es.sh.
+
+declare -A MSG=(
+  [welcome]="Welcome to Second Wind
+
+This program turns your Ubuntu into a macOS-like experience:
+
+  • Full macOS-style look (theme, icons, cursor, fonts, wallpaper)
+  • Floating dock and Mac-style top bar
+  • Window buttons on the left and a hot corner
+  • Spotlight-style search with Cmd+Space
+  • Mac keyboard shortcuts (Cmd+C, Cmd+V, Cmd+Q…)
+  • MacBook hardware fixes: camera, fan and F-keys
+
+A FULL BACKUP of your settings is saved before touching anything.
+Everything can be reverted later with ./uninstall.sh"
+
+  [confirm]="Shall we begin? A backup is taken first, then the changes are applied. You only confirm once."
+  [cancelled]="Cancelled. Nothing was changed."
+  [ask_hardware]="Include the steps that require your administrator password?
+
+  • MacBook hardware fixes (FaceTime HD camera, fan, F-keys)
+  • macOS-style login screen"
+  [ask_chrome]="To dress Chrome like a Mac (red/yellow/green buttons on the left) it must be closed for a moment. Your tabs come back when you reopen it normally.
+
+Close Chrome now?"
+  [ask_autologin]="Your computer signs in without a password (automatic login), which is why Ubuntu sometimes asks to unlock the 'keyring'.
+
+Disable automatic login to fix it? (You will type your password at startup, like on a Mac)"
+  [no_root]="Do not run this program as root/sudo. Run it as your normal user; the password is requested only when needed."
+  [dry_run_notice]="TEST MODE (--dry-run): nothing will be changed; only showing what would be done."
+  [log_at]="Full log:"
+
+  [mod_20]="macOS look (theme, icons, cursor, fonts, wallpaper)"
+  [mod_30]="Desktop extensions (panel theme, blur, keyboard)"
+  [mod_35]="macOS-style dock"
+  [mod_40]="Top bar and window behavior"
+  [mod_45]="Mac-style keyboard"
+  [mod_50]="Spotlight (search with Cmd+Space)"
+  [mod_55]="Mac-style browsers (Chrome/Firefox)"
+  [mod_60]="MacBook hardware (camera, fan, F-keys)"
+  [mod_65]="macOS-style login screen"
+  [mod_70]="Mac-style apps"
+  [mod_90]="Verification after next login"
+  [mod_done]="done"
+  [mod_skipped]="skipped (details above; the rest continues)"
+
+  [final_ok]="Done! The installation finished successfully."
+  [final_warn]="The installation finished, with some steps skipped (see the ⚠ notices above; nothing critical)."
+  [ask_logout]="To complete the change (panel theme, dock and per-app keyboard) you must LOG OUT and back in.
+
+Log out now? (Save your open work first)"
+  [logout_manual]="When you can, log out and back in to complete the change (top-right menu → Log Out)."
+
+  [pre_checking]="Checking that this computer is compatible…"
+  [pre_bad_distro]="This version of Second Wind is for Ubuntu 24.04 LTS (detected:"
+  [pre_need_gnome46]="GNOME 46 is required (detected:"
+  [pre_need_wayland]="No active Wayland graphical session detected. Log in to the desktop and run again."
+  [pre_no_net]="No internet connection (extensions.gnome.org unreachable). Connect and retry."
+  [pre_no_space]="At least 2 GB of free space in your home folder is required."
+  [pre_ok]="Compatible: Ubuntu 24.04, GNOME 46, Wayland, internet OK"
+
+  [bk_dry]="WOULD DO: full backup of your settings at"
+  [bk_exists]="The original backup already exists (kept untouched):"
+  [bk_making]="Saving a full backup of your settings…"
+  [bk_done]="Backup saved at"
+
+  [m20_fetch]="Downloading the themes (verified versions)…"
+  [m20_theme]="Installing window and panel theme (takes 1-2 minutes)…"
+  [m20_gtk_err]="The GTK theme installer returned an error; continuing (check the log)"
+  [m20_libadw_err]="Could not create the libadwaita link"
+  [m20_wallp]="Installing dynamic day/night wallpapers…"
+  [m20_icons]="Installing icons and cursors (the slowest part, 2-4 minutes)…"
+  [m20_font]="Installing the Inter font…"
+  [m20_font_err]="Could not download Inter; keeping current fonts"
+  [m20_apply]="Applying the look…"
+  [m20_dry]="WOULD DO: install MacTahoe GTK+shell theme (light and dark), icons, cursors, wallpapers and Inter font"
+
+  [m30_ut_err]="User Themes could not be installed (panel theme will stay pending)"
+  [m30_bms_err]="Blur my Shell could not be installed (no blur, not critical)"
+  [m30_xr_err]="Xremap could not be installed (per-app keyboard will stay pending)"
+  [m30_logo_err]="Logo Menu could not be installed (top-left menu will stay pending)"
+  [m30_relogin]="Extensions become active after logging out and back in."
+
+  [m35_no_dock]="This system has no Ubuntu Dock; skipping (will be configured in a future version)."
+
+  [m45_no_toshy]="Toshy is not installed on this computer; the per-app Mac keyboard stays pending (Stage 1 will install it automatically)."
+  [m45_xremap_err]="Could not install Xremap; global shortcuts still work, per-app ones stay pending"
+  [m45_tray_dry]="WOULD DO: remove Toshy's tray icon (its service keeps running)"
+  [m45_done]="Mac keyboard: Cmd+C copies, Cmd+V pastes, Cmd+Q quits, Cmd+Tab switches apps (complete after logging out)."
+
+  [m50_no_ul]="Ulauncher is not installed; Spotlight stays pending (Stage 1 will install it automatically)."
+  [m50_dry]="WOULD DO: install the Spotlight theme for Ulauncher, enable autostart and bind Cmd+Space"
+  [m50_done]="Spotlight ready: press Cmd+Space to search."
+
+  [m55_ff_dry]="WOULD DO: install the MacTahoe theme for Firefox"
+  [m55_ff_ok]="Firefox dressed like a Mac (reopen it to see it)"
+  [m55_ff_err]="Could not apply the Firefox theme"
+  [m55_no_ff]="Firefox is not installed; nothing to do with it."
+  [m55_no_chrome]="Chrome is not installed; nothing to do with it."
+  [m55_chrome_dry]="WOULD DO: enable Chrome's system title bar (Mac buttons on the left)"
+  [m55_chrome_open]="Chrome is open and cannot be modified while running. Close it and run:  ./install.sh --only browsers"
+  [m55_chrome_ok]="Chrome will use the Mac-style window (buttons on the left) next time you open it"
+
+  [m60_dry]="WOULD DO: install mbpfan, persist the F-key mode and enable the FaceTime HD camera (with sudo)"
+  [m60_sudo]="This step needs your administrator password."
+  [m60_no_sudo]="No administrator permission; hardware module skipped (you can retry later with ./install.sh --only hardware)."
+  [m60_apt_warn]="Could not refresh the package list; continuing with what is available"
+  [m60_fan]="Fan: installing smart control (mbpfan)…"
+  [m60_fan_ok]="mbpfan active: the fan now responds to the real temperature"
+  [m60_fan_err1]="mbpfan installed but its service did not start (check 'systemctl status mbpfan')"
+  [m60_fan_err2]="No mbpfan: the fan stays in basic automatic mode"
+  [m60_fn]="F-keys: making the current behavior survive reboots…"
+  [m60_initramfs_warn]="update-initramfs failed (not critical: the setting still applies when the module loads)"
+  [m60_cam_already]="The camera already works; leaving it alone."
+  [m60_cam_prep]="FaceTime HD camera: preparing the driver (3-6 minutes)…"
+  [m60_cam_ok]="FaceTime HD camera enabled! (/dev/video0)"
+  [m60_cam_reboot]="Camera driver installed; it will activate after a reboot"
+  [m60_cam_fail]="The camera driver did not build with this kernel. Everything camera-related is rolled back; the rest is unaffected (see docs/camera.md)."
+  [m60_fw_fail]="Could not extract the camera firmware (no reach to Apple's servers?). The camera stays pending."
+  [m60_src_fail]="Could not download the camera driver sources."
+  [m60_tools_fail]="Build tools missing; the camera stays pending."
+  [m60_autologin_ok]="Automatic login disabled (backup of the original file saved)"
+
+  [m65_dry]="WOULD DO: apply the macOS theme to the login screen (with sudo)"
+  [m65_no_yaru]="Ubuntu's login screen theme was not found; skipping."
+  [m65_no_sudo]="No administrator permission; the login screen stays pending (retry with ./install.sh --only gdm)."
+  [m65_ok]="Login screen with macOS look (visible after logging out or rebooting)"
+  [m65_fail]="The login screen theme could not be applied; the original stays intact."
+
+  [m70_msg]="Mac-style apps: available in Stage 1 (see docs/roadmap.md)."
+
+  [m90_dry]="WOULD DO: schedule the automatic verification for the next login"
+  [notify_ok]="Done! Your desktop is now macOS-style. Press Cmd+Space to search."
+  [notify_warn]="Applied, with some detail pending. Run ./verify.sh in the Second Wind folder to see which."
+
+  [un_confirm]="Ubuntu's original look and settings will be restored from the saved backup. Your personal files are not touched.
+
+Continue?"
+  [un_nothing]="No change manifest found; nothing to restore."
+  [un_desktop]="Restoring desktop settings…"
+  [un_exts]="Removing extensions installed by Second Wind…"
+  [un_files]="Removing files created by Second Wind…"
+  [un_libadw_ok]="Modern apps theme (gtk-4.0) restored"
+  [un_sys_need]="There are hardware/system changes to revert; your administrator password is needed."
+  [un_no_sudo]="No administrator permission: hardware changes were left unreverted (run ./uninstall.sh again later)."
+  [un_dkms]="Removing driver"
+  [un_file_rm]="Removed"
+  [un_gdm_ok]="Login screen restored to Ubuntu's original"
+  [un_gdm_bak_ok]="Login screen restored from the .bak backup"
+  [un_fw_ok]="Camera firmware removed"
+  [un_pkg_rm]="Package removed:"
+  [un_pkg_keep]="Keeping package (generic tool; remove with: sudo apt remove"
+  [un_chrome_open]="Chrome is open: its window preference could not be reverted (close it and run ./uninstall.sh again)"
+  [un_purge]="Purging MacTahoe themes from disk…"
+  [un_purge_ok]="Themes purged"
+  [un_dconf_warn]="Restoring ALL desktop settings from the backup day…"
+  [un_dconf_ok]="Full settings restored"
+  [un_dconf_missing]="The full dconf backup does not exist"
+  [un_done]="Restore finished. Log out and back in to see Ubuntu as before."
+
+  [v_sec_look]="— Look —"
+  [v_sec_dock]="— Dock and panel —"
+  [v_sec_kbd]="— Keyboard and Spotlight —"
+  [v_sec_ext]="— Extensions (require a logout after installing) —"
+  [v_sec_brow]="— Browsers and login screen (if applied) —"
+  [v_sec_hw]="— Hardware (if that module was installed) —"
+  [v_gtk]="MacTahoe window theme (solid, readable menus)"
+  [v_icons]="MacTahoe icons"
+  [v_cursor]="MacTahoe cursor"
+  [v_font]="Inter system font"
+  [v_theme_dir]="Theme installed in ~/.themes"
+  [v_theme_derived]="Second Wind derived theme (our polish)"
+  [v_font_files]="Inter font installed"
+  [v_wallp]="MacTahoe wallpapers"
+  [v_libadw]="Libadwaita (modern apps) themed"
+  [v_dock_float]="Floating dock"
+  [v_dock_48]="Dock: 48px icons"
+  [v_btns_left]="Window buttons on the left"
+  [v_hotcorner]="Hot corner (Mission Control)"
+  [v_center]="New windows centered"
+  [v_xkb]="No double XKB remapping"
+  [v_cmdtab_all]="Cmd+Tab across apps of all workspaces"
+  [v_cmdtab_uni]="Cmd+Tab unified into the app switcher"
+  [v_lowbat]="Automatic battery saver when low"
+  [v_toshy]="Mac keyboard service (Toshy) active"
+  [v_tray]="Toshy icon hidden"
+  [v_ul_run]="Ulauncher (Spotlight) running"
+  [v_spot_key]="Cmd+Space → Spotlight shortcut"
+  [v_overview_free]="Overview freed from the shortcut"
+  [v_ext_active]="Extension active:"
+  [v_panel_theme]="Second Wind panel theme applied"
+  [v_xremap_dbus]="Per-app keyboard operational (D-Bus)"
+  [v_chrome]="Chrome with Mac-style window"
+  [v_chrome_pending]="  (Chrome not dressed yet — run ./install.sh --only browsers with Chrome closed)"
+  [v_gdm]="Login screen with Mac theme (.bak backup present)"
+  [v_gdm_pending]="  (login screen not applied yet — ./install.sh --only gdm)"
+  [v_mbpfan]="Smart fan control (mbpfan) active"
+  [v_fnmode]="Persistent F-keys"
+  [v_cam]="FaceTime HD camera (/dev/video0)"
+  [v_hw_none]="  (hardware module not installed — nothing to check)"
+  [v_thermald]="System thermal management active"
+  [v_ok_all]="checks passed. All good!"
+  [v_some_bad]="with problems (marked ✖ above)."
+  [v_passed]="passed,"
+  [v_result]="Result:"
+
+  [pub_gh]="Installing GitHub CLI (will ask for your administrator password)…"
+  [pub_login]="Sign in to GitHub (your browser will open; follow the steps)…"
+  [pub_create]="Creating the private second-wind repository in your account…"
+  [pub_done]="Published privately at:"
+  [pub_hint]="  (When you decide to open it up: gh repo edit --visibility public)"
+)
