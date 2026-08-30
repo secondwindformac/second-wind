@@ -34,6 +34,11 @@ if ! sudo -v; then
   warn "${MSG[m15_no_sudo]}"
   return 1
 fi
+# Keep sudo warm: a slow Toshy build can outlive the 15-minute timestamp,
+# and its internal sudo calls would then stall on a hidden prompt.
+( while sleep 50; do sudo -n true 2>/dev/null || exit; done ) &
+SW_ENGINES_KEEPALIVE=$!
+trap 'kill "$SW_ENGINES_KEEPALIVE" 2>/dev/null || true' EXIT
 sudo apt-get update -qq 2>/dev/null || warn "${MSG[m60_apt_warn]}"
 
 # --- WiFi (needs a wired/tethered connection to download the driver) ---
