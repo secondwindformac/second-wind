@@ -54,6 +54,7 @@ chk "${MSG[v_tray]}"          bash -c '! test -e "$HOME/.config/autostart/Toshy_
 chk "${MSG[v_ul_run]}"        pgrep -x ulauncher
 chk "${MSG[v_spot_key]}"      bash -c "gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings | grep -q secondwind-spotlight"
 chk "${MSG[v_overview_free]}" eq org.gnome.shell.keybindings toggle-overview "@as []"
+chk "${MSG[store_name]}"      test -f "$HOME/.local/share/applications/second-wind-apps.desktop"
 
 if [ "$MODE" = "--all" ]; then
   echo "${MSG[v_sec_ext]}"
