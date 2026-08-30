@@ -26,15 +26,29 @@ else
   mf note "libadwaita-installed"
 
   # Derived shell theme "SecondWind-*": copy of MacTahoe-*-solid plus our own
-  # polish (assets/gnome-shell-overrides.css: solid quick-settings panel, shadows).
+  # polish (assets/gnome-shell-overrides.css: continuous macOS-style top bar
+  # without per-button pills, solid quick-settings panel). The overrides file
+  # carries @PLACEHOLDER@ colors substituted per variant here.
   rm -rf "$HOME/.themes/MacConLinux-Light" "$HOME/.themes/MacConLinux-Dark"   # pre-rename leftovers
   for variant in Light Dark; do
     src="$HOME/.themes/MacTahoe-$variant-solid/gnome-shell"
     if [ -d "$src" ]; then
+      if [ "$variant" = "Dark" ]; then
+        P_BG='rgba(20, 20, 22, 0.75)';  P_FG='#ffffff'
+        P_HOVER='rgba(255, 255, 255, 0.14)'; P_ACTIVE='rgba(255, 255, 255, 0.22)'
+        Q_BG='rgba(40, 40, 44, 0.98)';  Q_BORDER='rgba(255, 255, 255, 0.09)'
+      else
+        P_BG='rgba(247, 247, 249, 0.78)'; P_FG='#1d1d1f'
+        P_HOVER='rgba(0, 0, 0, 0.08)';  P_ACTIVE='rgba(0, 0, 0, 0.14)'
+        Q_BG='rgba(243, 243, 245, 0.98)'; Q_BORDER='rgba(0, 0, 0, 0.09)'
+      fi
       rm -rf "$HOME/.themes/SecondWind-$variant"
       mkdir -p "$HOME/.themes/SecondWind-$variant/gnome-shell"
       cp -a "$src/." "$HOME/.themes/SecondWind-$variant/gnome-shell/"
-      cat "$SW_ROOT/assets/gnome-shell-overrides.css" \
+      sed -e "s|@PANEL_BG@|$P_BG|g" -e "s|@PANEL_FG@|$P_FG|g" \
+          -e "s|@PANEL_HOVER@|$P_HOVER|g" -e "s|@PANEL_ACTIVE@|$P_ACTIVE|g" \
+          -e "s|@QS_BG@|$Q_BG|g" -e "s|@QS_BORDER@|$Q_BORDER|g" \
+          "$SW_ROOT/assets/gnome-shell-overrides.css" \
         >> "$HOME/.themes/SecondWind-$variant/gnome-shell/gnome-shell.css"
       track_new_file "$HOME/.themes/SecondWind-$variant"
     fi

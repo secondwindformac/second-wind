@@ -1,19 +1,55 @@
 /* ============================================================
    Second Wind — our own polish on top of the MacTahoe (solid) theme.
-   This file is APPENDED to the end of the derived "SecondWind-*"
-   theme's gnome-shell.css, built by module 20.
+   This file is APPENDED to the derived "SecondWind-*" theme's
+   gnome-shell.css by module 20, which substitutes the @PLACEHOLDER@
+   values per variant (Light/Dark).
    ============================================================ */
 
-/* The theme leaves the quick-settings container at 1% opacity, so its cards
-   "float" over transparent gaps (unreadable/fragmented — user report).
-   Turn it into a solid Control-Center-style panel. */
-.quick-settings {
-  background-color: rgba(243, 243, 245, 0.98) !important;
-  border: 1px solid rgba(0, 0, 0, 0.09) !important;
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.24) !important;
+/* --- Top bar: one continuous macOS-style strip ---------------------------
+   The theme paints each panel button as a floating "pill" (inset box-shadow
+   on a transparent bar). User feedback: that is not how a Mac menu bar
+   looks. We flatten it: continuous translucent bar, no per-button pills,
+   uniform text color, subtle hover. -------------------------------------- */
+#panel {
+  background-color: @PANEL_BG@ !important;
+}
+#panel .panel-button {
+  box-shadow: none !important;
+  border: 3px solid transparent !important;
+  border-radius: 8px !important;
+  color: @PANEL_FG@ !important;
+}
+#panel .panel-button StLabel {
+  color: @PANEL_FG@ !important;
+}
+#panel .panel-button:hover {
+  box-shadow: inset 0 0 0 1000px @PANEL_HOVER@ !important;
+}
+#panel .panel-button:active,
+#panel .panel-button:overview,
+#panel .panel-button:focus,
+#panel .panel-button:checked {
+  box-shadow: inset 0 0 0 1000px @PANEL_ACTIVE@ !important;
+}
+/* the clock keeps its own inner capsule in the theme — flatten it too */
+#panel .clock-display .clock,
+#panel .panel-button:hover.clock-display .clock,
+#panel .panel-button:active.clock-display .clock,
+#panel .panel-button:checked.clock-display .clock {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  color: @PANEL_FG@ !important;
 }
 
-/* Softer card shadows now that there is a background behind them */
+/* --- Quick settings: solid Control-Center-style panel --------------------
+   The theme leaves this container at 1% opacity, so its cards "float" over
+   transparent gaps (unreadable). Solid panel, variant-appropriate. -------- */
+.quick-settings {
+  background-color: @QS_BG@ !important;
+  border: 1px solid @QS_BORDER@ !important;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.30) !important;
+}
 .quick-toggle, .quick-menu-toggle, .quick-slider {
-  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.14) !important;
 }
