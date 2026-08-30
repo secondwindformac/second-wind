@@ -114,6 +114,9 @@ T = {
                   "An occasional notification; turn off anytime"),
     "news_test": d("Probar el aviso ahora", "Try the notice now"),
     "news_test_sub": d("Muestra la notificación de ejemplo", "Shows the sample notification"),
+    "help": d("Obtener ayuda", "Get help"),
+    "help_sub": d("Guía, preguntas frecuentes y reporte de problemas",
+                  "Guide, FAQ and problem reports"),
 }
 
 CSS = b"""
@@ -201,6 +204,12 @@ class Store(Adw.Application):
             body.append(flow)
 
         sup = Adw.PreferencesGroup(title=T["g_support"], margin_top=18)
+        helpr = Adw.ActionRow(title=T["help"], subtitle=T["help_sub"],
+                              activatable=True)
+        helpr.add_suffix(Gtk.Image.new_from_icon_name("help-browser-symbolic"))
+        helpr.connect("activated", lambda *_: subprocess.Popen(
+            ["xdg-open", links().get("SUPPORT_URL", links()["DONATE_URL"])]))
+        sup.add(helpr)
         donate = Adw.ActionRow(title=T["donate"], subtitle=T["donate_sub"],
                                activatable=True)
         donate.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))
