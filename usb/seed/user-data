@@ -46,6 +46,10 @@ autoinstall:
   updates: security
 
   late-commands:
+    # Ubuntu Desktop's default install ships WITHOUT curl and git, which
+    # Second Wind needs (bug caught in the first full VM rehearsal: the
+    # firstboot net-check failed forever on a machine with perfect internet).
+    - curtin in-target -- apt-get install -y curl git
     # Copy Second Wind from the seed volume into the installed system and
     # arm the first-login bootstrap for every created user.
     - |

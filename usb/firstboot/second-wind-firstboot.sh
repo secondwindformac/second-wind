@@ -26,8 +26,14 @@ esac
 # Give the desktop a moment to settle
 sleep 15
 
-# Wait for connectivity, reminding gently
-until curl -fsI -m 5 https://extensions.gnome.org >/dev/null 2>&1; do
+# Wait for connectivity, reminding gently. Never depend on curl alone:
+# a stock Ubuntu Desktop install ships without it (VM-rehearsal lesson).
+net_ok() {
+  nm-online -q -t 15 2>/dev/null && return 0
+  ping -c1 -W3 archive.ubuntu.com >/dev/null 2>&1 && return 0
+  command -v curl >/dev/null 2>&1 && curl -fsI -m 5 https://extensions.gnome.org >/dev/null 2>&1
+}
+until net_ok; do
   notify-send -i network-wireless "Second Wind" "$T_NET" 2>/dev/null || true
   sleep 40
 done
