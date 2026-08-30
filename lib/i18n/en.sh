@@ -41,6 +41,7 @@ Disable automatic login to fix it? (You will type your password at startup, like
   [m15_ul]="Installing Ulauncher (the Spotlight engine)…"
   [m15_ul_err]="Could not install Ulauncher; Spotlight stays pending"
   [m15_toshy]="Installing Toshy (the Mac keyboard engine; 2-4 minutes)…"
+  [m15_toshy_tty]="Toshy will ask a couple of questions itself (answer 'y' and your password when it does)."
   [m15_toshy_err]="Toshy could not be installed; Mac shortcuts stay pending (log: toshy-install.log)"
 
   [mod_20]="macOS look (theme, icons, cursor, fonts, wallpaper)"

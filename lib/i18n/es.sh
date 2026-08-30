@@ -41,6 +41,7 @@ Todo se puede revertir después con ./uninstall.sh"
   [m15_ul]="Instalando Ulauncher (el motor de Spotlight)…"
   [m15_ul_err]="No se pudo instalar Ulauncher; Spotlight queda pendiente"
   [m15_toshy]="Instalando Toshy (el motor del teclado Mac; 2-4 minutos)…"
+  [m15_toshy_tty]="Toshy hará un par de preguntas él mismo (respóndele 'y' y tu contraseña cuando las haga)."
   [m15_toshy_err]="Toshy no se pudo instalar; los atajos Mac quedan pendientes (registro: toshy-install.log)"
 
   [mod_20]="Apariencia macOS (tema, iconos, cursor, fuentes, fondo)"
