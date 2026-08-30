@@ -93,6 +93,18 @@ if [ "$NEED_SUDO" = 1 ]; then
         /usr/lib/firmware/facetimehd*)
           sudo rm -rf /usr/lib/firmware/facetimehd
           ok "${MSG[un_fw_ok]}" ;;
+        /etc/systemd/sleep.conf.d/secondwind.conf|/etc/systemd/logind.conf.d/secondwind.conf)
+          sudo rm -f "$path"
+          sudo systemctl kill -sHUP systemd-logind 2>/dev/null || true
+          ok "${MSG[un_file_rm]} $path" ;;
+        /etc/default/grub.d/secondwind-hibernate.cfg)
+          sudo rm -f "$path"
+          sudo update-grub >/dev/null 2>&1 || true
+          ok "${MSG[un_file_rm]} $path" ;;
+        /etc/initramfs-tools/conf.d/secondwind-resume)
+          sudo rm -f "$path"
+          sudo update-initramfs -u >/dev/null 2>&1 || true
+          ok "${MSG[un_file_rm]} $path" ;;
         /usr/share/gnome-shell/theme/Yaru/gnome-shell-theme.gresource)
           if [ -f "$SW_BACKUP/gnome-shell-theme.gresource.yaru" ]; then
             sudo cp "$SW_BACKUP/gnome-shell-theme.gresource.yaru" "$path"
@@ -117,6 +129,20 @@ if [ "$NEED_SUDO" = 1 ]; then
     done < <(python3 -c "import json,sys; [print(x) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get apt_packages)")
   else
     warn "${MSG[un_no_sudo]}"
+  fi
+fi
+
+# Swap file: shrink back to its original size if we enlarged it for hibernation
+if python3 lib/manifest.py has-note "swap-resized" 2>/dev/null \
+   && [ -f "$SW_BACKUP/swap-original-bytes" ]; then
+  ORIG="$(cat "$SW_BACKUP/swap-original-bytes")"
+  if [ "$ORIG" -gt 0 ] && { sudo -n true 2>/dev/null || sudo -v; }; then
+    sudo swapoff /swap.img 2>/dev/null || true
+    sudo fallocate -l "$ORIG" /swap.img
+    sudo chmod 600 /swap.img
+    sudo mkswap /swap.img >/dev/null
+    sudo swapon /swap.img 2>/dev/null || true
+    ok "${MSG[un_file_rm]} (swap restored to original size)"
   fi
 fi
 

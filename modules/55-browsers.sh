@@ -20,6 +20,25 @@ else
   info "${MSG[m55_no_ff]}"
 fi
 
+# --- Chrome: hardware-accelerated video decoding ---
+# Old Intel Macs decode H.264 in hardware, but Chrome ships with VA-API off on
+# Linux: every video burns CPU → heat → loud fan. A local launcher override
+# adds the decode flags (applies the next time Chrome starts from the dock).
+SYS_DESKTOP=/usr/share/applications/google-chrome.desktop
+LOCAL_DESKTOP="$HOME/.local/share/applications/google-chrome.desktop"
+if [ -f "$SYS_DESKTOP" ]; then
+  if [ "$DRY_RUN" = 1 ]; then
+    info "${MSG[m55_vaapi_dry]}"
+  else
+    mkdir -p "$HOME/.local/share/applications"
+    sed 's|/usr/bin/google-chrome-stable|/usr/bin/google-chrome-stable --enable-features=VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks|g' \
+      "$SYS_DESKTOP" > "$LOCAL_DESKTOP"
+    track_new_file "$LOCAL_DESKTOP"
+    ok "${MSG[m55_vaapi_ok]}"
+  fi
+  info "${MSG[m55_h264ify]}"
+fi
+
 # --- Google Chrome ---
 PREFS="$HOME/.config/google-chrome/Default/Preferences"
 if [ ! -f "$PREFS" ]; then

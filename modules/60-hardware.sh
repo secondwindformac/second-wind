@@ -50,6 +50,12 @@ else
   warn "${MSG[m60_fan_err2]}"
 fi
 
+# --- 1b) Hardware video decoding (VA-API driver for old Intel GPUs) ---
+# Pairs with the Chrome launcher flags from module 55: H.264 video decodes on
+# the GPU instead of the CPU → far less heat and fan noise on video playback.
+info "${MSG[m60_va]}"
+apt_track_install i965-va-driver vainfo || warn "${MSG[m60_va_err]}"
+
 # --- 2) Persistent F-keys ---
 FN="$(cat /sys/module/hid_apple/parameters/fnmode 2>/dev/null || echo 3)"
 CONF=/etc/modprobe.d/secondwind-hid_apple.conf

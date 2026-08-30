@@ -60,7 +60,9 @@ Useful options:
 
 **Firefox or other Snap apps don't pick up the theme.** Known Ubuntu Snap limitation; addressed in Stage 1.
 
-**What about battery?** Second Wind uses Ubuntu's own power management (power profiles + `thermald`), adds `mbpfan` so the fan actually responds on MacBooks, and enables the automatic power saver on low battery. TLP was deliberately left out: it fights GNOME's power profile selector. Most battery drain comes from the apps you run, not the system.
+**What about battery?** Second Wind uses Ubuntu's own power management (power profiles + `thermald`), adds `mbpfan` so the fan actually responds on MacBooks, and enables the automatic power saver on low battery. TLP was deliberately left out: it fights GNOME's power profile selector. On top of that, the battery-care module configures **suspend-then-hibernate**: close the lid and it suspends; if it stays closed for 2 hours it hibernates — zero drain, and your session is exactly where you left it when you open the lid.
+
+**The fan roars when I watch YouTube.** Two causes, both addressed: the fan finally *works* (mbpfan — before, it idled while the CPU cooked), and YouTube serves VP9/AV1 video these old chips must decode in software. Second Wind enables hardware H.264 decoding in Chrome's launcher and installs the VA-API driver; install the [enhanced-h264ify](https://chromewebstore.google.com/detail/enhanced-h264ify/omkfmpieigblcllmkgbflkikinpkodlk) extension so YouTube serves H.264, then fully restart Chrome. Result: cool, quiet video.
 
 ## Project status
 
