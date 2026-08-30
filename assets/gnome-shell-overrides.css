@@ -1,0 +1,19 @@
+/* ============================================================
+   MacConLinux — pulido propio sobre el tema MacTahoe (solid).
+   Este archivo se AÑADE al final del gnome-shell.css del tema
+   derivado "MacConLinux-*" que construye el módulo 20.
+   ============================================================ */
+
+/* El tema deja el contenedor del menú rápido al 1% de opacidad y las
+   tarjetas quedan "flotando" con huecos transparentes (ilegible/fragmentado,
+   reporte de usuario). Lo volvemos un panel sólido estilo Centro de Control. */
+.quick-settings {
+  background-color: rgba(243, 243, 245, 0.98) !important;
+  border: 1px solid rgba(0, 0, 0, 0.09) !important;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.24) !important;
+}
+
+/* Sombras de las tarjetas algo más suaves ahora que hay fondo detrás */
+.quick-toggle, .quick-menu-toggle, .quick-slider {
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.12) !important;
+}

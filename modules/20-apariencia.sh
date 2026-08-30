@@ -25,6 +25,20 @@ else
     || warn "No se pudo crear el vínculo libadwaita"
   mf note "libadwaita-instalado"
 
+  # Tema derivado "MacConLinux-*": copia de MacTahoe-*-solid + pulidos propios
+  # (assets/gnome-shell-overrides.css: menú rápido con panel sólido, sombras).
+  for variante in Light Dark; do
+    SRCT="$HOME/.themes/MacTahoe-$variante-solid/gnome-shell"
+    if [ -d "$SRCT" ]; then
+      rm -rf "$HOME/.themes/MacConLinux-$variante"
+      mkdir -p "$HOME/.themes/MacConLinux-$variante/gnome-shell"
+      cp -a "$SRCT/." "$HOME/.themes/MacConLinux-$variante/gnome-shell/"
+      cat "$MCL_ROOT/assets/gnome-shell-overrides.css" \
+        >> "$HOME/.themes/MacConLinux-$variante/gnome-shell/gnome-shell.css"
+      track_new_file "$HOME/.themes/MacConLinux-$variante"
+    fi
+  done
+
   info "Instalando fondos de pantalla dinámicos (día/noche)…"
   ( cd "$MCL_CACHE/MacTahoe-gtk-theme" \
     && bash wallpaper/install-gnome-backgrounds.sh >/dev/null 2>&1 )

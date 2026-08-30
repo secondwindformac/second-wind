@@ -29,6 +29,7 @@ chk "Iconos MacTahoe"                          eq org.gnome.desktop.interface ic
 chk "Cursor MacTahoe"                          eq org.gnome.desktop.interface cursor-theme "'MacTahoe-cursors'"
 chk "Fuente del sistema Inter"                 eq org.gnome.desktop.interface font-name "'Inter 11'"
 chk "Tema instalado en ~/.themes"              test -d "$HOME/.themes/MacTahoe-Light-solid/gnome-shell"
+chk "Tema derivado MacConLinux (pulidos propios)" test -d "$HOME/.themes/MacConLinux-Light/gnome-shell"
 chk "Fuente Inter instalada"                   test -f "$HOME/.local/share/fonts/Inter/Inter-Regular.ttf"
 chk "Fondos de pantalla MacTahoe"              test -f "$HOME/.local/share/backgrounds/MacTahoe/MacTahoe-day.jpeg"
 chk "Libadwaita (apps modernas) con tema"      test -f "$HOME/.config/gtk-4.0/gtk.css"
@@ -53,10 +54,10 @@ chk "Vista general liberada del atajo"         eq org.gnome.shell.keybindings to
 
 if [ "$MODE" = "--todo" ]; then
   echo "— Extensiones (requieren haber cerrado sesión tras instalar) —"
-  for uuid in "$EXT_USER_THEME_UUID" "$EXT_BMS_UUID" "$EXT_XREMAP_UUID"; do
+  for uuid in "$EXT_USER_THEME_UUID" "$EXT_BMS_UUID" "$EXT_XREMAP_UUID" "$EXT_LOGO_UUID"; do
     chk "Extensión activa: ${uuid%%@*}" bash -c "LC_ALL=C gnome-extensions info '$uuid' 2>/dev/null | grep -qE 'State: (ACTIVE|ENABLED)'"
   done
-  chk "Tema del panel MacTahoe aplicado"       bash -c "[ \"\$(dconf read /org/gnome/shell/extensions/user-theme/name)\" = \"'MacTahoe-Light-solid'\" ]"
+  chk "Tema del panel MacConLinux aplicado"    bash -c "[ \"\$(dconf read /org/gnome/shell/extensions/user-theme/name)\" = \"'MacConLinux-Light'\" ]"
   chk "Teclado por aplicación operativo (D-Bus)" busctl --user introspect org.gnome.Shell /com/k0kubun/Xremap
 
   echo "— Navegadores y pantalla de acceso (si se aplicaron) —"

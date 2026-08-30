@@ -13,6 +13,7 @@ sus propias licencias.
 | User Themes (GNOME) | Activar el tema del panel | GPL-2.0+ | https://extensions.gnome.org/extension/19/user-themes/ |
 | Blur my Shell (aunetx) | Transparencias del panel | GPL-3.0 | https://extensions.gnome.org/extension/3193/blur-my-shell/ |
 | Xremap (k0kubun) | Detección de app activa (teclado por aplicación) | MIT | https://extensions.gnome.org/extension/5060/xremap/ |
+| Logo Menu (aryan_k) | Menú superior izquierdo estilo Mac (con icono ⌘ propio de MacConLinux) | GPL-3.0 | https://extensions.gnome.org/extension/4451/logo-menu/ |
 | facetimehd + facetimehd-firmware (patjak) | Driver de la cámara FaceTime HD | GPL-2.0 (driver) | https://github.com/patjak/facetimehd |
 | mbpfan (linux-on-mac) | Control del ventilador | GPL-3.0 | paquete `mbpfan` de Ubuntu |
 | Toshy (RedBearAK) | Teclado estilo Mac por aplicación | GPL-3.0 | https://github.com/RedBearAK/toshy — MacConLinux lo configura si está presente; su instalación se integrará en la Etapa 1 |
