@@ -1,21 +1,21 @@
-# MacConLinux — pineado de recursos externos. ÚNICO origen de verdad.
-# Regla: cambiar un valor aquí exige probar la instalación completa en el
-# equipo de referencia (MacBookAir6,2 / Ubuntu 24.04 / GNOME 46) antes de commitear.
-# Formato clave=valor, se carga con `source`.
+# Second Wind — pinned external resources. SINGLE source of truth.
+# Rule: changing a value here requires a full install test on the reference
+# machine (MacBookAir6,2 / Ubuntu 24.04 / GNOME 46) before committing.
+# key=value format, loaded with `source`.
 
-# --- Temas (repos git, pineados por commit) ---
+# --- Themes (git repos, pinned by commit) ---
 MACTAHOE_GTK_REPO=https://github.com/vinceliuice/MacTahoe-gtk-theme.git
 MACTAHOE_GTK_SHA=0b544450f6d13b5e51acb079a06d6d4f479c43b6        # 2026-08-24
 MACTAHOE_ICON_REPO=https://github.com/vinceliuice/MacTahoe-icon-theme.git
-MACTAHOE_ICON_SHA=63cdd37ee8b629dc4dacc404b6695b93b84d930f       # 2026-08-29 (incluye cursors/)
+MACTAHOE_ICON_SHA=63cdd37ee8b629dc4dacc404b6695b93b84d930f       # 2026-08-29 (includes cursors/)
 
-# --- Cámara FaceTime HD (driver DKMS + extractor de firmware) ---
+# --- FaceTime HD camera (DKMS driver + firmware extractor) ---
 FTHD_REPO=https://github.com/patjak/facetimehd.git
-FTHD_SHA=54fb8f25fcf76d4d5af682875f044dc0b6fa0b65                # 2026-08-25, compila con kernel 6.17
+FTHD_SHA=54fb8f25fcf76d4d5af682875f044dc0b6fa0b65                # 2026-08-25, builds on kernel 6.17
 FTHD_FW_REPO=https://github.com/patjak/facetimehd-firmware.git
 FTHD_FW_SHA=60ee21228d9ca00a7bd84fdaefaff00a81f1db91             # 2026-08-19
 
-# --- Extensiones GNOME 46 (extensions.gnome.org, pineadas por version_tag + sha256 del zip) ---
+# --- GNOME 46 extensions (extensions.gnome.org, pinned by version_tag + zip sha256) ---
 EXT_USER_THEME_UUID=user-theme@gnome-shell-extensions.gcampax.github.com
 EXT_USER_THEME_TAG=61748                                          # v60
 EXT_USER_THEME_SHA256=3a81c880cada5b8e18d30f0ec65a16a44bf88cdca51038a0af5ed48e63cbfa98
@@ -23,12 +23,12 @@ EXT_BMS_UUID=blur-my-shell@aunetx
 EXT_BMS_TAG=69740                                                 # v72
 EXT_BMS_SHA256=4b82a0a0be4f2f917bff88e0952fab4d6c347d1128e7d8487caef240b699a910
 EXT_XREMAP_UUID=xremap@k0kubun.com
-EXT_XREMAP_TAG=69781                                              # v15 — repara los keymaps por app de Toshy
+EXT_XREMAP_TAG=69781                                              # v15 — restores Toshy's per-app keymaps
 EXT_XREMAP_SHA256=9f81d40ecc23810c704f0e6e6d9cc69c25e7c5528c24576a4972056b5b7d6d5a
 EXT_LOGO_UUID=logomenu@aryan_k
-EXT_LOGO_TAG=70010                                                # v41 — menú superior izquierdo estilo Mac
+EXT_LOGO_TAG=70010                                                # v41 — Mac-style top-left menu
 EXT_LOGO_SHA256=669ea05161df08c3bec6c81c1abe565ac34c17802263cd75658252a76c2fac81
 
-# --- Fuente del sistema (sustituto libre de SF Pro) ---
+# --- System font (free SF Pro substitute) ---
 INTER_URL=https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
 INTER_SHA256=9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e

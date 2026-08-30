@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-# 40-panel — barra superior y comportamiento de ventanas al estilo macOS.
+# 40-panel — top bar and window behavior, macOS style.
 
-# Esquina activa (arriba-izquierda = vista general, como Mission Control)
+# Hot corner (top-left = overview, like Mission Control)
 gset_track org.gnome.desktop.interface enable-hot-corners true
-# Botones de ventana a la izquierda: cerrar, minimizar, maximizar
+# Window buttons on the left: close, minimize, maximize
 gset_track org.gnome.desktop.wm.preferences button-layout "'close,minimize,maximize:'"
-# Reloj con día de la semana, como la barra de menús de macOS
+# Clock with weekday, like the macOS menu bar
 gset_track org.gnome.desktop.interface clock-show-weekday true
-# Ventanas nuevas centradas
+# New windows centered
 gset_track org.gnome.mutter center-new-windows true
-# Batería: activar automáticamente el modo de ahorro cuando quede poca,
-# como hace macOS (el resto de la gestión la llevan power-profiles-daemon,
-# thermald y mbpfan — TLP se descarta a propósito: rompe el selector de
-# energía de GNOME)
+# Battery: automatically switch to power saver when low, like macOS
+# (the rest is handled by power-profiles-daemon, thermald and mbpfan —
+# TLP is deliberately NOT used: it breaks GNOME's power profile selector)
 gset_track org.gnome.settings-daemon.plugins.power power-saver-profile-on-low-battery true
-# Nota: overlay-key se deja vacía a propósito (pulsar Cmd solo no abre nada,
-# igual que en un Mac); la vista general queda en la esquina activa y el gesto
-# de 3 dedos hacia arriba.
+# Note: overlay-key is left empty on purpose (pressing Cmd alone opens
+# nothing, just like on a Mac); the overview lives on the hot corner and the
+# 3-finger-up gesture.

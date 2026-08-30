@@ -1,38 +1,38 @@
 #!/usr/bin/env bash
-# 65-gdm — pantalla de inicio de sesión con look macOS (tema oficial MacTahoe
-# para GDM: fondo estilo macOS + panel oscuro). Requiere sudo.
-# Reversible por partida doble: el propio tema respalda el original como .bak,
-# y MacConLinux guarda además su propia copia en el respaldo prístino.
+# 65-gdm — macOS-look login screen (official MacTahoe GDM theme: macOS-style
+# background + dark panel). Needs sudo.
+# Doubly reversible: the theme itself backs the original up as .bak, and
+# Second Wind keeps its own extra copy in the pristine backup.
 
 YARU_GR="/usr/share/gnome-shell/theme/Yaru/gnome-shell-theme.gresource"
 
 if [ "$DRY_RUN" = 1 ]; then
-  info "HARÍA: aplicar el tema macOS a la pantalla de inicio de sesión (con sudo)"
+  info "${MSG[m65_dry]}"
   return 0
 fi
 
 if [ ! -f "$YARU_GR" ]; then
-  warn "No se encontró el tema de la pantalla de acceso de Ubuntu; se omite."
+  warn "${MSG[m65_no_yaru]}"
   return 1
 fi
 
-info "Este paso necesita tu contraseña de administrador."
+info "${MSG[m60_sudo]}"
 if ! sudo -v; then
-  warn "Sin permisos de administrador; la pantalla de acceso queda pendiente (repite con ./install.sh --solo gdm)."
+  warn "${MSG[m65_no_sudo]}"
   return 1
 fi
 
-# Copia de seguridad propia (además del .bak que crea el tema), solo la 1ª vez
-if [ ! -f "$MCL_BACKUP/gnome-shell-theme.gresource.yaru" ]; then
-  mkdir -p "$MCL_BACKUP"
-  cp "$YARU_GR" "$MCL_BACKUP/gnome-shell-theme.gresource.yaru"
+# Our own safety copy (besides the .bak the theme creates), first time only
+if [ ! -f "$SW_BACKUP/gnome-shell-theme.gresource.yaru" ]; then
+  mkdir -p "$SW_BACKUP"
+  cp "$YARU_GR" "$SW_BACKUP/gnome-shell-theme.gresource.yaru"
 fi
 
-if ( cd "$MCL_CACHE/MacTahoe-gtk-theme" && sudo ./tweaks.sh -g >/dev/null 2>&1 ); then
+if ( cd "$SW_CACHE/MacTahoe-gtk-theme" && sudo ./tweaks.sh -g >/dev/null 2>&1 ); then
   mf system-file "$YARU_GR"
-  mf note "gdm-instalado"
-  ok "Pantalla de inicio de sesión con look macOS (se verá al cerrar sesión o reiniciar)"
+  mf note "gdm-installed"
+  ok "${MSG[m65_ok]}"
 else
-  warn "El tema de la pantalla de acceso no se pudo aplicar; la original queda intacta."
+  warn "${MSG[m65_fail]}"
   return 1
 fi

@@ -1,176 +1,179 @@
 #!/usr/bin/env bash
-# MacConLinux — desinstalador. Restaura la configuración original de Ubuntu
-# usando el manifiesto de cambios y el respaldo prístino.
-# Uso: ./uninstall.sh [--si] [--purgar-temas] [--dconf-completo]
-#   --purgar-temas    además borra los temas/iconos/fuentes MacTahoe del disco
-#   --dconf-completo  último recurso: repone TODA la configuración de escritorio
-#                     tal como estaba el día del respaldo (pisa cambios posteriores)
+# Second Wind — uninstaller. Restores Ubuntu's original configuration using
+# the change manifest and the pristine backup.
+# Usage: ./uninstall.sh [--yes] [--purge-themes] [--full-dconf]
+#   --purge-themes  also deletes the MacTahoe themes/icons/fonts from disk
+#   --full-dconf    last resort: restores ALL desktop settings exactly as they
+#                   were on backup day (overwrites later changes)
+# (Spanish aliases: --si --purgar-temas --dconf-completo)
 set -Eeuo pipefail
 cd "$(dirname "$0")"
-MCL_ROOT="$(pwd)"
+SW_ROOT="$(pwd)"
 
 source lib/common.sh
 source versions.lock
-source lib/i18n/es.sh
 source lib/ui.sh
 
-PURGAR=0
-DCONF_COMPLETO=0
+PURGE=0
+FULL_DCONF=0
 while [ $# -gt 0 ]; do
   case "$1" in
-    --si|--yes|-y) ASSUME_YES=1 ;;
-    --purgar-temas) PURGAR=1 ;;
-    --dconf-completo) DCONF_COMPLETO=1 ;;
-    -h|--help) grep '^#' "$0" | head -8; exit 0 ;;
-    *) die "Opción desconocida: $1" ;;
+    --yes|-y|--si) ASSUME_YES=1 ;;
+    --purge-themes|--purgar-temas) PURGE=1 ;;
+    --full-dconf|--dconf-completo) FULL_DCONF=1 ;;
+    -h|--help) grep '^#' "$0" | head -9; exit 0 ;;
+    *) die "Unknown option: $1" ;;
   esac
   shift
 done
 export ASSUME_YES
 
 [ "$(id -u)" -eq 0 ] && die "${MSG[no_root]}"
-[ -f "$MCL_MANIFEST" ] || die "No hay manifiesto de cambios ($MCL_MANIFEST); no hay nada que restaurar."
+[ -f "$SW_MANIFEST" ] || die "${MSG[un_nothing]}"
 
-ui_yesno "${MSG[des_confirmar]}" || die "${MSG[cancelado]}"
+ui_yesno "${MSG[un_confirm]}" || die "${MSG[cancelled]}"
 
-mkdir -p "$MCL_LOGDIR"
-LOG="$MCL_LOGDIR/uninstall-$(date +%Y%m%d-%H%M%S).log"
+mkdir -p "$SW_LOGDIR"
+LOG="$SW_LOGDIR/uninstall-$(date +%Y%m%d-%H%M%S).log"
 exec > >(tee -a "$LOG") 2>&1
-info "Registro: $LOG"
+info "${MSG[log_at]} $LOG"
 
-info "Restaurando configuración del escritorio…"
+info "${MSG[un_desktop]}"
 python3 lib/restore.py gsettings
 python3 lib/restore.py dconf
-info "Quitando extensiones instaladas por MacConLinux…"
-python3 lib/restore.py extensiones
-info "Quitando archivos creados por MacConLinux…"
-python3 lib/restore.py archivos
+info "${MSG[un_exts]}"
+python3 lib/restore.py extensions
+info "${MSG[un_files]}"
+python3 lib/restore.py files
 
-# gtk-4.0 (libadwaita): se repone desde el respaldo prístino
-if python3 lib/manifest.py has-note "libadwaita-instalado"; then
+# gtk-4.0 (libadwaita): restored from the pristine backup
+if python3 lib/manifest.py has-note "libadwaita-installed"; then
   rm -rf "$HOME/.config/gtk-4.0"
-  if [ -d "$MCL_BACKUP/gtk-4.0" ]; then
-    cp -a "$MCL_BACKUP/gtk-4.0" "$HOME/.config/gtk-4.0"
+  if [ -d "$SW_BACKUP/gtk-4.0" ]; then
+    cp -a "$SW_BACKUP/gtk-4.0" "$HOME/.config/gtk-4.0"
   fi
-  ok "Tema de aplicaciones modernas (gtk-4.0) restaurado"
+  ok "${MSG[un_libadw_ok]}"
 fi
 
-# Ulauncher: cerrar si lo dejamos corriendo (su autostart ya fue eliminado)
+# Ulauncher: stop it if we left it running (its autostart entry is already gone)
 pgrep -x ulauncher >/dev/null 2>&1 && pkill -x ulauncher 2>/dev/null || true
 
-# --- parte con sudo: solo si el manifiesto registra cambios de sistema ---
-NECESITA_SUDO=0
-[ "$(python3 lib/manifest.py get paquetes_apt)" != "[]" ] && NECESITA_SUDO=1
-[ "$(python3 lib/manifest.py get dkms)" != "[]" ] && NECESITA_SUDO=1
-[ "$(python3 lib/manifest.py get sistema)" != "[]" ] && NECESITA_SUDO=1
+# --- sudo part: only if the manifest records system changes ---
+NEED_SUDO=0
+[ "$(python3 lib/manifest.py get apt_packages)" != "[]" ] && NEED_SUDO=1
+[ "$(python3 lib/manifest.py get dkms)" != "[]" ] && NEED_SUDO=1
+[ "$(python3 lib/manifest.py get system)" != "[]" ] && NEED_SUDO=1
 
-if [ "$NECESITA_SUDO" = 1 ]; then
-  info "Hay cambios de hardware/sistema que revertir; se necesita tu contraseña de administrador."
+if [ "$NEED_SUDO" = 1 ]; then
+  info "${MSG[un_sys_need]}"
   if sudo -v; then
-    # dkms (driver de cámara)
+    # dkms (camera driver)
     while read -r modver; do
       [ -n "$modver" ] || continue
       m="${modver%%/*}"; v="${modver##*/}"
-      info "Quitando driver $m…"
+      info "${MSG[un_dkms]} $m…"
       sudo dkms remove -m "$m" -v "$v" --all >/dev/null 2>&1 || true
       sudo rm -rf "/usr/src/$m-$v"
       sudo modprobe -r "$m" 2>/dev/null || true
     done < <(python3 -c "import json,sys; [print(x) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get dkms)")
 
-    # archivos de sistema que creamos/modificamos
-    while read -r ruta; do
-      [ -n "$ruta" ] || continue
-      case "$ruta" in
-        /etc/modprobe.d/macconlinux-*)
-          sudo rm -f "$ruta"
+    # system files we created/modified
+    while read -r path; do
+      [ -n "$path" ] || continue
+      case "$path" in
+        /etc/modprobe.d/secondwind-*|/etc/modprobe.d/macconlinux-*)
+          sudo rm -f "$path"
           sudo update-initramfs -u >/dev/null 2>&1 || true
-          ok "Eliminado $ruta" ;;
+          ok "${MSG[un_file_rm]} $path" ;;
         /etc/gdm3/custom.conf)
-          if [ -f "$MCL_BACKUP/gdm-custom.conf" ]; then
-            sudo cp "$MCL_BACKUP/gdm-custom.conf" /etc/gdm3/custom.conf
-            ok "Restaurado /etc/gdm3/custom.conf (inicio de sesión como antes)"
+          if [ -f "$SW_BACKUP/gdm-custom.conf" ]; then
+            sudo cp "$SW_BACKUP/gdm-custom.conf" /etc/gdm3/custom.conf
+            ok "${MSG[un_file_rm]} (restored) /etc/gdm3/custom.conf"
           fi ;;
         /usr/lib/firmware/facetimehd*)
           sudo rm -rf /usr/lib/firmware/facetimehd
-          ok "Firmware de cámara eliminado" ;;
+          ok "${MSG[un_fw_ok]}" ;;
         /usr/share/gnome-shell/theme/Yaru/gnome-shell-theme.gresource)
-          if [ -f "$MCL_BACKUP/gnome-shell-theme.gresource.yaru" ]; then
-            sudo cp "$MCL_BACKUP/gnome-shell-theme.gresource.yaru" "$ruta"
-            sudo rm -f "$ruta.bak"
-            ok "Pantalla de inicio de sesión restaurada a la original de Ubuntu"
-          elif [ -f "$ruta.bak" ]; then
-            sudo mv "$ruta.bak" "$ruta"
-            ok "Pantalla de inicio de sesión restaurada desde el respaldo .bak"
+          if [ -f "$SW_BACKUP/gnome-shell-theme.gresource.yaru" ]; then
+            sudo cp "$SW_BACKUP/gnome-shell-theme.gresource.yaru" "$path"
+            sudo rm -f "$path.bak"
+            ok "${MSG[un_gdm_ok]}"
+          elif [ -f "$path.bak" ]; then
+            sudo mv "$path.bak" "$path"
+            ok "${MSG[un_gdm_bak_ok]}"
           fi ;;
       esac
-    done < <(python3 -c "import json,sys; [print(x['ruta']) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get sistema)")
+    done < <(python3 -c "import json,sys; [print(x['path']) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get system)")
 
-    # paquetes apt que instalamos (mbpfan sí; compiladores se conservan por si acaso)
+    # apt packages we installed (mbpfan yes; compilers are kept just in case)
     while read -r p; do
       [ -n "$p" ] || continue
       case "$p" in
         mbpfan)
           sudo systemctl disable --now mbpfan >/dev/null 2>&1 || true
-          sudo apt-get remove -y mbpfan >/dev/null 2>&1 && ok "Paquete $p eliminado" ;;
-        *) info "Se conserva el paquete $p (herramienta genérica; puedes quitarlo con: sudo apt remove $p)" ;;
+          sudo apt-get remove -y mbpfan >/dev/null 2>&1 && ok "${MSG[un_pkg_rm]} $p" ;;
+        *) info "${MSG[un_pkg_keep]} $p)" ;;
       esac
-    done < <(python3 -c "import json,sys; [print(x) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get paquetes_apt)")
+    done < <(python3 -c "import json,sys; [print(x) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get apt_packages)")
   else
-    warn "Sin permisos de administrador: los cambios de hardware quedaron sin revertir (repite luego ./uninstall.sh)."
+    warn "${MSG[un_no_sudo]}"
   fi
 fi
 
-# Chrome: reponer su preferencia de ventana (solo si lo tocamos y está cerrado)
-if python3 lib/manifest.py has-note "chrome-parchado" 2>/dev/null; then
+# Chrome: restore its window preference (only if we touched it and it is closed)
+if python3 lib/manifest.py has-note "chrome-patched" 2>/dev/null; then
   if pgrep -x chrome >/dev/null 2>&1; then
-    warn "Chrome está abierto: su preferencia de ventana no se pudo revertir (ciérralo y repite ./uninstall.sh)"
-  elif [ -f "$MCL_STATE/chrome-prefs-antes.json" ]; then
-    python3 - "$HOME/.config/google-chrome/Default/Preferences" "$MCL_STATE/chrome-prefs-antes.json" <<'PY'
+    warn "${MSG[un_chrome_open]}"
+  elif [ -f "$SW_STATE/chrome-prefs-before.json" ] || [ -f "$SW_STATE/chrome-prefs-antes.json" ]; then
+    python3 - "$HOME/.config/google-chrome/Default/Preferences" "$SW_STATE" <<'PY'
 import json, os, sys
-prefs_p, antes_p = sys.argv[1], sys.argv[2]
+prefs_p, state = sys.argv[1], sys.argv[2]
+before_p = os.path.join(state, "chrome-prefs-before.json")
+if not os.path.exists(before_p):
+    before_p = os.path.join(state, "chrome-prefs-antes.json")
 try:
     with open(prefs_p) as f:
         d = json.load(f)
-    with open(antes_p) as f:
-        antes = json.load(f).get("custom_chrome_frame", "__ausente__")
-    if antes == "__ausente__":
+    with open(before_p) as f:
+        before = json.load(f).get("custom_chrome_frame", "__absent__")
+    if before in ("__absent__", "__ausente__"):
         d.get("browser", {}).pop("custom_chrome_frame", None)
     else:
-        d.setdefault("browser", {})["custom_chrome_frame"] = antes
-    tmp = prefs_p + ".macconlinux.tmp"
+        d.setdefault("browser", {})["custom_chrome_frame"] = before
+    tmp = prefs_p + ".secondwind.tmp"
     with open(tmp, "w") as f:
         json.dump(d, f)
     os.replace(tmp, prefs_p)
-    print("  Chrome: preferencia de ventana restaurada")
+    print("  Chrome: window preference restored")
 except FileNotFoundError:
     pass
 PY
   fi
 fi
 
-# --- opciones extra ---
-if [ "$PURGAR" = 1 ]; then
-  info "Purgando temas MacTahoe del disco…"
-  if [ -d "$MCL_CACHE/MacTahoe-gtk-theme" ]; then
-    ( cd "$MCL_CACHE/MacTahoe-gtk-theme" && ./install.sh -r theme >/dev/null 2>&1 ) || true
+# --- extra options ---
+if [ "$PURGE" = 1 ]; then
+  info "${MSG[un_purge]}"
+  if [ -d "$SW_CACHE/MacTahoe-gtk-theme" ]; then
+    ( cd "$SW_CACHE/MacTahoe-gtk-theme" && ./install.sh -r theme >/dev/null 2>&1 ) || true
   fi
-  rm -rf "$HOME"/.themes/MacTahoe-* 2>/dev/null || true
+  rm -rf "$HOME"/.themes/MacTahoe-* "$HOME"/.themes/SecondWind-* "$HOME"/.themes/MacConLinux-* 2>/dev/null || true
   rm -rf "$HOME"/.local/share/icons/MacTahoe* 2>/dev/null || true
-  ok "Temas purgados"
+  ok "${MSG[un_purge_ok]}"
 fi
 
-if [ "$DCONF_COMPLETO" = 1 ]; then
-  if [ -f "$MCL_BACKUP/dconf-full.ini" ]; then
-    warn "Reponiendo TODA la configuración de escritorio del día del respaldo…"
-    dconf load / < "$MCL_BACKUP/dconf-full.ini"
-    ok "Configuración completa restaurada"
+if [ "$FULL_DCONF" = 1 ]; then
+  if [ -f "$SW_BACKUP/dconf-full.ini" ]; then
+    warn "${MSG[un_dconf_warn]}"
+    dconf load / < "$SW_BACKUP/dconf-full.ini"
+    ok "${MSG[un_dconf_ok]}"
   else
-    warn "No existe el respaldo dconf completo"
+    warn "${MSG[un_dconf_missing]}"
   fi
 fi
 
-# El manifiesto ya se aplicó: se archiva (no se borra, por trazabilidad)
-mv "$MCL_MANIFEST" "$MCL_MANIFEST.restaurado-$(date +%Y%m%d-%H%M%S)"
+# The manifest has been applied: archive it (kept for traceability)
+mv "$SW_MANIFEST" "$SW_MANIFEST.restored-$(date +%Y%m%d-%H%M%S)"
 
 echo
-ok "${MSG[des_fin]}"
+ok "${MSG[un_done]}"

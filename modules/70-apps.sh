@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 70-apps — aplicaciones estilo Mac (suite ofimática, visor de fotos, etc.).
-# Reservado para la Etapa 1: ver docs/etapa-1.md.
+# 70-apps — Mac-style applications (office suite, photo viewer, Quick Look…).
+# Reserved for Stage 1: see docs/roadmap.md.
 
-info "Aplicaciones estilo Mac: disponibles en la Etapa 1 (ver docs/etapa-1.md)."
+info "${MSG[m70_msg]}"

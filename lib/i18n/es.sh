@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Textos del instalador en español. Etapa 1 añadirá en.sh con las mismas claves.
+# Second Wind — cadenas en español. Las claves deben coincidir con lib/i18n/en.sh.
 
 declare -A MSG=(
-  [bienvenida]="Bienvenido a MacConLinux
+  [welcome]="Bienvenido a Second Wind
 
-Este programa convertirá tu Ubuntu en una experiencia tipo macOS:
+Este programa convierte tu Ubuntu en una experiencia tipo macOS:
 
   • Apariencia completa estilo macOS (tema, iconos, cursor, fuentes, fondo)
   • Dock flotante y barra superior al estilo Mac
@@ -16,17 +16,21 @@ Este programa convertirá tu Ubuntu en una experiencia tipo macOS:
 Antes de tocar nada se guarda un RESPALDO COMPLETO de tu configuración.
 Todo se puede revertir después con ./uninstall.sh"
 
-  [confirmar]="¿Comenzamos? Se hará primero el respaldo y luego se aplicarán los cambios. Solo tendrás que confirmar una vez."
-  [cancelado]="Instalación cancelada. No se cambió nada."
-  [preg_hardware]="¿Incluir los pasos que piden tu contraseña de administrador?
+  [confirm]="¿Comenzamos? Se hace primero el respaldo y luego se aplican los cambios. Solo confirmas una vez."
+  [cancelled]="Cancelado. No se cambió nada."
+  [ask_hardware]="¿Incluir los pasos que piden tu contraseña de administrador?
 
   • Arreglos de hardware del MacBook (cámara FaceTime HD, ventilador, teclas F)
-  • Pantalla de inicio de sesión con look macOS"
-  [preg_chrome]="Para vestir Chrome como Mac (botones rojo/amarillo/verde a la izquierda) hay que cerrarlo un momento. Tus pestañas se recuperan al reabrirlo con normalidad.
+  • Pantalla de inicio de sesión estilo macOS"
+  [ask_chrome]="Para vestir Chrome como Mac (botones rojo/amarillo/verde a la izquierda) hay que cerrarlo un momento. Tus pestañas vuelven al reabrirlo con normalidad.
 
 ¿Cierro Chrome ahora?"
-  [no_root]="No ejecutes este programa como root/sudo. Ábrelo con tu usuario normal; la contraseña se pedirá solo cuando haga falta."
-  [modo_prueba]="MODO PRUEBA (--dry-run): no se cambiará nada; solo se muestra lo que se haría."
+  [ask_autologin]="Tu equipo entra sin pedir contraseña (inicio de sesión automático), y por eso Ubuntu pide a veces desbloquear el 'llavero'.
+
+¿Desactivar el inicio de sesión automático para arreglarlo? (Escribirás tu contraseña al encender, como en un Mac)"
+  [no_root]="No ejecutes este programa como root/sudo. Ábrelo con tu usuario normal; la contraseña se pide solo cuando hace falta."
+  [dry_run_notice]="MODO PRUEBA (--dry-run): no se cambiará nada; solo se muestra lo que se haría."
+  [log_at]="Registro completo:"
 
   [mod_20]="Apariencia macOS (tema, iconos, cursor, fuentes, fondo)"
   [mod_30]="Extensiones del escritorio (tema del panel, transparencias, teclado)"
@@ -39,19 +43,172 @@ Todo se puede revertir después con ./uninstall.sh"
   [mod_65]="Pantalla de inicio de sesión estilo macOS"
   [mod_70]="Aplicaciones estilo Mac"
   [mod_90]="Verificación tras el próximo inicio de sesión"
+  [mod_done]="listo"
+  [mod_skipped]="omitido (detalle arriba; el resto continúa)"
 
-  [fin_ok]="¡Listo! La instalación terminó correctamente."
-  [fin_avisos]="La instalación terminó, con algunos pasos omitidos (revisa los avisos ⚠ de arriba; nada crítico)."
-  [preg_logout]="Para completar el cambio (tema del panel, dock y teclado por aplicación) hay que CERRAR SESIÓN y volver a entrar.
+  [final_ok]="¡Listo! La instalación terminó correctamente."
+  [final_warn]="La instalación terminó, con algunos pasos omitidos (revisa los avisos ⚠ de arriba; nada crítico)."
+  [ask_logout]="Para completar el cambio (tema del panel, dock y teclado por aplicación) hay que CERRAR SESIÓN y volver a entrar.
 
 ¿Cerrar sesión ahora? (Guarda antes tu trabajo abierto)"
   [logout_manual]="Cuando puedas, cierra sesión y vuelve a entrar para completar el cambio (menú de arriba a la derecha → Cerrar sesión)."
-  [preg_autologin]="Tu equipo entra sin pedir contraseña (inicio de sesión automático), y por eso Ubuntu pide a veces desbloquear el 'llavero'.
 
-¿Desactivar el inicio de sesión automático para arreglarlo? (Tendrás que escribir tu contraseña al encender, como en un Mac)"
+  [pre_checking]="Comprobando que este equipo es compatible…"
+  [pre_bad_distro]="Esta versión de Second Wind es para Ubuntu 24.04 LTS (detectado:"
+  [pre_need_gnome46]="Se necesita GNOME 46 (detectado:"
+  [pre_need_wayland]="No se detectó una sesión gráfica Wayland activa. Inicia sesión en el escritorio y ejecuta de nuevo."
+  [pre_no_net]="Sin conexión a internet (no se alcanza extensions.gnome.org). Conéctate y reintenta."
+  [pre_no_space]="Se necesitan al menos 2 GB libres en tu carpeta personal."
+  [pre_ok]="Compatible: Ubuntu 24.04, GNOME 46, Wayland, internet OK"
 
-  [des_confirmar]="Se restaurará la apariencia y configuración original de Ubuntu usando el respaldo guardado. Tus archivos personales no se tocan.
+  [bk_dry]="HARÍA: respaldo completo de tu configuración en"
+  [bk_exists]="El respaldo original ya existe (se conserva intacto):"
+  [bk_making]="Guardando un respaldo completo de tu configuración…"
+  [bk_done]="Respaldo guardado en"
+
+  [m20_fetch]="Descargando los temas (versiones verificadas)…"
+  [m20_theme]="Instalando tema de ventanas y paneles (tarda 1-2 minutos)…"
+  [m20_gtk_err]="El instalador del tema GTK devolvió un error; se continúa (revisa el registro)"
+  [m20_libadw_err]="No se pudo crear el vínculo libadwaita"
+  [m20_wallp]="Instalando fondos de pantalla dinámicos (día/noche)…"
+  [m20_icons]="Instalando iconos y cursores (lo más lento, 2-4 minutos)…"
+  [m20_font]="Instalando la fuente Inter…"
+  [m20_font_err]="No se pudo descargar Inter; se mantienen las fuentes actuales"
+  [m20_apply]="Aplicando la apariencia…"
+  [m20_dry]="HARÍA: instalar tema MacTahoe GTK+shell (claro y oscuro), iconos, cursores, fondos y fuente Inter"
+
+  [m30_ut_err]="User Themes no se pudo instalar (el tema del panel queda pendiente)"
+  [m30_bms_err]="Blur my Shell no se pudo instalar (sin transparencias, no crítico)"
+  [m30_xr_err]="Xremap no se pudo instalar (el teclado por aplicación queda pendiente)"
+  [m30_logo_err]="Logo Menu no se pudo instalar (el menú superior izquierdo queda pendiente)"
+  [m30_relogin]="Las extensiones quedarán activas al cerrar sesión y volver a entrar."
+
+  [m35_no_dock]="Este sistema no tiene el dock de Ubuntu; se omite (se configurará en una versión futura)."
+
+  [m45_no_toshy]="Toshy no está instalado en este equipo; el teclado Mac por aplicación queda pendiente (la Etapa 1 lo instalará automáticamente)."
+  [m45_xremap_err]="No se pudo instalar Xremap; los atajos globales funcionan igual, los de por-aplicación quedan pendientes"
+  [m45_tray_dry]="HARÍA: quitar el icono de bandeja de Toshy (su servicio sigue activo)"
+  [m45_done]="Teclado Mac: Cmd+C copia, Cmd+V pega, Cmd+Q cierra, Cmd+Tab cambia de app (completo tras cerrar sesión)."
+
+  [m50_no_ul]="Ulauncher no está instalado; Spotlight queda pendiente (la Etapa 1 lo instalará automáticamente)."
+  [m50_dry]="HARÍA: instalar el tema Spotlight para Ulauncher, dejarlo en autoarranque y asignar Cmd+Espacio"
+  [m50_done]="Spotlight listo: pulsa Cmd+Espacio para buscar."
+
+  [m55_ff_dry]="HARÍA: instalar el tema MacTahoe para Firefox"
+  [m55_ff_ok]="Firefox vestido como Mac (reábrelo para verlo)"
+  [m55_ff_err]="No se pudo aplicar el tema de Firefox"
+  [m55_no_ff]="Firefox no está instalado; nada que hacer con él."
+  [m55_no_chrome]="Chrome no está instalado; nada que hacer con él."
+  [m55_chrome_dry]="HARÍA: activar en Chrome la barra de título del sistema (botones Mac a la izquierda)"
+  [m55_chrome_open]="Chrome está abierto y no se puede modificar en caliente. Ciérralo y ejecuta:  ./install.sh --only browsers"
+  [m55_chrome_ok]="Chrome usará la ventana estilo Mac (botones a la izquierda) la próxima vez que lo abras"
+
+  [m60_dry]="HARÍA: instalar mbpfan, persistir el modo de las teclas F y activar la cámara FaceTime HD (con sudo)"
+  [m60_sudo]="Este paso necesita tu contraseña de administrador."
+  [m60_no_sudo]="Sin permisos de administrador; módulo de hardware omitido (reintenta luego con ./install.sh --only hardware)."
+  [m60_apt_warn]="No se pudo refrescar la lista de paquetes; se sigue con lo disponible"
+  [m60_fan]="Ventilador: instalando control inteligente (mbpfan)…"
+  [m60_fan_ok]="mbpfan activo: el ventilador ahora responde a la temperatura real"
+  [m60_fan_err1]="mbpfan instalado pero su servicio no arrancó (revisa 'systemctl status mbpfan')"
+  [m60_fan_err2]="Sin mbpfan: el ventilador sigue en modo automático básico"
+  [m60_fn]="Teclas F: fijando el comportamiento actual para que sobreviva a los reinicios…"
+  [m60_initramfs_warn]="update-initramfs falló (no crítico: el ajuste aplica igual al cargar el módulo)"
+  [m60_cam_already]="La cámara ya funciona; no se toca."
+  [m60_cam_prep]="Cámara FaceTime HD: preparando el driver (3-6 minutos)…"
+  [m60_cam_ok]="¡Cámara FaceTime HD activada! (/dev/video0)"
+  [m60_cam_reboot]="Driver de cámara instalado; se activará tras reiniciar"
+  [m60_cam_fail]="El driver de la cámara no compiló con este kernel. Se revierte todo lo de la cámara; el resto no se ve afectado (ver docs/es/camara.md)."
+  [m60_fw_fail]="No se pudo extraer el firmware de la cámara (¿sin acceso a los servidores de Apple?). La cámara queda pendiente."
+  [m60_src_fail]="No se pudieron descargar las fuentes del driver de cámara."
+  [m60_tools_fail]="Faltan herramientas de compilación; la cámara queda pendiente."
+  [m60_autologin_ok]="Inicio de sesión automático desactivado (respaldo del archivo original guardado)"
+
+  [m65_dry]="HARÍA: aplicar el tema macOS a la pantalla de inicio de sesión (con sudo)"
+  [m65_no_yaru]="No se encontró el tema de la pantalla de acceso de Ubuntu; se omite."
+  [m65_no_sudo]="Sin permisos de administrador; la pantalla de acceso queda pendiente (reintenta con ./install.sh --only gdm)."
+  [m65_ok]="Pantalla de inicio de sesión con look macOS (se verá al cerrar sesión o reiniciar)"
+  [m65_fail]="El tema de la pantalla de acceso no se pudo aplicar; la original queda intacta."
+
+  [m70_msg]="Aplicaciones estilo Mac: disponibles en la Etapa 1 (ver docs/es/etapa-1.md)."
+
+  [m90_dry]="HARÍA: programar la verificación automática del próximo inicio de sesión"
+  [notify_ok]="¡Listo! Tu escritorio ya es tipo macOS. Pulsa Cmd+Espacio para buscar."
+  [notify_warn]="Aplicado, con algún detalle pendiente. Ejecuta ./verify.sh en la carpeta de Second Wind para ver cuál."
+
+  [un_confirm]="Se restaurará la apariencia y configuración original de Ubuntu desde el respaldo guardado. Tus archivos personales no se tocan.
 
 ¿Continuar?"
-  [des_fin]="Restauración terminada. Cierra sesión y vuelve a entrar para ver Ubuntu como antes."
+  [un_nothing]="No hay manifiesto de cambios; nada que restaurar."
+  [un_desktop]="Restaurando configuración del escritorio…"
+  [un_exts]="Quitando extensiones instaladas por Second Wind…"
+  [un_files]="Quitando archivos creados por Second Wind…"
+  [un_libadw_ok]="Tema de aplicaciones modernas (gtk-4.0) restaurado"
+  [un_sys_need]="Hay cambios de hardware/sistema que revertir; se necesita tu contraseña de administrador."
+  [un_no_sudo]="Sin permisos de administrador: los cambios de hardware quedaron sin revertir (repite luego ./uninstall.sh)."
+  [un_dkms]="Quitando driver"
+  [un_file_rm]="Eliminado"
+  [un_gdm_ok]="Pantalla de inicio de sesión restaurada a la original de Ubuntu"
+  [un_gdm_bak_ok]="Pantalla de inicio de sesión restaurada desde el respaldo .bak"
+  [un_fw_ok]="Firmware de cámara eliminado"
+  [un_pkg_rm]="Paquete eliminado:"
+  [un_pkg_keep]="Se conserva el paquete (herramienta genérica; quítalo con: sudo apt remove"
+  [un_chrome_open]="Chrome está abierto: su preferencia de ventana no se pudo revertir (ciérralo y repite ./uninstall.sh)"
+  [un_purge]="Purgando temas MacTahoe del disco…"
+  [un_purge_ok]="Temas purgados"
+  [un_dconf_warn]="Reponiendo TODA la configuración de escritorio del día del respaldo…"
+  [un_dconf_ok]="Configuración completa restaurada"
+  [un_dconf_missing]="No existe el respaldo dconf completo"
+  [un_done]="Restauración terminada. Cierra sesión y vuelve a entrar para ver Ubuntu como antes."
+
+  [v_sec_look]="— Apariencia —"
+  [v_sec_dock]="— Dock y panel —"
+  [v_sec_kbd]="— Teclado y Spotlight —"
+  [v_sec_ext]="— Extensiones (requieren haber cerrado sesión tras instalar) —"
+  [v_sec_brow]="— Navegadores y pantalla de acceso (si se aplicaron) —"
+  [v_sec_hw]="— Hardware (si se instaló ese módulo) —"
+  [v_gtk]="Tema de ventanas MacTahoe (solid, menús legibles)"
+  [v_icons]="Iconos MacTahoe"
+  [v_cursor]="Cursor MacTahoe"
+  [v_font]="Fuente del sistema Inter"
+  [v_theme_dir]="Tema instalado en ~/.themes"
+  [v_theme_derived]="Tema derivado Second Wind (pulidos propios)"
+  [v_font_files]="Fuente Inter instalada"
+  [v_wallp]="Fondos de pantalla MacTahoe"
+  [v_libadw]="Libadwaita (apps modernas) con tema"
+  [v_dock_float]="Dock flotante"
+  [v_dock_48]="Dock: iconos 48px"
+  [v_btns_left]="Botones de ventana a la izquierda"
+  [v_hotcorner]="Esquina activa (Mission Control)"
+  [v_center]="Ventanas nuevas centradas"
+  [v_xkb]="Sin doble remapeo XKB"
+  [v_cmdtab_all]="Cmd+Tab entre apps de todos los escritorios"
+  [v_cmdtab_uni]="Cmd+Tab unificado al selector de apps"
+  [v_lowbat]="Ahorro de batería automático al quedar poca"
+  [v_toshy]="Servicio de teclado Mac (Toshy) activo"
+  [v_tray]="Icono de Toshy oculto"
+  [v_ul_run]="Ulauncher (Spotlight) en ejecución"
+  [v_spot_key]="Atajo Cmd+Espacio → Spotlight"
+  [v_overview_free]="Vista general liberada del atajo"
+  [v_ext_active]="Extensión activa:"
+  [v_panel_theme]="Tema del panel Second Wind aplicado"
+  [v_xremap_dbus]="Teclado por aplicación operativo (D-Bus)"
+  [v_chrome]="Chrome con ventana estilo Mac"
+  [v_chrome_pending]="  (Chrome aún sin vestir — ejecuta ./install.sh --only browsers con Chrome cerrado)"
+  [v_gdm]="Pantalla de acceso con tema Mac (respaldo .bak presente)"
+  [v_gdm_pending]="  (pantalla de acceso aún no aplicada — ./install.sh --only gdm)"
+  [v_mbpfan]="Ventilador inteligente (mbpfan) activo"
+  [v_fnmode]="Teclas F persistentes"
+  [v_cam]="Cámara FaceTime HD (/dev/video0)"
+  [v_hw_none]="  (módulo de hardware no instalado — nada que comprobar)"
+  [v_thermald]="Gestión térmica del sistema activa"
+  [v_ok_all]="comprobaciones correctas. ¡Todo en orden!"
+  [v_some_bad]="con problemas (marcadas con ✖ arriba)."
+  [v_passed]="correctas,"
+  [v_result]="Resultado:"
+
+  [pub_gh]="Instalando GitHub CLI (pedirá tu contraseña de administrador)…"
+  [pub_login]="Inicia sesión en GitHub (se abrirá tu navegador; sigue los pasos)…"
+  [pub_create]="Creando el repositorio privado second-wind en tu cuenta…"
+  [pub_done]="Publicado en privado:"
+  [pub_hint]="  (Cuando decidas abrirlo: gh repo edit --visibility public)"
 )

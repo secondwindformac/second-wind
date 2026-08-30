@@ -1,27 +1,36 @@
 #!/usr/bin/env bash
-# MacConLinux — funciones compartidas. Se carga con `source` desde
-# install.sh / uninstall.sh / verify.sh. Nunca ejecutar como root.
+# Second Wind — shared helpers. Sourced by install.sh / uninstall.sh / verify.sh.
+# Never run as root.
 
-MCL_ROOT="${MCL_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-MCL_LIB="$MCL_ROOT/lib"
-MCL_STATE="${MCL_STATE:-$HOME/.local/state/macconlinux}"
-MCL_CACHE="$MCL_STATE/cache"
-MCL_BACKUP="$MCL_STATE/backup/pristine"
-MCL_LOGDIR="$MCL_STATE/logs"
-export MCL_MANIFEST="$MCL_STATE/manifest.json"
+SW_ROOT="${SW_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+SW_LIB="$SW_ROOT/lib"
+SW_STATE="${SW_STATE:-$HOME/.local/state/second-wind}"
+SW_SHARE="$HOME/.local/share/second-wind"
+SW_CACHE="$SW_STATE/cache"
+SW_BACKUP="$SW_STATE/backup/pristine"
+SW_LOGDIR="$SW_STATE/logs"
+export SW_MANIFEST="$SW_STATE/manifest.json"
 
 DRY_RUN="${DRY_RUN:-0}"
 ASSUME_YES="${ASSUME_YES:-0}"
 
-# El instalador puede correr desde un shell sin variables de sesión gráfica
-# (SSH, herramientas, instalación desatendida). Derivamos las imprescindibles:
+# One-time migration from the project's former name (MacConLinux).
+if [ -d "$HOME/.local/state/macconlinux" ] && [ ! -d "$SW_STATE" ]; then
+  mv "$HOME/.local/state/macconlinux" "$SW_STATE"
+fi
+if [ -d "$HOME/.local/share/macconlinux" ] && [ ! -d "$SW_SHARE" ]; then
+  mv "$HOME/.local/share/macconlinux" "$SW_SHARE"
+fi
+
+# The installer may run from a shell without graphical session variables
+# (SSH, tooling, unattended installs). Derive the essentials:
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
 export DISPLAY="${DISPLAY:-:0}"
-# Sin TERM, los instaladores de temas de vinceliuice mueren en `setterm`:
+# Without TERM, vinceliuice's theme installers die inside `setterm`:
 export TERM="${TERM:-xterm-256color}"
 
-# --- salida ---
+# --- output ---
 if [ -t 1 ]; then
   C_OK=$'\033[1;32m'; C_WARN=$'\033[1;33m'; C_ERR=$'\033[1;31m'
   C_INFO=$'\033[1;36m'; C_OFF=$'\033[0m'
@@ -33,44 +42,45 @@ ok()   { printf '%s\n' "${C_OK}✔ $*${C_OFF}"; }
 warn() { printf '%s\n' "${C_WARN}⚠ $*${C_OFF}"; }
 die()  { printf '%s\n' "${C_ERR}✖ $*${C_OFF}" >&2; exit 1; }
 
-# Ejecuta el comando, o en modo --dry-run solo muestra qué haría.
+# Run the command, or just print it in --dry-run mode.
 run() {
-  if [ "$DRY_RUN" = 1 ]; then printf 'HARÍA: %s\n' "$*"; else "$@"; fi
+  if [ "$DRY_RUN" = 1 ]; then printf 'DRY-RUN: %s\n' "$*"; else "$@"; fi
 }
 
-# Manifiesto de cambios (silencioso en dry-run).
+# Change manifest (no-op in dry-run).
 mf() {
   [ "$DRY_RUN" = 1 ] && return 0
-  python3 "$MCL_LIB/manifest.py" "$@"
+  python3 "$SW_LIB/manifest.py" "$@"
 }
 
-need_cmd() { command -v "$1" >/dev/null 2>&1 || die "Falta la herramienta '$1'."; }
+need_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing required tool '$1'."; }
 
-# --- gsettings / dconf con registro del valor original ---
+# --- gsettings / dconf with original-value tracking ---
 
-# gset_track SCHEMA CLAVE VALOR — aplica solo si difiere; registra el "antes" una vez.
+# gset_track SCHEMA KEY VALUE — applies only if different; records "before" once.
 gset_track() {
   local schema="$1" key="$2" value="$3" cur
   if ! cur="$(gsettings get "$schema" "$key" 2>/dev/null)"; then
-    warn "No existe la clave $schema $key en este sistema — se omite."
+    warn "Key $schema $key does not exist on this system — skipped."
     return 0
   fi
   [ "$cur" = "$value" ] && return 0
   if [ "$DRY_RUN" = 1 ]; then
-    printf 'HARÍA: gsettings set %s %s %s   (antes: %s)\n' "$schema" "$key" "$value" "$cur"
+    printf 'DRY-RUN: gsettings set %s %s %s   (before: %s)\n' "$schema" "$key" "$value" "$cur"
     return 0
   fi
   mf record-gsettings "$schema" "$key" "$cur"
   gsettings set "$schema" "$key" "$value"
 }
 
-# dconf_track RUTA VALOR — para claves sin schema instalado aún (extensiones pre-relogin).
+# dconf_track PATH VALUE — for keys whose schema is not installed yet
+# (extensions before the next login).
 dconf_track() {
   local path="$1" value="$2" cur
   cur="$(dconf read "$path" 2>/dev/null || true)"
   [ "$cur" = "$value" ] && return 0
   if [ "$DRY_RUN" = 1 ]; then
-    printf 'HARÍA: dconf write %s %s   (antes: %s)\n' "$path" "$value" "${cur:-<sin valor>}"
+    printf 'DRY-RUN: dconf write %s %s   (before: %s)\n' "$path" "$value" "${cur:-<unset>}"
     return 0
   fi
   mf record-dconf "$path" "$cur"
@@ -79,44 +89,55 @@ dconf_track() {
 
 track_new_file() { mf file-created "$1"; }
 
-# --- descargas y clones pineados ---
+# Force gnome-shell to reload the wallpaper after its files were re-copied
+# (same URI ⇒ no change event ⇒ a deleted-and-recreated file shows as black).
+bg_refresh() {
+  local day="$1" night="$2"
+  [ "$DRY_RUN" = 1 ] && return 0
+  gsettings set org.gnome.desktop.background picture-uri "'$night'" 2>/dev/null || return 0
+  gsettings set org.gnome.desktop.background picture-uri "'$day'"
+  gsettings set org.gnome.desktop.background picture-uri-dark "'$day'"
+  gsettings set org.gnome.desktop.background picture-uri-dark "'$night'"
+}
 
-# download_cached URL DESTINO SHA256 — reutiliza el caché si la firma coincide.
+# --- downloads and pinned clones ---
+
+# download_cached URL DEST SHA256 — reuses the cache when the checksum matches.
 download_cached() {
   local url="$1" dest="$2" sha="$3"
   mkdir -p "$(dirname "$dest")"
   if [ -f "$dest" ] && printf '%s  %s\n' "$sha" "$dest" | sha256sum -c --quiet - 2>/dev/null; then
     return 0
   fi
-  if [ "$DRY_RUN" = 1 ]; then printf 'HARÍA: descargar %s\n' "$url"; return 0; fi
-  curl -fsSL --retry 3 -o "$dest.parcial" "$url" || { warn "No se pudo descargar $url"; return 1; }
-  if ! printf '%s  %s\n' "$sha" "$dest.parcial" | sha256sum -c --quiet - 2>/dev/null; then
-    rm -f "$dest.parcial"
-    warn "La descarga de $url no coincide con la firma esperada (sha256). Por seguridad no se usará."
+  if [ "$DRY_RUN" = 1 ]; then printf 'DRY-RUN: download %s\n' "$url"; return 0; fi
+  curl -fsSL --retry 3 -o "$dest.partial" "$url" || { warn "Could not download $url"; return 1; }
+  if ! printf '%s  %s\n' "$sha" "$dest.partial" | sha256sum -c --quiet - 2>/dev/null; then
+    rm -f "$dest.partial"
+    warn "Download of $url does not match the expected sha256 signature. Refusing to use it."
     return 1
   fi
-  mv "$dest.parcial" "$dest"
+  mv "$dest.partial" "$dest"
 }
 
-# clone_pinned URL DIR SHA — clona (o actualiza) y fija el commit exacto.
+# clone_pinned URL DIR SHA — clone (or update) and check out the exact commit.
 clone_pinned() {
   local url="$1" dir="$2" sha="$3"
-  if [ "$DRY_RUN" = 1 ]; then printf 'HARÍA: clonar %s @ %s\n' "$url" "${sha:0:10}"; return 0; fi
+  if [ "$DRY_RUN" = 1 ]; then printf 'DRY-RUN: clone %s @ %s\n' "$url" "${sha:0:10}"; return 0; fi
   if [ -d "$dir/.git" ]; then
     git -C "$dir" cat-file -e "$sha^{commit}" 2>/dev/null || git -C "$dir" fetch -q origin
   else
-    git clone -q "$url" "$dir" || { warn "No se pudo clonar $url"; return 1; }
+    git clone -q "$url" "$dir" || { warn "Could not clone $url"; return 1; }
   fi
-  git -C "$dir" checkout -q --detach "$sha" || { warn "No existe el commit pineado en $url"; return 1; }
+  git -C "$dir" checkout -q --detach "$sha" || { warn "Pinned commit not found in $url"; return 1; }
 }
 
-# --- extensiones GNOME ---
+# --- GNOME extensions ---
 
-# Merge idempotente en enabled-extensions. No usamos `gnome-extensions enable`
-# porque falla con extensiones que el shell aún no cargó (pre-relogin).
+# Idempotent merge into enabled-extensions. We avoid `gnome-extensions enable`
+# because it fails for extensions the shell has not loaded yet (pre-relogin).
 enable_extension() {
   local uuid="$1"
-  if [ "$DRY_RUN" = 1 ]; then printf 'HARÍA: habilitar extensión %s\n' "$uuid"; return 0; fi
+  if [ "$DRY_RUN" = 1 ]; then printf 'DRY-RUN: enable extension %s\n' "$uuid"; return 0; fi
   python3 - "$uuid" <<'PY'
 import ast, subprocess, sys
 uuid = sys.argv[1]
@@ -130,11 +151,11 @@ if uuid not in cur:
 PY
 }
 
-# ext_install_pinned UUID TAG SHA256 — descarga desde extensions.gnome.org,
-# instala a nivel usuario y habilita (carga real: al cerrar sesión).
+# ext_install_pinned UUID TAG SHA256 — download from extensions.gnome.org,
+# install at user level and enable (actually loads at next login).
 ext_install_pinned() {
   local uuid="$1" tag="$2" sha="$3"
-  local zip="$MCL_CACHE/$uuid.shell-extension.zip"
+  local zip="$SW_CACHE/$uuid.shell-extension.zip"
   download_cached "https://extensions.gnome.org/download-extension/$uuid.shell-extension.zip?version_tag=$tag" \
     "$zip" "$sha" || return 1
   run gnome-extensions install --force "$zip" || return 1
@@ -142,14 +163,14 @@ ext_install_pinned() {
   enable_extension "$uuid"
 }
 
-# --- atajos personalizados ---
+# --- custom keybindings ---
 
-# custom_keybinding_add ID NOMBRE COMANDO ATAJO
+# custom_keybinding_add ID NAME COMMAND BINDING
 custom_keybinding_add() {
   local id="$1" name="$2" cmd="$3" binding="$4"
   local base="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/$id/"
   if [ "$DRY_RUN" = 1 ]; then
-    printf 'HARÍA: atajo personalizado %s → %s (%s)\n' "$binding" "$cmd" "$id"
+    printf 'DRY-RUN: custom shortcut %s → %s (%s)\n' "$binding" "$cmd" "$id"
     return 0
   fi
   local cur
@@ -174,3 +195,31 @@ PY
   gsettings set "$schema" command "$cmd"
   gsettings set "$schema" binding "$binding"
 }
+
+# custom_keybinding_remove ID — drop one of OUR custom keybindings (migrations).
+custom_keybinding_remove() {
+  local id="$1"
+  local base="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/$id/"
+  [ "$DRY_RUN" = 1 ] && return 0
+  python3 - "$base" <<'PY'
+import ast, subprocess, sys
+path = sys.argv[1]
+out = subprocess.check_output(
+    ['gsettings', 'get', 'org.gnome.settings-daemon.plugins.media-keys',
+     'custom-keybindings']).decode().strip()
+cur = [] if out.startswith('@as') else ast.literal_eval(out)
+if path in cur:
+    cur.remove(path)
+    subprocess.check_call(
+        ['gsettings', 'set', 'org.gnome.settings-daemon.plugins.media-keys',
+         'custom-keybindings', str(cur)])
+PY
+  dconf reset -f "$base" 2>/dev/null || true
+}
+
+# --- language ---
+# Installer strings follow the system language; English is the default.
+case "${LC_ALL:-${LC_MESSAGES:-${LANG:-en}}}" in
+  es*) source "$SW_LIB/i18n/es.sh" ;;
+  *)   source "$SW_LIB/i18n/en.sh" ;;
+esac

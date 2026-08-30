@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=MacConLinux (verificación final)
-Comment=Se ejecuta una sola vez tras iniciar sesión y luego se elimina
+Name=Second Wind (final verification)
+Comment=Runs once after login, then removes itself
 Exec=bash -c "@POSTLOGIN@"
 X-GNOME-Autostart-enabled=true
 NoDisplay=true

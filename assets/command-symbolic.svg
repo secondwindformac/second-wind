@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <!-- Símbolo de comando (⌘, U+2318): icono del menú superior de MacConLinux.
-       Dibujo propio (MIT); el símbolo es de uso libre, sin marcas de Apple. -->
+  <!-- Command symbol (⌘, U+2318): Second Wind's top-bar menu icon.
+       Original drawing (MIT); the symbol itself is free to use — no Apple
+       trademarks involved. -->
   <g fill="none" stroke="#3b3b3b" stroke-width="1.4" stroke-linecap="round">
     <circle cx="4.4" cy="4.4" r="2.3"/>
     <circle cx="11.6" cy="4.4" r="2.3"/>

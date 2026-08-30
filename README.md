@@ -1,71 +1,77 @@
-# MacConLinux
+# Second Wind
 
-**Convierte tu Mac viejo con Ubuntu en una experiencia tipo macOS, en un solo paso y sin saber de Linux.**
+**A second wind for your old Mac — turn Ubuntu into a macOS-like experience in one step, no Linux knowledge required.**
 
-Apple dejó sin actualizaciones a millones de Macs Intel perfectamente capaces. Con Ubuntu siguen siendo computadores excelentes, pero se sienten "ajenos". MacConLinux los hace sentirse como en casa:
+*Leer en español: [README.es.md](README.es.md)*
 
-- 🖥️ **Apariencia macOS completa**: tema de ventanas, iconos, cursor, fuentes y fondo de pantalla dinámico día/noche (basado en el look de macOS Tahoe).
-- 🚀 **Dock flotante** y barra superior al estilo Mac, con botones de ventana a la izquierda.
-- 🔍 **Spotlight**: pulsa `Cmd + Espacio` y busca aplicaciones y archivos.
-- ⌨️ **Teclado de Mac de verdad**: `Cmd+C` copia, `Cmd+V` pega, `Cmd+Q` cierra, `Cmd+Tab` cambia de aplicación — y en la Terminal `Cmd+C` copia sin cortar el programa, como en macOS.
-- 🔧 **Arreglos de hardware para MacBooks**: cámara FaceTime HD, control inteligente del ventilador y teclas F persistentes.
-- ↩️ **Todo reversible**: antes de tocar nada se guarda un respaldo completo; `./uninstall.sh` deja Ubuntu como estaba.
+Apple left millions of perfectly capable Intel Macs without updates. With Ubuntu they are still excellent computers — but they feel foreign. Second Wind makes them feel like home:
 
-## Requisitos
+- 🖥️ **Full macOS-style look**: window theme, icons, cursor, fonts and a dynamic day/night wallpaper (based on the macOS Tahoe look).
+- 🚀 **Floating dock** and Mac-style top bar, window buttons on the left, ⌘ menu on the top-left.
+- 🔍 **Spotlight**: press `Cmd + Space` and search apps and files.
+- ⌨️ **A real Mac keyboard**: `Cmd+C` copies, `Cmd+V` pastes, `Cmd+Q` quits, `Cmd+Tab` switches between apps across all workspaces — and in the Terminal `Cmd+C` copies without killing the program, just like macOS.
+- 🔧 **MacBook hardware fixes**: FaceTime HD camera, smart fan control and persistent F-keys.
+- ↩️ **Everything reversible**: a full backup is taken before touching anything; `./uninstall.sh` puts Ubuntu back the way it was.
 
-- Ubuntu **24.04 LTS** con escritorio GNOME 46 (la instalación estándar), sesión Wayland (la que viene por defecto).
-- Conexión a internet y 2 GB libres.
-- Pensado y probado en MacBooks Intel (equipo de referencia: MacBook Air 13" 2014). Funciona también en PCs normales con Ubuntu 24.04 (el módulo de hardware Mac simplemente se omite).
+The installer speaks **English and Spanish** (it follows your system language).
 
-## Instalación
+## Requirements
+
+- Ubuntu **24.04 LTS** with the GNOME 46 desktop (the standard install), Wayland session (the default).
+- Internet connection and 2 GB of free space.
+- Designed and tested on Intel MacBooks (reference machine: MacBook Air 13" 2014). It also works on regular PCs running Ubuntu 24.04 (the Mac hardware module simply skips itself).
+
+### Why exactly Ubuntu 24.04 + GNOME 46?
+
+Every external piece (theme, four GNOME extensions, camera driver) is **pinned to versions tested together** on the reference machine (`versions.lock`). A different GNOME release needs different pins — supporting a version means re-testing the whole experience, not hoping for the best. The plan: track Ubuntu **LTS** releases (24.04 now, 26.04 next), because owners of older Macs want stability, and let Stage 2's install USB ship the exact tested base system so end users never have to think about versions at all.
+
+## Install
 
 ```bash
-git clone https://github.com/USUARIO/MacConLinux.git
-cd MacConLinux
+git clone https://github.com/USER/second-wind.git
+cd second-wind
 ./install.sh
 ```
 
-El instalador explica lo que va a hacer, pide **una sola confirmación**, guarda el respaldo y aplica todo. Al final te pedirá cerrar sesión y volver a entrar (necesario para el tema del panel y el teclado por aplicación). La contraseña de administrador solo se pide para los arreglos de hardware.
+The installer explains what it will do, asks for **a single confirmation**, saves the backup and applies everything. At the end it asks you to log out and back in (needed for the panel theme and the per-app keyboard). The administrator password is only requested for the hardware fixes and the login screen.
 
-Opciones útiles:
+Useful options:
 
-| Comando | Qué hace |
+| Command | What it does |
 |---|---|
-| `./install.sh --dry-run` | Muestra qué haría, sin cambiar nada |
-| `./install.sh --si` | Instala sin preguntas (valores por defecto) |
-| `./install.sh --sin-hardware` | Omite el módulo que pide contraseña |
-| `./install.sh --solo dock` | Re-ejecuta un solo módulo |
-| `./verify.sh` | Comprueba que todo esté en orden |
-| `./uninstall.sh` | Restaura Ubuntu como estaba |
+| `./install.sh --dry-run` | Show what would be done, change nothing |
+| `./install.sh --yes` | Install with no questions (defaults) |
+| `./install.sh --no-hardware` | Skip the steps that ask for the admin password |
+| `./install.sh --only dock` | Re-run a single module |
+| `./verify.sh` | Check that everything is in order |
+| `./uninstall.sh` | Restore Ubuntu as it was |
 
-## Preguntas frecuentes
+## FAQ
 
-**¿Esto toca mis archivos?** No. Solo configura la apariencia y el comportamiento del escritorio. Tus documentos, fotos y programas no se tocan.
+**Does this touch my files?** No. It only configures the desktop's look and behavior. Your documents, photos and programs are untouched.
 
-**¿Puedo volver atrás?** Sí, siempre: `./uninstall.sh` restaura cada ajuste a su valor original usando el respaldo que se guardó antes de empezar.
+**Can I go back?** Always: `./uninstall.sh` restores every setting to its original value using the backup taken before anything changed.
 
-**Algunas apps no tienen los botones rojo/amarillo/verde.** Las aplicaciones que dibujan su propia ventana (Chrome, y las hechas con Electron, como muchas apps de escritorio modernas) no usan los botones del sistema. Para Chrome, MacConLinux activa su opción de "barra de título del sistema" y queda con botones Mac; en las apps Electron depende de cada aplicación y no se puede forzar.
+**Some apps lack the red/yellow/green buttons.** Apps that draw their own window frame (Chrome, and Electron-based apps) don't use the system's buttons. For Chrome, Second Wind enables its "system title bar" option and it gets Mac buttons; for Electron apps it depends on each app and cannot be forced.
 
-**Los menús del sistema no son idénticos a los de macOS.** El panel y sus menús son de GNOME: MacConLinux los viste (colores, formas, tipografía, variante opaca legible), pero su estructura interna es la de Ubuntu.
+**The system menus aren't identical to macOS.** The panel and its menus belong to GNOME: Second Wind dresses them (colors, shapes, typography, a readable opaque variant), but their internal structure is Ubuntu's.
 
-**El App Center de Ubuntu se ve distinto.** Esa tienda no usa la tecnología de temas del sistema (GTK) y no se puede vestir.
+**Ubuntu's App Center looks different.** That store doesn't use the system theme technology (GTK) and cannot be dressed.
 
-**Firefox u otras apps de Snap no toman el tema.** Limitación conocida de los Snaps de Ubuntu; se aborda en la Etapa 1.
+**Firefox or other Snap apps don't pick up the theme.** Known Ubuntu Snap limitation; addressed in Stage 1.
 
-**¿Y la batería?** MacConLinux usa la gestión de energía propia de Ubuntu (perfiles de energía + `thermald`) y añade `mbpfan` para que el ventilador responda de verdad en MacBooks, más el ahorro automático al quedar poca batería. Se descartó TLP a propósito: choca con el selector de energía de GNOME. El mayor consumo suele venir de las aplicaciones abiertas, no del sistema.
+**What about battery?** Second Wind uses Ubuntu's own power management (power profiles + `thermald`), adds `mbpfan` so the fan actually responds on MacBooks, and enables the automatic power saver on low battery. TLP was deliberately left out: it fights GNOME's power profile selector. Most battery drain comes from the apps you run, not the system.
 
-**La cámara no se activó.** El driver de la cámara FaceTime HD es de terceros y se compila para tu kernel; si falla, el instalador lo revierte solo y lo deja documentado en `docs/camara.md`. Puedes reintentar tras una actualización con `./install.sh --solo hardware`.
+## Project status
 
-**Ubuntu me pide "desbloquear el llavero" al entrar.** Pasa cuando el equipo entra sin contraseña (autologin). El instalador ofrece arreglarlo; detalles en `docs/llavero-autologin.md`.
+**Stage 0** (this): one-click installer for Ubuntu 24.04/GNOME 46, tested on the reference machine.
+**Stage 1**: Mac-style apps + Quick Look, coordinated dark mode, Firefox theme, auto-install of the keyboard/search engines on clean machines, more Mac models.
+**Stage 2**: the total install USB — from a Mac running macOS to a "new Mac" running Ubuntu + Second Wind, without ever seeing a terminal.
 
-## Estado del proyecto
+See [docs/roadmap.md](docs/roadmap.md) for the honest feasibility notes (global menu bar, desktop widgets, and friends).
 
-**Etapa 0** (esta): instalador one-click para Ubuntu 24.04/GNOME 46, probado en el equipo de referencia.
-**Etapa 1**: apps estilo Mac, modo oscuro conmutable, tema de la pantalla de acceso, inglés, GUI.
-**Etapa 2**: pendrive de instalación total — de un Mac con macOS a un "Mac nuevo" con Ubuntu + MacConLinux, sin terminal.
+## License
 
-## Licencia
+Own code under the [MIT](LICENSE) license. Third-party components (themes, extensions, drivers) are **not redistributed**: the installer downloads them from their official sources at verified versions; see [THIRD_PARTY.md](THIRD_PARTY.md).
 
-Código propio bajo licencia [MIT](LICENSE). Los componentes de terceros (temas, extensiones, drivers) **no se redistribuyen**: el instalador los descarga de sus fuentes oficiales en versiones verificadas; ver [THIRD_PARTY.md](THIRD_PARTY.md).
-
-MacConLinux no está afiliado a Apple Inc. "Mac" y "macOS" son marcas de Apple Inc.; se mencionan solo para describir compatibilidad y semejanza visual.
+Second Wind is not affiliated with Apple Inc. "Mac" and "macOS" are trademarks of Apple Inc., mentioned only to describe compatibility and visual resemblance.
