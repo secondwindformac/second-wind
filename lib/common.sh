@@ -60,6 +60,21 @@ mf() {
 
 need_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing required tool '$1'."; }
 
+# apt_track_install PKG... — install only what is missing, recording it for
+# uninstall. Requires an authorized sudo (caller runs `sudo -v` first).
+apt_track_install() {
+  local p
+  for p in "$@"; do
+    dpkg -s "$p" >/dev/null 2>&1 && continue
+    if sudo apt-get install -y "$p" >/dev/null 2>&1; then
+      mf apt-installed "$p"
+    else
+      warn "Could not install package $p"
+      return 1
+    fi
+  done
+}
+
 # --- gsettings / dconf with original-value tracking ---
 
 # gset_track SCHEMA KEY VALUE — applies only if different; records "before" once.

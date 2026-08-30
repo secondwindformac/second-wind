@@ -20,7 +20,11 @@ gset_track org.gnome.shell.window-switcher current-workspace-only false
 #   3. Its tray icon is hidden: the user never sees the word "Toshy" again.
 # Toshy's own config and internal preferences are never touched.
 
-if [ "${HAVE_TOSHY:-0}" != 1 ]; then
+# Re-detect live (module 15 may have just installed Toshy in this same run;
+# the preflight value was computed before that).
+HAVE_TOSHY_NOW="${HAVE_TOSHY:-0}"
+systemctl --user list-unit-files 'toshy*' 2>/dev/null | grep -q toshy && HAVE_TOSHY_NOW=1
+if [ "$HAVE_TOSHY_NOW" != 1 ]; then
   warn "${MSG[m45_no_toshy]}"
   return 0
 fi

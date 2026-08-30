@@ -24,20 +24,6 @@ fi
 SW_SUDO_KEEPALIVE=$!
 trap 'kill "$SW_SUDO_KEEPALIVE" 2>/dev/null || true' EXIT
 
-# Install a package only if missing, recording it for uninstall.
-apt_track_install() {
-  local p
-  for p in "$@"; do
-    dpkg -s "$p" >/dev/null 2>&1 && continue
-    if sudo apt-get install -y "$p" >/dev/null 2>&1; then
-      mf apt-installed "$p"
-    else
-      warn "Could not install package $p"
-      return 1
-    fi
-  done
-}
-
 sudo apt-get update -qq 2>/dev/null || warn "${MSG[m60_apt_warn]}"
 
 # --- 1) Fan ---

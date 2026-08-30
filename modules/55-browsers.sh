@@ -31,7 +31,7 @@ if [ -f "$SYS_DESKTOP" ]; then
     info "${MSG[m55_vaapi_dry]}"
   else
     mkdir -p "$HOME/.local/share/applications"
-    sed 's|/usr/bin/google-chrome-stable|/usr/bin/google-chrome-stable --enable-features=VaapiVideoDecodeLinuxGL,VaapiIgnoreDriverChecks|g' \
+    sed 's|/usr/bin/google-chrome-stable|/usr/bin/google-chrome-stable --enable-features=VaapiVideoDecodeLinuxGL,VaapiVideoEncodeLinuxGL,VaapiIgnoreDriverChecks|g' \
       "$SYS_DESKTOP" > "$LOCAL_DESKTOP"
     track_new_file "$LOCAL_DESKTOP"
     ok "${MSG[m55_vaapi_ok]}"
