@@ -9,6 +9,7 @@ if [ "${HAVE_DOCK:-0}" != 1 ]; then
   return 0
 fi
 
+gset_track org.gnome.shell.extensions.dash-to-dock dock-position "'BOTTOM'"
 gset_track org.gnome.shell.extensions.dash-to-dock extend-height false
 gset_track org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 48
 gset_track org.gnome.shell.extensions.dash-to-dock show-mounts false
