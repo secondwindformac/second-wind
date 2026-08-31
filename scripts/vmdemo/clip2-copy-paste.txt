@@ -1,0 +1,11 @@
+1.0 key alt spc
+2.5 type text editor
+5.0 key ret
+9.0 type Hello from my Mac
+11.5 key alt a
+13.0 key alt c
+14.2 key right
+14.8 key ret
+15.4 key alt v
+16.8 key ret
+17.4 key alt v
