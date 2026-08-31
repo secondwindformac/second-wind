@@ -82,10 +82,31 @@ autoinstall:
     # wl WiFi driver. New installs pin to the GA 6.8 series instead —
     # LTS-first, same philosophy as versions.lock. (The live ISO's kernel is
     # running, not the target's, so purging HWE images in-target is safe.)
-    # (the hwe kernel *images* carry no "hwe" in their names — purging the
-    # metas and autoremoving drops them as orphans; GA 6.8 remains and GRUB
-    # boots it. Offline installs skip this quietly and stay on HWE.)
-    - curtin in-target -- bash -c "apt-get install -y linux-generic && apt-get purge -y $(dpkg-query --admindir=/target/var/lib/dpkg -W -f '${Package} ' 'linux-*hwe*' 2>/dev/null) && apt-get autoremove --purge -y || true"
+    # (H1, caught by the 31-08 VM certification: purging the metas is NOT
+    # enough — apt's kernel protection shields the newest HWE *image* from
+    # autoremove, and GRUB then boots a frozen, never-patched 7.x. After
+    # installing GA we therefore purge every versioned kernel package outside
+    # the 6.8 series explicitly, guarded on the GA image actually being
+    # present — offline installs still just stay on HWE quietly.)
+    - |
+      cat > /target/usr/local/sbin/sw-ga-kernel.sh <<'EOS'
+      #!/bin/bash
+      set -x
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get install -y linux-generic || exit 0
+      METAS=$(dpkg-query -W -f '${Package} ' 'linux-*hwe*' 2>/dev/null || true)
+      [ -n "$METAS" ] && apt-get purge -y $METAS || true
+      if dpkg-query -W 'linux-image-6.8.*-generic' >/dev/null 2>&1; then
+        DROP=$(dpkg-query -W -f '${Package}\n' 'linux-image-[0-9]*' 'linux-headers-[0-9]*' 'linux-modules-*-generic' 2>/dev/null | grep -v -- '-6\.8\.' || true)
+        [ -n "$DROP" ] && apt-get purge -y $DROP || true
+      fi
+      apt-get autoremove --purge -y || true
+      update-grub || true
+      exit 0
+      EOS
+      chmod +x /target/usr/local/sbin/sw-ga-kernel.sh
+      curtin in-target -- /usr/local/sbin/sw-ga-kernel.sh || true
+      rm -f /target/usr/local/sbin/sw-ga-kernel.sh
     # Copy Second Wind from the seed volume into the installed system and
     # arm the first-login bootstrap for every created user.
     - |

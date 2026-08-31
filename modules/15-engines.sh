@@ -43,7 +43,7 @@ fi
 # and its internal sudo calls would then stall on a hidden prompt.
 ( while sleep 50; do sudo -n true 2>/dev/null || exit; done ) &
 SW_ENGINES_KEEPALIVE=$!
-trap 'kill "$SW_ENGINES_KEEPALIVE" 2>/dev/null || true' EXIT
+trap 'kill "$SW_ENGINES_KEEPALIVE" 2>/dev/null || true; sudo -n rm -f /etc/sudoers.d/zz-second-wind-engines 2>/dev/null || true' EXIT
 sudo apt-get update -qq 2>/dev/null || warn "${MSG[m60_apt_warn]}"
 
 # --- WiFi (needs a wired/tethered connection to download the driver) ---
@@ -72,16 +72,31 @@ fi
 # --- Toshy (Mac keyboard engine), pinned to the verified commit ---
 if [ "$NEED_TOSHY" = 1 ]; then
   info "${MSG[m15_toshy]}"
-  # Toshy's installer is interactive BY DESIGN: it resets sudo (sudo -k) and
-  # asks its own [y/n] + password on the tty. With a terminal, let it talk to
-  # the human (that's the firstboot UX); headless, best-effort with `yes |`.
+  # H2, caught by the 31-08 VM certification: Toshy's installer resets sudo
+  # (sudo -k) and prompts for the password mid-run — inside firstboot's
+  # pipeline that prompt fights the tty and the install dies mute at the
+  # 15-minute timeout. Toshy therefore runs UNATTENDED now: a temporary
+  # NOPASSWD drop-in (the person already proved the password to start this
+  # install) covers its internal sudo, and `yes` feeds its [y/n] prompts.
+  # The drop-in is removed right after the attempt — and again in the EXIT
+  # trap above, belt and suspenders.
+  SW_SUDO_DROPIN=/etc/sudoers.d/zz-second-wind-engines
+  printf '%s ALL=(ALL) NOPASSWD:ALL\n' "$(id -un)" | sudo tee "$SW_SUDO_DROPIN" >/dev/null
+  sudo chmod 0440 "$SW_SUDO_DROPIN"
+  if ! sudo visudo -c -q -f "$SW_SUDO_DROPIN" 2>/dev/null; then
+    sudo rm -f "$SW_SUDO_DROPIN"; SW_SUDO_DROPIN=""
+  fi
   TOSHY_RUN() {
     cd "$SW_CACHE/toshy" && export PATH="$HOME/.local/bin:$PATH"
+    # PIPESTATUS[1]: under pipefail, `yes` dying of SIGPIPE (141) must not
+    # count as a Toshy failure — the installer's own exit code decides.
     if ui_has_tty; then
       info "${MSG[m15_toshy_tty]}"
-      timeout 900 python3 setup_toshy.py install 2>&1 | tee -a "$SW_LOGDIR/toshy-install.log"
+      yes | timeout 900 python3 setup_toshy.py install 2>&1 | tee -a "$SW_LOGDIR/toshy-install.log"
+      return "${PIPESTATUS[1]}"
     else
       yes | timeout 900 python3 setup_toshy.py install >>"$SW_LOGDIR/toshy-install.log" 2>&1
+      return "${PIPESTATUS[1]}"
     fi
   }
   if clone_pinned "$TOSHY_REPO" "$SW_CACHE/toshy" "$TOSHY_SHA" && ( TOSHY_RUN ); then
@@ -95,6 +110,7 @@ if [ "$NEED_TOSHY" = 1 ]; then
   else
     warn "${MSG[m15_toshy_err]}"
   fi
+  [ -n "${SW_SUDO_DROPIN:-}" ] && sudo rm -f "$SW_SUDO_DROPIN" || true
 fi
 
 # --- Hide the engines' technical menu entries from the app grid. The person
