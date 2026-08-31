@@ -1,6 +1,14 @@
-# clip5 browser-tabs: Cmd+T new tab -> type site -> Enter -> loads -> Cmd+W
-0.3 move 640 400
+# clip5 browser-tabs: Cmd+T new tab -> type site -> Enter -> new landing (Join the waitlist) -> soft scroll -> Cmd+W
+# duration 18 @ 12fps; chips: "⌘ + T|1.5|3.2" "⌘ + W|15.8|17.4"
+# site fully rendered ~7.5s (warm cache; cold adds ~1s). Park pointer at 950,660 (no tooltip there).
+0.3 move 950 660
 1.5 key alt t
 2.6 type secondwindformac.com
 4.9 key ret
-13.5 key alt w
+11.0 wheel down
+11.4 wheel down
+11.8 wheel down
+13.3 wheel up
+13.7 wheel up
+14.1 wheel up
+15.8 key alt w
