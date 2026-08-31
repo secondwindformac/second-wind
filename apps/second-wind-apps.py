@@ -40,6 +40,11 @@ def d(es, en):
 # kinds: apt | snap | snap_classic | deb (url) | web (url)
 CATALOG = [
     ("ess", d("Esenciales", "Essentials"), [
+        ("chrome", "Google Chrome", "deb",
+         "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb",
+         "google.com",
+         d("El navegador que ya conoces — y la base de las apps web",
+           "The browser you already know — and what web apps run on"), True),
         ("quicklook", "Quick Look", "apt", "gnome-sushi", "gnome.org",
          d("Vista previa con la barra espaciadora", "Space-bar file preview"), True),
         ("vlc", "VLC", "apt", "vlc", "videolan.org",
