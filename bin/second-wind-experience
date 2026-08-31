@@ -172,9 +172,14 @@ day30_check() {
   echo off > "$EXP/state"
   experience_off
   if [ "$R" = "buy" ]; then
-    DONATE_URL="https://secondwindformac.com/"; EXPERIENCE_URL=""
-    [ -f "$SW_STATE/links.conf" ] && . "$SW_STATE/links.conf"
-    xdg-open "${EXPERIENCE_URL:-$DONATE_URL}" >/dev/null 2>&1 &
+    # Open OUR store (the permanent home of the Mac Experience row: Buy +
+    # paste-your-key live there), not the raw checkout — the user must come
+    # back to the store to activate anyway. Fallback: the checkout URL.
+    if ! gtk-launch app.secondwind.Apps >/dev/null 2>&1; then
+      DONATE_URL="https://secondwindformac.com/"; EXPERIENCE_URL=""
+      [ -f "$SW_STATE/links.conf" ] && . "$SW_STATE/links.conf"
+      xdg-open "${EXPERIENCE_URL:-$DONATE_URL}" >/dev/null 2>&1 &
+    fi
   fi
 }
 
