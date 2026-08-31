@@ -47,7 +47,6 @@ chk "${MSG[v_center]}"        eq org.gnome.mutter center-new-windows "true"
 echo "${MSG[v_sec_kbd]}"
 chk "${MSG[v_xkb]}"           eq org.gnome.desktop.input-sources xkb-options "@as []"
 chk "${MSG[v_cmdtab_all]}"    eq org.gnome.shell.app-switcher current-workspace-only "false"
-chk "${MSG[v_cmdtab_uni]}"    bash -c "gsettings get org.gnome.desktop.wm.keybindings switch-applications | grep -q '<Alt>Tab'"
 chk "${MSG[v_lowbat]}"        eq org.gnome.settings-daemon.plugins.power power-saver-profile-on-low-battery "true"
 # The Experience layer (⌘ keyboard, Spotlight, ⌘Tab) is stateful: trial and
 # active mean ON; off (day-30, unlicensed) means the OPPOSITE must hold.
@@ -59,13 +58,14 @@ if [ "$EXP_STATE" = "off" ]; then
     && ! gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings | grep -q secondwind-spotlight \
     && gsettings get org.gnome.desktop.wm.keybindings switch-windows | grep -q "<Alt>Tab"'
 else
+  chk "${MSG[v_cmdtab_uni]}"    bash -c "gsettings get org.gnome.desktop.wm.keybindings switch-applications | grep -q '<Alt>Tab'"
   chk "${MSG[v_toshy]}"         systemctl --user is-active toshy-config.service
   chk "${MSG[v_ul_run]}"        pgrep -x ulauncher
   chk "${MSG[v_spot_key]}"      bash -c "gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings | grep -q secondwind-spotlight"
 fi
 chk "${MSG[v_tray]}"          bash -c '! test -e "$HOME/.config/autostart/Toshy_Tray.desktop"'
 chk "${MSG[v_overview_free]}" eq org.gnome.shell.keybindings toggle-overview "@as []"
-chk "${MSG[store_name]}"      test -f "$HOME/.local/share/applications/second-wind-apps.desktop"
+chk "${MSG[store_name]}"      test -f "$HOME/.local/share/applications/app.secondwind.Apps.desktop"
 
 if [ "$MODE" = "--all" ]; then
   echo "${MSG[v_sec_ext]}"

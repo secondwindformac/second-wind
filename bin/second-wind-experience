@@ -101,54 +101,61 @@ experience_on() {
 
 # --- license ------------------------------------------------------------------
 
-activate_license() {
-  local key="$1" host instance
-  host="$(hostname 2>/dev/null || echo mac)"
-  local resp rc=0
-  resp="$(curl -fsS -m 12 -X POST "$LS_API/activate" \
-            -H 'Accept: application/json' \
-            --data-urlencode "license_key=$key" \
-            --data-urlencode "instance_name=second-wind@$host" 2>&1)" || rc=$?
-  if [ "$rc" -ne 0 ]; then
-    # Fail-open: no network / server trouble → provisional activation, the
-    # daily check revalidates. Never punish the paying user for our outage.
-    printf '%s' "$key" | sha256sum | cut -d' ' -f1 > "$EXP/license.hash"
+accept_license() {  # accept_license KEY [BODY] [provisional]
+  printf '%s' "$1" | sha256sum | cut -d' ' -f1 > "$EXP/license.hash"
+  if [ "${3:-}" = provisional ]; then
     touch "$EXP/license.provisional"
-    echo active > "$EXP/state"
-    experience_on
+  else
+    local instance
+    instance="$(printf '%s' "${2:-}" | grep -o '"id" *: *"[^"]*"' | head -1 | cut -d'"' -f4)"
+    [ -n "$instance" ] && printf '%s' "$instance" > "$EXP/license.instance"
+    rm -f "$EXP/license.provisional"
+  fi
+  echo active > "$EXP/state"
+  experience_on
+}
+
+activate_license() {
+  local key="$1" host raw body http rc=0
+  host="$(hostname 2>/dev/null || echo mac)"
+  # NO -f: an HTTP error status is the server SPEAKING (e.g. 404 "license_key
+  # not found"), not a transport failure — with -f, curl rc=22 made garbage
+  # keys land in the fail-open branch and activate. Caught by the VM E2E.
+  raw="$(curl -sS -m 12 -w $'\n%{http_code}' -X POST "$LS_API/activate" \
+           -H 'Accept: application/json' \
+           --data-urlencode "license_key=$key" \
+           --data-urlencode "instance_name=second-wind@$host" 2>/dev/null)" || rc=$?
+  http="${raw##*$'\n'}"
+  body="${raw%$'\n'*}"
+  if [ "$rc" -ne 0 ] || ! printf '%s' "$http" | grep -qE '^[0-9]{3}$'; then
+    # TRANSPORT failure only (no DNS, refused, timeout): fail open — never
+    # punish a paying user for being offline. The hash-only store means this
+    # provisional simply stands; that is the accepted cost of honesty.
+    accept_license "$key" "" provisional
     ok "${MSG[exp_act_prov]}"
     return 0
   fi
-  if printf '%s' "$resp" | grep -q '"activated" *: *true'; then
-    printf '%s' "$key" | sha256sum | cut -d' ' -f1 > "$EXP/license.hash"
-    instance="$(printf '%s' "$resp" | grep -o '"id" *: *"[^"]*"' | head -1 | cut -d'"' -f4)"
-    [ -n "$instance" ] && printf '%s' "$instance" > "$EXP/license.instance"
-    rm -f "$EXP/license.provisional"
-    echo active > "$EXP/state"
-    experience_on
+  if printf '%s' "$body" | grep -q '"activated" *: *true'; then
+    accept_license "$key" "$body"
     ok "${MSG[exp_act_ok]}"
     return 0
   fi
+  case "$http" in
+    5??)  # the server is sick, not the key — same fail-open courtesy
+      accept_license "$key" "" provisional
+      ok "${MSG[exp_act_prov]}"
+      return 0 ;;
+  esac
+  # Any other HTTP answer is authoritative: the key is not valid here.
   warn "${MSG[exp_act_bad]}"
   return 1
-}
-
-revalidate() {  # provisional → confirm quietly when the network is back
-  [ -f "$EXP/license.provisional" ] || return 0
-  local resp
-  resp="$(curl -fsS -m 12 -X POST "$LS_API/validate" \
-            -H 'Accept: application/json' \
-            --data-urlencode "license_key=dummy" 2>/dev/null)" || return 0
-  # We only stored a hash (never the key), so a real revalidation needs the
-  # user's key again; v0 policy: a provisional activation simply stands.
-  rm -f "$EXP/license.provisional"
 }
 
 # --- the daily check (systemd timer) -----------------------------------------
 
 day30_check() {
   ensure_state
-  [ "$(state)" = trial ] || { revalidate; return 0; }
+  [ "$(state)" = trial ] || return 0
   [ "$(age_days)" -ge "$TRIAL_DAYS" ] || return 0
 
   # Tell the user BEFORE flipping anything; only proceed when the notification
