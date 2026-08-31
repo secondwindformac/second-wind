@@ -1,0 +1,175 @@
+#!/bin/bash
+# Second Wind updater — council release blocker: "the installed product must
+# not break itself, and updates must be able to roll back".
+#
+# Runs only on machines installed from the USB (payload at
+# /usr/local/share/second-wind, root-owned). Developer git clones update with
+# git and never see this. The person never sees a terminal:
+#
+#   --check       weekly (systemd user timer): quietly compares the installed
+#                 VERSION with the latest GitHub release; when newer, shows ONE
+#                 notification with an "Update now" button. Clicking it applies.
+#   --apply       download + verify SHA-256, ONE system password dialog
+#                 (pkexec) to swap the payload, then a user-level refresh
+#                 (install.sh --yes --no-hardware, idempotent by design).
+#                 If the post-update health check (verify.sh) reports MORE
+#                 problems than before, it rolls back automatically and
+#                 refreshes again — the Mac ends the day working either way.
+#   --core-swap / --core-rollback   root halves (via pkexec), minimal on
+#                 purpose: verify, stage, atomic-ish directory swap. The
+#                 previous payload is kept at second-wind.prev until the next
+#                 successful update.
+set -u
+
+MANAGED_ROOT="/usr/local/share/second-wind"
+SW_STATE="$HOME/.local/state/second-wind"
+LOGDIR="$SW_STATE/logs"
+UPD="$SW_STATE/updates"
+REPO="arancibiamartin/second-wind"
+
+case "${LANG:-en}" in
+  es*)
+    T_READY="Hay una mejora de Second Wind lista (versión %s). Toma unos minutos, no toca tus archivos y tu Mac queda igual que siempre, pero mejor."
+    T_NOW="Actualizar ahora"; T_LATER="Después"
+    T_WORKING="Actualizando Second Wind… puedes seguir usando el Mac."
+    T_DONE="Second Wind se actualizó a la versión %s. Todo en orden ✓"
+    T_ROLLED="La mejora no quedó bien a la primera, así que volvimos a la versión anterior. Tu Mac sigue como estaba; lo intentaremos de nuevo más adelante."
+    ;;
+  *)
+    T_READY="A Second Wind improvement is ready (version %s). It takes a few minutes, touches none of your files, and your Mac stays the same — just better."
+    T_NOW="Update now"; T_LATER="Later"
+    T_WORKING="Updating Second Wind… you can keep using the Mac."
+    T_DONE="Second Wind updated to version %s. All good ✓"
+    T_ROLLED="The improvement didn't land right on the first try, so we went back to the previous version. Your Mac is unchanged; we'll try again later."
+    ;;
+esac
+
+log() { echo "$(date -Is) $*"; }
+
+# ---------- root halves (pkexec) ----------
+if [ "${1:-}" = "--core-swap" ]; then
+  [ "$(id -u)" -eq 0 ] || { echo "--core-swap runs as root"; exit 1; }
+  TARBALL="$2"; SHA="$3"
+  echo "$SHA  $TARBALL" | sha256sum -c --quiet - || { echo "checksum mismatch"; exit 1; }
+  STAGING="/usr/local/share/.second-wind-staging"
+  rm -rf "$STAGING"; mkdir -p "$STAGING"
+  tar -xzf "$TARBALL" -C "$STAGING" --strip-components=1 || exit 1
+  [ -x "$STAGING/install.sh" ] || { echo "payload incomplete"; exit 1; }
+  rm -rf "$MANAGED_ROOT.prev"
+  mv "$MANAGED_ROOT" "$MANAGED_ROOT.prev"
+  mv "$STAGING" "$MANAGED_ROOT"
+  echo "SWAP_OK"
+  exit 0
+fi
+if [ "${1:-}" = "--core-rollback" ]; then
+  [ "$(id -u)" -eq 0 ] || { echo "--core-rollback runs as root"; exit 1; }
+  [ -d "$MANAGED_ROOT.prev" ] || { echo "nothing to roll back to"; exit 1; }
+  rm -rf "$MANAGED_ROOT.broken"
+  mv "$MANAGED_ROOT" "$MANAGED_ROOT.broken"
+  mv "$MANAGED_ROOT.prev" "$MANAGED_ROOT"
+  echo "ROLLBACK_OK"
+  exit 0
+fi
+
+# ---------- user side ----------
+mkdir -p "$LOGDIR" "$UPD"
+exec >>"$LOGDIR/updater.log" 2>&1
+
+# Only USB-installed machines are managed; developer clones use git.
+SELF_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+if [ "$SELF_DIR" != "$MANAGED_ROOT" ]; then
+  log "not a managed install ($SELF_DIR); nothing to do"
+  exit 0
+fi
+
+current_version() { cat "$MANAGED_ROOT/VERSION" 2>/dev/null || echo "0.0.0"; }
+
+latest_release() {
+  curl -fsSL -m 20 -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null
+}
+
+verify_failures() {
+  (cd "$MANAGED_ROOT" && ./verify.sh 2>/dev/null) | grep -c "✖"
+}
+
+refresh_user_level() {
+  (cd "$MANAGED_ROOT" && ./install.sh --yes --no-hardware) \
+    >>"$LOGDIR/updater-refresh.log" 2>&1
+}
+
+apply_update() {
+  local version="$1" tarball_url="$2" sums_url="$3"
+  local tarball="$UPD/second-wind-$version.tar.gz"
+
+  notify-send -a "Second Wind" -i software-update-available "Second Wind" "$T_WORKING" 2>/dev/null || true
+
+  curl -fsSL --retry 3 -m 600 -o "$tarball" "$tarball_url" || { log "download failed"; return 1; }
+  local sha
+  sha="$(curl -fsSL -m 60 "$sums_url" 2>/dev/null | awk -v f="second-wind-$version.tar.gz" '$2==f {print $1}')"
+  [ -n "$sha" ] || { log "no checksum for the payload"; return 1; }
+  echo "$sha  $tarball" | sha256sum -c --quiet - || { log "checksum mismatch"; rm -f "$tarball"; return 1; }
+
+  local before after
+  before="$(verify_failures)"
+  log "pre-update verify failures: $before"
+
+  pkexec bash "$MANAGED_ROOT/bin/second-wind-update" --core-swap "$tarball" "$sha" \
+    || { log "swap declined or failed"; return 1; }
+
+  refresh_user_level
+  after="$(verify_failures)"
+  log "post-update verify failures: $after (was $before)"
+
+  if [ "$after" -gt "$before" ]; then
+    log "regression detected — rolling back"
+    pkexec bash "$MANAGED_ROOT/bin/second-wind-update" --core-rollback || true
+    refresh_user_level
+    notify-send -a "Second Wind" -i view-refresh-symbolic "Second Wind" "$T_ROLLED" 2>/dev/null || true
+    return 1
+  fi
+
+  rm -f "$tarball"
+  # shellcheck disable=SC2059
+  notify-send -a "Second Wind" -i emblem-ok-symbolic "Second Wind" "$(printf "$T_DONE" "$version")" 2>/dev/null || true
+  log "updated to $version"
+}
+
+check() {
+  local release json latest current tarball_url sums_url
+  json="$(latest_release)" || { log "release check unreachable"; exit 0; }
+  latest="$(echo "$json" | grep -m1 '"tag_name"' | sed 's/.*"v\{0,1\}\([0-9][^"]*\)".*/\1/')"
+  [ -n "$latest" ] || { log "no tag in response"; exit 0; }
+  current="$(current_version)"
+  newest="$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -1)"
+  if [ "$latest" = "$current" ] || [ "$newest" = "$current" ]; then
+    log "up to date ($current)"
+    exit 0
+  fi
+
+  tarball_url="$(echo "$json" | grep -o "https://[^\"]*second-wind-$latest\.tar\.gz" | head -1)"
+  sums_url="$(echo "$json" | grep -o 'https://[^"]*SHA256SUMS' | head -1)"
+  [ -n "$tarball_url" ] && [ -n "$sums_url" ] || { log "release assets incomplete"; exit 0; }
+
+  # shellcheck disable=SC2059
+  R="$(notify-send -a "Second Wind" -i software-update-available \
+        -A update="$T_NOW" -A later="$T_LATER" \
+        "Second Wind" "$(printf "$T_READY" "$latest")" 2>/dev/null)"
+  if [ "$R" = "update" ]; then
+    apply_update "$latest" "$tarball_url" "$sums_url"
+  else
+    log "person chose later (or notification timed out)"
+  fi
+}
+
+case "${1:---check}" in
+  --check) check ;;
+  --apply)
+    json="$(latest_release)" || exit 1
+    latest="$(echo "$json" | grep -m1 '"tag_name"' | sed 's/.*"v\{0,1\}\([0-9][^"]*\)".*/\1/')"
+    tarball_url="$(echo "$json" | grep -o "https://[^\"]*second-wind-$latest\.tar\.gz" | head -1)"
+    sums_url="$(echo "$json" | grep -o 'https://[^"]*SHA256SUMS' | head -1)"
+    apply_update "$latest" "$tarball_url" "$sums_url"
+    ;;
+  *) log "usage: second-wind-update --check | --apply"; exit 1 ;;
+esac

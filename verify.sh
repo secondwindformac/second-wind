@@ -105,6 +105,10 @@ if [ "$MODE" = "--all" ]; then
   chk "${MSG[v_thermald]}" systemctl is-active thermald
 fi
 
+if [ -f "$HOME/.config/systemd/user/second-wind-update.timer" ]; then
+  chk "${MSG[v_upd]}" systemctl --user is-enabled second-wind-update.timer
+fi
+
 echo
 if [ "$FAIL" -eq 0 ]; then
   ok "${MSG[v_result]} $PASS ${MSG[v_ok_all]}"

@@ -71,7 +71,8 @@ lsblk -d                             # find your stick, e.g. /dev/sdb
 
 ⚠ These four changes modify the certified flow: run the full VM rehearsal
 again (including a mid-install power-cut simulation) before writing a
-physical stick — and re-verify the camera driver builds on GA 6.8.
+physical stick. (The camera driver was already re-verified: the pinned
+facetimehd commit compiles clean against GA 6.8.0-138 headers.)
 
 ## Current limits (v0)
 
