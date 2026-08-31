@@ -1,0 +1,7 @@
+0.4 move 640 300
+2.0 down alt
+2.7 key tab
+4.3 up alt
+7.0 down alt
+7.7 key tab
+9.3 up alt

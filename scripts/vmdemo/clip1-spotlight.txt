@@ -1,0 +1,4 @@
+1.5 key alt spc
+3.0 type calculator
+6.0 key ret
+13.5 key alt q
