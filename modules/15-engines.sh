@@ -96,3 +96,27 @@ if [ "$NEED_TOSHY" = 1 ]; then
     warn "${MSG[m15_toshy_err]}"
   fi
 fi
+
+# --- Hide the engines' technical menu entries from the app grid. The person
+# never chose "Toshy" or "Ulauncher" — those names mean nothing to them, and
+# the features keep working (Spotlight via ⌘Space, keyboard via services). ---
+hide_desktop_entry() {
+  local f="$1"
+  [ -f "$f" ] || return 0
+  if grep -q '^NoDisplay=' "$f"; then
+    sed -i 's/^NoDisplay=.*/NoDisplay=true/' "$f"
+  else
+    printf 'NoDisplay=true\n' >> "$f"
+  fi
+}
+hide_desktop_entry "$HOME/.local/share/applications/app.toshy.preferences.desktop"
+hide_desktop_entry "$HOME/.local/share/applications/Toshy_Tray.desktop"
+# Ulauncher's entry is system-wide: shadow it with a hidden user-level copy.
+if [ -f /usr/share/applications/ulauncher.desktop ] \
+   && [ ! -f "$HOME/.local/share/applications/ulauncher.desktop" ]; then
+  mkdir -p "$HOME/.local/share/applications"
+  cp /usr/share/applications/ulauncher.desktop "$HOME/.local/share/applications/ulauncher.desktop"
+  hide_desktop_entry "$HOME/.local/share/applications/ulauncher.desktop"
+  track_new_file "$HOME/.local/share/applications/ulauncher.desktop"
+fi
+ok "${MSG[m15_hidden]}"

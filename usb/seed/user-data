@@ -31,10 +31,37 @@ autoinstall:
     # identity screen replaces it
     password: "@PASSWORD_HASH@"
 
-  # Wipe the whole disk with the standard direct layout
+  # P0 safety (council blocker): this stick must be unable to wipe the wrong
+  # machine or the wrong disk.
+  #   1. early-commands abort on non-Apple hardware (DMI vendor check) BEFORE
+  #      any disk is touched — a PC that boots this stick gets a clear
+  #      bilingual message, not a wipe. QEMU is allowed for the VM test bench.
+  #   2. the storage match only ever selects Apple-branded internal disks
+  #      (all 2013–2017 Macs ship "APPLE SSD/HDD …" models) — an external
+  #      USB drive can never be picked. QEMU HARDDISK again for the VM.
+  # Known, accepted limit: a Mac whose internal disk was replaced by a
+  # third-party SSD stops with an error instead of installing — those users
+  # take the classic install.sh path. Safe beats convenient here.
+  early-commands:
+    - |
+      vendor="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || echo unknown)"
+      case "$vendor" in
+        Apple*|QEMU*) echo "Second Wind: hardware check passed ($vendor)" ;;
+        *)
+          echo "Second Wind: this USB stick only installs on Mac computers (this is: $vendor)." >&2
+          echo "Second Wind: este pendrive solo instala en computadores Mac (esto es: $vendor)." >&2
+          exit 1
+          ;;
+      esac
+
+  # Wipe the whole disk with the standard direct layout — but only a disk
+  # that matches the guard above.
   storage:
     layout:
       name: direct
+      match:
+        - model: "APPLE*"
+        - model: "QEMU*"
 
   # Third-party drivers (Broadcom WiFi on Intel Macs) and media codecs
   drivers:
@@ -50,6 +77,15 @@ autoinstall:
     # Second Wind needs (bug caught in the first full VM rehearsal: the
     # firstboot net-check failed forever on a machine with perfect internet).
     - curtin in-target -- apt-get install -y curl git
+    # Council blocker "the installed product breaks itself": the HWE kernel
+    # rolls to new majors (6.8→6.14→…) and each roll can break the Broadcom
+    # wl WiFi driver. New installs pin to the GA 6.8 series instead —
+    # LTS-first, same philosophy as versions.lock. (The live ISO's kernel is
+    # running, not the target's, so purging HWE images in-target is safe.)
+    # (the hwe kernel *images* carry no "hwe" in their names — purging the
+    # metas and autoremoving drops them as orphans; GA 6.8 remains and GRUB
+    # boots it. Offline installs skip this quietly and stay on HWE.)
+    - curtin in-target -- bash -c "apt-get install -y linux-generic && apt-get purge -y $(dpkg-query --admindir=/target/var/lib/dpkg -W -f '${Package} ' 'linux-*hwe*' 2>/dev/null) && apt-get autoremove --purge -y || true"
     # Copy Second Wind from the seed volume into the installed system and
     # arm the first-login bootstrap for every created user.
     - |

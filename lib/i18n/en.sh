@@ -43,6 +43,7 @@ Disable automatic login to fix it? (You will type your password at startup, like
   [m15_toshy]="Installing Toshy (the Mac keyboard engine; 2-4 minutes)…"
   [m15_toshy_tty]="Toshy will ask a couple of questions itself (answer 'y' and your password when it does)."
   [m15_toshy_err]="Toshy could not be installed; Mac shortcuts stay pending (log: toshy-install.log)"
+  [m15_hidden]="Technical helper entries hidden from the app grid (everything keeps working)"
 
   [mod_20]="macOS look (theme, icons, cursor, fonts, wallpaper)"
   [mod_30]="Desktop extensions (panel theme, blur, keyboard)"

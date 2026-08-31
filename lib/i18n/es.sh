@@ -43,6 +43,7 @@ Todo se puede revertir después con ./uninstall.sh"
   [m15_toshy]="Instalando Toshy (el motor del teclado Mac; 2-4 minutos)…"
   [m15_toshy_tty]="Toshy hará un par de preguntas él mismo (respóndele 'y' y tu contraseña cuando las haga)."
   [m15_toshy_err]="Toshy no se pudo instalar; los atajos Mac quedan pendientes (registro: toshy-install.log)"
+  [m15_hidden]="Entradas técnicas ocultas de la cuadrícula de apps (todo sigue funcionando)"
 
   [mod_20]="Apariencia macOS (tema, iconos, cursor, fuentes, fondo)"
   [mod_30]="Extensiones del escritorio (tema del panel, transparencias, teclado)"

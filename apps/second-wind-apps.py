@@ -54,7 +54,7 @@ CATALOG = [
         ("gimp", "GIMP", "apt", "gimp", "gimp.org",
          d("Edición de imágenes", "Image editing"), False),
     ]),
-    ("media", d("Música y video", "Music & video"), [
+    ("media", d("Música y video", "Music and video"), [
         ("spotify", "Spotify", "snap", "spotify", "spotify.com",
          d("Tu música", "Your music"), True),
         ("audacity", "Audacity", "apt", "audacity", "audacityteam.org",
@@ -78,7 +78,7 @@ CATALOG = [
         ("slack", "Slack", "snap", "slack", "slack.com",
          d("Trabajo en equipo", "Team chat"), False),
     ]),
-    ("work", d("Oficina y creatividad", "Office & creativity"), [
+    ("work", d("Oficina y creatividad", "Office and creativity"), [
         ("onlyoffice", "OnlyOffice", "snap", "onlyoffice-desktopeditors", "onlyoffice.com",
          d("Word, Excel y PowerPoint", "Word, Excel and PowerPoint"), True),
         ("blender", "Blender", "snap_classic", "blender", "blender.org",
@@ -114,7 +114,7 @@ T = {
     "g_support": d("El proyecto", "The project"),
     "donate": d("Apoyar Second Wind", "Support Second Wind"),
     "donate_sub": d("Donaciones y novedades", "Donations and news"),
-    "news": d("Avisos de novedades y apoyo", "News & support notices"),
+    "news": d("Avisos de novedades y apoyo", "News and support notices"),
     "news_sub": d("Una notificación ocasional; apágalo cuando quieras",
                   "An occasional notification; turn off anytime"),
     "news_test": d("Probar el aviso ahora", "Try the notice now"),
@@ -179,11 +179,23 @@ def mf(*args):
 
 def fetch_icon(app_id, domain):
     path = os.path.join(ICONDIR, f"{app_id}.png")
-    if not (os.path.exists(path) and os.path.getsize(path) > 0):
-        subprocess.run(["curl", "-fsSL", "-m", "10", "-o", path,
-                        f"https://www.google.com/s2/favicons?domain={domain}&sz=128"],
-                       check=False)
-    return path if os.path.exists(path) and os.path.getsize(path) > 0 else None
+    if os.path.exists(path) and os.path.getsize(path) > 0:
+        return path
+    # Several sources, in order: some domains 404 on one service but not the
+    # next (VLC/GIMP did, caught in the E2E clips). GdkPixbuf sniffs content,
+    # so an .ico body behind a .png name still renders. Icons are cached, and
+    # deliberately NOT shipped in the repo (third-party logos stay upstream).
+    for url in (f"https://www.google.com/s2/favicons?domain={domain}&sz=128",
+                f"https://icons.duckduckgo.com/ip3/{domain}.ico",
+                f"https://{domain}/favicon.ico"):
+        subprocess.run(["curl", "-fsSL", "-m", "10", "-o", path, url], check=False)
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            return path
+    try:
+        os.remove(path)  # leave no empty cache file behind
+    except FileNotFoundError:
+        pass
+    return None
 
 
 def make_webapp(app_id, name, url, domain):
