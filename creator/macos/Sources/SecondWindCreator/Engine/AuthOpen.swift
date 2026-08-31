@@ -7,6 +7,7 @@
 #if os(macOS)
 import Foundation
 import Darwin
+import CreatorCore
 
 enum AuthOpenError: Error, CustomStringConvertible {
     case spawnFailed(Int32)
@@ -143,6 +144,7 @@ final class RawDiskDevice: BlockDevice {
     }
 
     private func writeFully(_ data: Data, at offset: UInt64) throws {
+        let fd = self.fd
         var written = 0
         try data.withUnsafeBytes { (buf: UnsafeRawBufferPointer) in
             while written < buf.count {
