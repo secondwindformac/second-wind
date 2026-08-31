@@ -56,6 +56,12 @@ def keyevent(q, qcode, down):
                                  'key': {'type': 'qcode', 'data': qcode}}}])
 
 
+def wheel(q, direction):
+    btn = 'wheel-down' if direction == 'down' else 'wheel-up'
+    q.cmd('input-send-event', events=[{'type': 'btn', 'data': {'button': btn, 'down': True}}])
+    q.cmd('input-send-event', events=[{'type': 'btn', 'data': {'button': btn, 'down': False}}])
+
+
 def main():
     sock, script, outdir, dur = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4])
     fps = float(sys.argv[5]) if len(sys.argv) > 5 else 10.0
@@ -81,6 +87,11 @@ def main():
                 elif cmd == 'move': move(q, int(a[0]), int(a[1]))
                 elif cmd == 'down': keyevent(q, a[0], True)
                 elif cmd == 'up': keyevent(q, a[0], False)
+                elif cmd == 'wheel': wheel(q, a[0])
+                elif cmd == 'bdown':
+                    q.cmd('input-send-event', events=[{'type': 'btn', 'data': {'button': 'left', 'down': True}}])
+                elif cmd == 'bup':
+                    q.cmd('input-send-event', events=[{'type': 'btn', 'data': {'button': 'left', 'down': False}}])
             except Exception as e:
                 print('action failed', cmd, a, e, file=sys.stderr)
         if now * fps >= frame:

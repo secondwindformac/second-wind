@@ -1,0 +1,6 @@
+# clip5 browser-tabs: Cmd+T new tab -> type site -> Enter -> loads -> Cmd+W
+0.3 move 640 400
+1.5 key alt t
+2.6 type secondwindformac.com
+4.9 key ret
+13.5 key alt w

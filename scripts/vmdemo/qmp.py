@@ -61,5 +61,17 @@ if __name__ == '__main__':
     elif cmd == 'key': q.keys(a)
     elif cmd == 'type': q.type(a[0])
     elif cmd == 'click': q.click(int(a[0]), int(a[1]), *(int(x) for x in a[2:]))
+    elif cmd == 'wheel':
+        btn = 'wheel-down' if a[0] == 'down' else 'wheel-up'
+        for _ in range(int(a[1]) if len(a) > 1 else 1):
+            q.cmd('input-send-event', events=[{'type': 'btn', 'data': {'button': btn, 'down': True}}])
+            q.cmd('input-send-event', events=[{'type': 'btn', 'data': {'button': btn, 'down': False}}])
+            time.sleep(0.25)
+    elif cmd == 'move':
+        x, y = int(a[0]), int(a[1])
+        ax, ay = int(x * 32767 / 1280), int(y * 32767 / 800)
+        q.cmd('input-send-event', events=[
+            {'type': 'abs', 'data': {'axis': 'x', 'value': ax}},
+            {'type': 'abs', 'data': {'axis': 'y', 'value': ay}}])
     elif cmd == 'wake': q.keys(['ctrl'])
     else: sys.exit('unknown cmd')

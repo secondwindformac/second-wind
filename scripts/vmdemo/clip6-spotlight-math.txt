@@ -1,0 +1,10 @@
+# clip6 spotlight-math: Cmd+Space -> type 1249*12 slowly -> result 14988 inline -> Esc
+1.2 key alt spc
+2.4 type 1
+2.7 type 2
+3.0 type 4
+3.3 type 9
+3.6 type *
+3.95 type 1
+4.25 type 2
+8.5 key esc
