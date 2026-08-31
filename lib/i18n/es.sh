@@ -268,9 +268,12 @@ Todo se puede revertir después con ./uninstall.sh"
 
   [pub_gh]="Instalando GitHub CLI (pedirá tu contraseña de administrador)…"
   [pub_login]="Inicia sesión en GitHub (se abrirá tu navegador; sigue los pasos)…"
-  [pub_create]="Creando el repositorio privado second-wind en tu cuenta…"
-  [pub_done]="Publicado en privado:"
-  [pub_hint]="  (Cuando decidas abrirlo: gh repo edit --visibility public)"
+  [pub_create]="Creando el repositorio público second-wind en tu cuenta…"
+  [pub_done]="Publicado en:"
+  [pub_hint]="  (Para sacar una versión con checksums SHA-256: ./scripts/publish.sh --release X.Y.Z)"
+  [pub_sums]="Checksums SHA-256 de esta versión (se publican como SHA256SUMS):"
+  [pub_tag_exists]="Esa versión ya tiene etiqueta; usa el número siguiente."
+  [pub_rel_done]="Versión publicada con sus checksums SHA-256:"
 
   # --- Mac Experience (módulo 76 + bin/second-wind-experience) ---
   [mod_76]="Prueba de Mac Experience"

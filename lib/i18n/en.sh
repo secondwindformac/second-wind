@@ -268,9 +268,12 @@ Continue?"
 
   [pub_gh]="Installing GitHub CLI (will ask for your administrator password)…"
   [pub_login]="Sign in to GitHub (your browser will open; follow the steps)…"
-  [pub_create]="Creating the private second-wind repository in your account…"
-  [pub_done]="Published privately at:"
-  [pub_hint]="  (When you decide to open it up: gh repo edit --visibility public)"
+  [pub_create]="Creating the public second-wind repository in your account…"
+  [pub_done]="Published at:"
+  [pub_hint]="  (To cut a release with SHA-256 checksums: ./scripts/publish.sh --release X.Y.Z)"
+  [pub_sums]="SHA-256 checksums for this release (published as SHA256SUMS):"
+  [pub_tag_exists]="That version already has a tag; pick the next version number."
+  [pub_rel_done]="Release published with its SHA-256 checksums:"
 
   # --- Mac Experience (module 76 + bin/second-wind-experience) ---
   [mod_76]="Mac Experience trial"
