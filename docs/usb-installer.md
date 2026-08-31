@@ -51,9 +51,31 @@ lsblk -d                             # find your stick, e.g. /dev/sdb
 - Rebuild the seed any time — the ISO stays cached. Never yank the USB before
   the "remove medium and press ENTER" prompt (the live system still needs it).
 
+## Safety guards (council P0, 2026-08-31 — pending one full VM re-rehearsal)
+
+- **The stick refuses non-Mac machines**: an autoinstall early-command checks
+  the DMI vendor and aborts with a bilingual message before any disk is
+  touched (QEMU is allowed for the VM test bench).
+- **Only Apple internal disks can be selected**: the storage layout matches
+  `model: APPLE*` — an external USB drive or a PC's disk can never be wiped.
+  Known, accepted limit: a Mac with a third-party replacement SSD stops with
+  an error instead of installing; those users take the classic `install.sh`
+  path.
+- **First-boot retries**: the first-login bootstrap stays armed until
+  `install.sh` finishes successfully. Power cut or failure → the next login
+  resumes with a friendly notice; only success disarms it.
+- **GA kernel on new installs**: the HWE kernel rolls to new majors and can
+  break the Broadcom `wl` WiFi driver, so installs pin to the GA 6.8 series
+  (LTS-first, like everything in `versions.lock`). Offline installs quietly
+  stay on HWE.
+
+⚠ These four changes modify the certified flow: run the full VM rehearsal
+again (including a mid-install power-cut simulation) before writing a
+physical stick — and re-verify the camera driver builds on GA 6.8.
+
 ## Current limits (v0)
 
-- Creator runs on Linux; the "make it from macOS in 3 clicks" app is the next
-  step of Stage 2.
+- Creator from macOS: in the works at [creator/macos](../creator/macos/) —
+  engine already CI-validated against sgdisk/fsck/mtools.
 - Dual-boot is not offered: the stick exists to give the whole machine a
   second wind.
