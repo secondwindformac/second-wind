@@ -1,0 +1,38 @@
+# clip7 app-store: Spotlight "second wind" -> store opens -> smooth 3-stage scrollbar drag
+0.3 move 640 300
+1.0 key alt spc
+2.2 type second wind
+4.2 key ret
+7.2 move 968 300
+8.6 move 971 240
+9.0 bdown
+9.20 move 971 250
+9.32 move 971 260
+9.44 move 971 270
+9.56 move 971 280
+9.68 move 971 290
+9.80 move 971 300
+9.92 move 971 310
+10.04 move 971 320
+10.16 move 971 330
+10.28 move 971 340
+11.60 move 971 350
+11.72 move 971 360
+11.84 move 971 370
+11.96 move 971 380
+12.08 move 971 390
+12.20 move 971 400
+12.32 move 971 410
+12.44 move 971 420
+12.56 move 971 430
+12.68 move 971 440
+14.00 move 971 450
+14.12 move 971 460
+14.24 move 971 470
+14.36 move 971 480
+14.48 move 971 490
+14.60 move 971 500
+14.72 move 971 510
+14.84 move 971 520
+15.20 bup
+15.60 move 150 400
