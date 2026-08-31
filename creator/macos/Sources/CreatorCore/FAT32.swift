@@ -220,7 +220,7 @@ public enum FAT32Builder {
         b[64] = 0x80                                            // drive number
         b[66] = 0x29                                            // extended boot signature
         put32(&b, 67, volumeID)
-        replace(&b, 71, Array(pad11(label)))
+        replace(&b, 71, Array(pad11(label).utf8))
         replace(&b, 82, Array("FAT32   ".utf8))
         b[510] = 0x55; b[511] = 0xAA
         return Data(b)
