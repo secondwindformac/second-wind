@@ -31,9 +31,12 @@
    Menu (adds "About This Computer", Recent Items, window controls in the
    panel when maximized).
 9. **Installer GUI** (the whiptail TUI covers Stage 0).
-10. **Business decision**: open (MIT already allows it) vs. sell packaged; own
-    code is MIT and GPL components are downloaded separately, so both doors
-    stay open.
+10. ~~Business decision~~ **DECIDED (2026-08)**: public repository under
+    [PolyForm Shield 1.0.0](../LICENSE) — all the code in plain sight,
+    auditable, free forever for your Mac; the only forbidden use is offering
+    a competing product. Revenue comes from the optional "Mac Experience"
+    unlock (US$10 once per Mac, 30-day free trial). GPL components stay
+    downloaded separately, never vendored.
 
 ## Honest feasibility notes (asked by users)
 

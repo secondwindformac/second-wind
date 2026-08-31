@@ -39,6 +39,8 @@ Preguntas frecuentes y limitaciones honestas: ver [README.md](README.md) (inglé
 
 ## Licencia
 
-Código propio bajo licencia [MIT](LICENSE). Los componentes de terceros no se redistribuyen: se descargan de sus fuentes oficiales en versiones verificadas ([THIRD_PARTY.md](THIRD_PARTY.md)).
+Todo el código a la vista, auditable. Gratis para siempre para tu Mac. Cada línea de Second Wind está publicada aquí para que cualquiera la lea, la audite, la cambie y la use — en casa o en el trabajo. Lo único que la licencia prohíbe es tomar este código para ofrecer un producto que compita. Formalmente: [PolyForm Shield 1.0.0](LICENSE) (ver [NOTICE](NOTICE)).
+
+Los componentes de terceros no se redistribuyen: se descargan de sus fuentes oficiales en versiones verificadas y llegan a tu equipo bajo sus propias licencias ([THIRD_PARTY.md](THIRD_PARTY.md)). Las contribuciones se aceptan según [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Second Wind no está afiliado a Apple Inc. "Mac" y "macOS" son marcas de Apple Inc.; se mencionan solo para describir compatibilidad y semejanza visual.

@@ -1,6 +1,6 @@
 # Third-party components
 
-Second Wind (MIT license) does **not** bundle or redistribute these
+Second Wind (PolyForm Shield 1.0.0 license) does **not** bundle or redistribute these
 components: the installer downloads them from their official sources, at the
 exact versions pinned in `versions.lock`, and they land on the user's machine
 under their own licenses.
@@ -25,8 +25,9 @@ Notes:
   from an official Apple package on the user's machine (the
   `facetimehd-firmware` tool) and it is **never** redistributed.
 - The Spotlight CSS theme for Ulauncher (`assets/ulauncher/user-themes/`) is
-  Second Wind's own code (MIT); it inherits styles from Ulauncher's "light"
-  theme by reference (`@import` of the local path), without copying its code.
+  Second Wind's own code (PolyForm Shield 1.0.0); it inherits styles from
+  Ulauncher's "light" theme by reference (`@import` of the local path),
+  without copying its code.
 - The ⌘ command-symbol icon (`assets/command-symbolic.svg`) is an original
-  drawing (MIT). The command symbol itself (U+2318) is a freely usable
-  character; no Apple trademarks are included.
+  drawing (PolyForm Shield 1.0.0). The command symbol itself (U+2318) is a
+  freely usable character; no Apple trademarks are included.

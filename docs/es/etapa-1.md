@@ -20,9 +20,12 @@ Pendientes ordenados por impacto, sobre la base ya montada en la Etapa 0:
    (cada modelo tiene sus mañas: sensores, WiFi, cámara).
 8. **Soporte GNOME 47/48** (Ubuntu 24.10+/26.04) re-pineando `versions.lock`.
 9. **GUI del instalador** (Zenity/GTK) — hoy el TUI whiptail cumple.
-10. **Decisión de negocio**: liberar (MIT ya lo permite) vs. vender
-    empaquetado; el código propio es MIT y lo GPL se descarga aparte, así que
-    ambas puertas quedan abiertas.
+10. ~~Decisión de negocio~~ **DECIDIDA (2026-08)**: repositorio público bajo
+    [PolyForm Shield 1.0.0](../../LICENSE) — todo el código a la vista,
+    auditable, gratis para siempre para tu Mac; lo único prohibido es ofrecer
+    un producto que compita. El ingreso viene del desbloqueo opcional
+    "Mac Experience" (US$10 una vez por Mac, 30 días de prueba). Lo GPL se
+    sigue descargando aparte, nunca copiado al repo.
 
 # Etapa 2 — "la Mac nueva en un pendrive"
 
