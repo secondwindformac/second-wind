@@ -5,7 +5,10 @@
 # (The picker itself is apps/second-wind-apps.sh; catalog policy: official
 # sources only, web-app windows for apps that do not exist on Linux.)
 
-DESK="$HOME/.local/share/applications/second-wind-apps.desktop"
+# The .desktop basename MUST equal the GTK application_id (app.secondwind.Apps)
+# or GNOME never associates the running window with the dock favorite (the
+# store shows up as a second, generic icon while open).
+DESK="$HOME/.local/share/applications/app.secondwind.Apps.desktop"
 
 if [ "$DRY_RUN" = 1 ]; then
   info "${MSG[m70_dry]}"
@@ -13,6 +16,8 @@ if [ "$DRY_RUN" = 1 ]; then
 fi
 
 install -d "$SW_SHARE" "$HOME/.local/share/applications"
+# Clean the pre-rename spelling so upgrades don't grow a duplicate grid entry
+rm -f "$HOME/.local/share/applications/second-wind-apps.desktop"
 cp "$SW_ROOT/assets/second-wind-apps.svg" "$SW_SHARE/second-wind-apps.svg"
 cat > "$DESK" <<EOF
 [Desktop Entry]
@@ -28,6 +33,6 @@ track_new_file "$DESK"
 track_new_file "$SW_SHARE/second-wind-apps.svg"
 
 # Into the dock, like the App Store on a Mac
-favorite_add second-wind-apps.desktop
+favorite_add app.secondwind.Apps.desktop
 
 ok "${MSG[m70_installed]}"
