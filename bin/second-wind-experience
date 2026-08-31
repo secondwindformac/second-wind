@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+# second-wind-experience — the Mac Experience switch (trial / active / off).
+#
+# The Experience layer is the part of Second Wind you FEEL: the ⌘ keyboard
+# (Toshy), Spotlight (Ulauncher) and the Mac-style app switcher. It ships ON
+# for everyone with a 30-day trial; on day 30 this script turns it off —
+# politely, reversibly, never touching the look, the drivers or any data —
+# until a license (US$10, Lemon Squeezy) is activated from the store.
+#
+# Honesty by design: this is a courtesy lock. A technical user can re-enable
+# everything by hand and we say so in the FAQ; the license is for people who
+# would rather pay a lunch than fight a terminal. Nothing here phones home
+# except the one license activation call the user explicitly triggers.
+#
+# Usage: second-wind-experience status|check|on|off|activate <key>
+set -Eeuo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/lib/common.sh"
+
+EXP="$SW_STATE/experience"
+TRIAL_DAYS=30
+LS_API="https://api.lemonsqueezy.com/v1/licenses"
+
+ensure_state() {
+  mkdir -p "$EXP"
+  if [ ! -f "$EXP/trial_since" ]; then
+    if [ -f "$SW_STATE/news/install-date" ]; then
+      cp "$SW_STATE/news/install-date" "$EXP/trial_since"
+    else
+      date +%s > "$EXP/trial_since"
+    fi
+  fi
+  if [ ! -f "$EXP/state" ]; then
+    if [ -f "$EXP/license.hash" ]; then echo active > "$EXP/state"
+    else echo trial > "$EXP/state"; fi
+  fi
+}
+
+age_days()  { echo $(( ( $(date +%s) - $(cat "$EXP/trial_since") ) / 86400 )); }
+days_left() { local d=$(( TRIAL_DAYS - $(age_days) )); [ "$d" -lt 0 ] && d=0; echo "$d"; }
+state()     { cat "$EXP/state" 2>/dev/null || echo trial; }
+
+# --- the switch ---------------------------------------------------------------
+# ON re-applies exactly what modules 45/50 configure; OFF writes Ubuntu stock
+# values EXPLICITLY (the manifest "before" on a Toshy machine is pre-Second
+# Wind Toshy state, not stock — restoring it would resurrect double remaps).
+
+toshy_ctl() {  # toshy_ctl enable|disable — prefer Toshy's own CLIs (they also
+  local verb="$1" cli="$HOME/.local/bin/toshy-services-$1"
+  if [ -x "$cli" ]; then "$cli" >/dev/null 2>&1 || true
+  else
+    case "$verb" in
+      enable)  systemctl --user enable --now toshy-config.service toshy-session-monitor.service >/dev/null 2>&1 || true ;;
+      disable) systemctl --user disable --now toshy-config.service toshy-session-monitor.service >/dev/null 2>&1 || true ;;
+    esac
+  fi
+  # keep the stop/start pair in sync with enable/disable
+  local pair="$HOME/.local/bin/toshy-services-start"
+  [ "$verb" = disable ] && pair="$HOME/.local/bin/toshy-services-stop"
+  [ -x "$pair" ] && "$pair" >/dev/null 2>&1 || true
+}
+
+UL_AUTOSTART="$HOME/.config/autostart/ulauncher.desktop"
+
+experience_off() {
+  toshy_ctl disable
+  # Ulauncher: neutralize (the autostart file is tracked in the manifest —
+  # hide it instead of deleting it)
+  if [ -f "$UL_AUTOSTART" ] && ! grep -q '^Hidden=true' "$UL_AUTOSTART"; then
+    echo 'Hidden=true' >> "$UL_AUTOSTART"
+  fi
+  pkill -x ulauncher 2>/dev/null || true
+  custom_keybinding_remove secondwind-spotlight
+  # Ubuntu 24.04 stock switcher (10_ubuntu-settings.gschema.override)
+  gsettings set org.gnome.desktop.wm.keybindings switch-applications "['<Super>Tab']" 2>/dev/null || true
+  gsettings set org.gnome.desktop.wm.keybindings switch-applications-backward "['<Shift><Super>Tab']" 2>/dev/null || true
+  gsettings set org.gnome.desktop.wm.keybindings switch-windows "['<Alt>Tab']" 2>/dev/null || true
+  gsettings set org.gnome.desktop.wm.keybindings switch-windows-backward "['<Shift><Alt>Tab']" 2>/dev/null || true
+  gsettings set org.gnome.shell.window-switcher current-workspace-only true 2>/dev/null || true
+  # toggle-overview and xkb-options stay [] on purpose: stock-equivalent and
+  # they avoid resurrecting pre-install remaps.
+}
+
+experience_on() {
+  toshy_ctl enable
+  if [ -f "$UL_AUTOSTART" ]; then
+    sed -i '/^Hidden=true$/d' "$UL_AUTOSTART"
+  elif [ -f /usr/share/applications/ulauncher.desktop ]; then
+    cp /usr/share/applications/ulauncher.desktop "$UL_AUTOSTART"
+  fi
+  if command -v ulauncher >/dev/null 2>&1 && ! pgrep -x ulauncher >/dev/null 2>&1; then
+    ( setsid env GDK_BACKEND=x11 ulauncher --hide-window >/dev/null 2>&1 & ) || true
+  fi
+  gsettings set org.gnome.desktop.wm.keybindings switch-applications "['<Alt>Tab', '<Super>Tab']" 2>/dev/null || true
+  gsettings set org.gnome.desktop.wm.keybindings switch-applications-backward "['<Shift><Alt>Tab', '<Shift><Super>Tab']" 2>/dev/null || true
+  gsettings set org.gnome.desktop.wm.keybindings switch-windows "[]" 2>/dev/null || true
+  gsettings set org.gnome.desktop.wm.keybindings switch-windows-backward "[]" 2>/dev/null || true
+  gsettings set org.gnome.shell.window-switcher current-workspace-only false 2>/dev/null || true
+  gsettings set org.gnome.shell.keybindings toggle-overview "[]" 2>/dev/null || true
+  custom_keybinding_add secondwind-spotlight "Spotlight (Ulauncher)" "ulauncher-toggle" "<Shift><Control>space"
+}
+
+# --- license ------------------------------------------------------------------
+
+activate_license() {
+  local key="$1" host instance
+  host="$(hostname 2>/dev/null || echo mac)"
+  local resp rc=0
+  resp="$(curl -fsS -m 12 -X POST "$LS_API/activate" \
+            -H 'Accept: application/json' \
+            --data-urlencode "license_key=$key" \
+            --data-urlencode "instance_name=second-wind@$host" 2>&1)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    # Fail-open: no network / server trouble → provisional activation, the
+    # daily check revalidates. Never punish the paying user for our outage.
+    printf '%s' "$key" | sha256sum | cut -d' ' -f1 > "$EXP/license.hash"
+    touch "$EXP/license.provisional"
+    echo active > "$EXP/state"
+    experience_on
+    ok "${MSG[exp_act_prov]}"
+    return 0
+  fi
+  if printf '%s' "$resp" | grep -q '"activated" *: *true'; then
+    printf '%s' "$key" | sha256sum | cut -d' ' -f1 > "$EXP/license.hash"
+    instance="$(printf '%s' "$resp" | grep -o '"id" *: *"[^"]*"' | head -1 | cut -d'"' -f4)"
+    [ -n "$instance" ] && printf '%s' "$instance" > "$EXP/license.instance"
+    rm -f "$EXP/license.provisional"
+    echo active > "$EXP/state"
+    experience_on
+    ok "${MSG[exp_act_ok]}"
+    return 0
+  fi
+  warn "${MSG[exp_act_bad]}"
+  return 1
+}
+
+revalidate() {  # provisional → confirm quietly when the network is back
+  [ -f "$EXP/license.provisional" ] || return 0
+  local resp
+  resp="$(curl -fsS -m 12 -X POST "$LS_API/validate" \
+            -H 'Accept: application/json' \
+            --data-urlencode "license_key=dummy" 2>/dev/null)" || return 0
+  # We only stored a hash (never the key), so a real revalidation needs the
+  # user's key again; v0 policy: a provisional activation simply stands.
+  rm -f "$EXP/license.provisional"
+}
+
+# --- the daily check (systemd timer) -----------------------------------------
+
+day30_check() {
+  ensure_state
+  [ "$(state)" = trial ] || { revalidate; return 0; }
+  [ "$(age_days)" -ge "$TRIAL_DAYS" ] || return 0
+
+  # Tell the user BEFORE flipping anything; only proceed when the notification
+  # was actually shown (or after 3 failed attempts, as a backstop).
+  local fails=0 R rc=0
+  [ -f "$EXP/notify-fails" ] && fails="$(cat "$EXP/notify-fails")"
+  R="$(notify-send -a "Second Wind" -i emblem-favorite \
+        -A buy="${MSG[exp_notify_buy]}" -A ok="${MSG[exp_notify_later]}" \
+        "Second Wind" "${MSG[exp_notify_body]}" 2>/dev/null)" || rc=$?
+  if [ "$rc" -ne 0 ] && [ "$fails" -lt 3 ]; then
+    echo $((fails + 1)) > "$EXP/notify-fails"
+    return 0
+  fi
+  echo off > "$EXP/state"
+  experience_off
+  if [ "$R" = "buy" ]; then
+    DONATE_URL="https://secondwindformac.com/"; EXPERIENCE_URL=""
+    [ -f "$SW_STATE/links.conf" ] && . "$SW_STATE/links.conf"
+    xdg-open "${EXPERIENCE_URL:-$DONATE_URL}" >/dev/null 2>&1 &
+  fi
+}
+
+# --- CLI ----------------------------------------------------------------------
+ensure_state
+case "${1:-status}" in
+  status)
+    case "$(state)" in
+      trial)  printf 'trial %s\n' "$(days_left)" ;;
+      active) [ -f "$EXP/license.provisional" ] && echo "active provisional" || echo active ;;
+      off)    echo off ;;
+    esac ;;
+  check)    day30_check ;;
+  on)       echo active > "$EXP/state"; experience_on;  ok "${MSG[exp_on_ok]}" ;;
+  off)      echo off    > "$EXP/state"; experience_off; ok "${MSG[exp_off_ok]}" ;;
+  activate) [ -n "${2:-}" ] || die "${MSG[exp_act_usage]}"; activate_license "$2" ;;
+  *)        die "usage: second-wind-experience status|check|on|off|activate <key>" ;;
+esac

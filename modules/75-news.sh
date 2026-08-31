@@ -64,17 +64,20 @@ if [ -n "$LATEST" ] && [ "$LATEST" != "$(cat "$NEWS/last-seen-release" 2>/dev/nu
   [ "$R" = "open" ] && xdg-open "https://github.com/arancibiamartin/second-wind/releases" &
 fi
 
-# (b) One-time 30-day support nudge
+# (b) One-time 30-day support nudge — only burned once the notification was
+# actually SHOWN (notify-send exiting 0 means a daemon displayed it; an empty
+# reply just means the user dismissed it, which still counts as shown).
 if [ ! -f "$NEWS/nudged" ] && [ -f "$NEWS/install-date" ]; then
   AGE=$(( ( $(date +%s) - $(cat "$NEWS/install-date") ) / 86400 ))
   if [ "$AGE" -ge 30 ]; then
-    touch "$NEWS/nudged"
-    R=$(notify-send -a "Second Wind" -i emblem-favorite \
-          -A support="$T_SUP" -A never="$T_NO" "Second Wind" "$T_THANKS" 2>/dev/null)
-    case "$R" in
-      support) xdg-open "$DONATE_URL" & ;;
-      never)   touch "$SW_STATE/news-optout" ;;
-    esac
+    if R=$(notify-send -a "Second Wind" -i emblem-favorite \
+             -A support="$T_SUP" -A never="$T_NO" "Second Wind" "$T_THANKS" 2>/dev/null); then
+      touch "$NEWS/nudged"
+      case "$R" in
+        support) xdg-open "$DONATE_URL" & ;;
+        never)   touch "$SW_STATE/news-optout" ;;
+      esac
+    fi
   fi
 fi
 exit 0

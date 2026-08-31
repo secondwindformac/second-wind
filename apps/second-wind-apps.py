@@ -122,6 +122,25 @@ T = {
     "help": d("Obtener ayuda", "Get help"),
     "help_sub": d("Guía, preguntas frecuentes y reporte de problemas",
                   "Guide, FAQ and problem reports"),
+    "exp_title": "Mac Experience",
+    "exp_trial": d("Prueba gratis: quedan {days} días · después US$10 una vez",
+                   "Free trial: {days} days left · then US$10 once"),
+    "exp_active": d("Activo en este Mac — tuyo para siempre ✓",
+                    "Active on this Mac — yours forever ✓"),
+    "exp_off": d("Apagado — tu Mac sigue igual; recupera ⌘ y Spotlight por US$10",
+                 "Off — your Mac is unchanged; bring back ⌘ and Spotlight for US$10"),
+    "exp_buy": d("Comprar", "Buy"),
+    "exp_key": d("Tengo una clave", "I have a key"),
+    "exp_key_head": d("Activar Mac Experience", "Activate Mac Experience"),
+    "exp_key_body": d("Pega la clave de licencia que te llegó por correo al comprar.",
+                      "Paste the license key you received by email after buying."),
+    "exp_key_ph": d("Clave de licencia", "License key"),
+    "exp_activate": d("Activar", "Activate"),
+    "cancel": d("Cancelar", "Cancel"),
+    "exp_act_okmsg": d("¡Listo! Tu teclado ⌘ y Spotlight están de vuelta.",
+                       "Done! Your ⌘ keyboard and Spotlight are back."),
+    "exp_act_badmsg": d("La clave no se pudo activar — revisa que esté bien copiada.",
+                        "The key couldn't be activated — check it was copied correctly."),
 }
 
 CSS = b"""
@@ -133,7 +152,7 @@ CSS = b"""
 
 
 def links():
-    cfg = {"DONATE_URL": "https://github.com/arancibiamartin/second-wind"}
+    cfg = {}
     for path in (os.path.join(SW_STATE, "links.conf"),
                  os.path.join(SW_ROOT, "links.conf")):
         try:
@@ -145,6 +164,10 @@ def links():
             break
         except FileNotFoundError:
             continue
+    # Defaults AFTER parsing (a pre-seeded default would shadow the real file)
+    cfg.setdefault("DONATE_URL", "https://github.com/arancibiamartin/second-wind")
+    cfg.setdefault("EXPERIENCE_URL", cfg.get("WEBSITE_URL",
+                   "https://secondwindformac.com/"))
     return cfg
 
 
@@ -209,6 +232,17 @@ class Store(Adw.Application):
             body.append(flow)
 
         sup = Adw.PreferencesGroup(title=T["g_support"], margin_top=18)
+        self.exp_row = Adw.ActionRow(title=T["exp_title"])
+        expkey = Gtk.Button(label=T["exp_key"], valign=Gtk.Align.CENTER)
+        expkey.connect("clicked", self.on_exp_key)
+        expbuy = Gtk.Button(label=T["exp_buy"], valign=Gtk.Align.CENTER,
+                            css_classes=["suggested-action"])
+        expbuy.connect("clicked", lambda *_: subprocess.Popen(
+            ["xdg-open", links()["EXPERIENCE_URL"]]))
+        self.exp_row.add_suffix(expkey)
+        self.exp_row.add_suffix(expbuy)
+        sup.add(self.exp_row)
+        self.exp_refresh()
         helpr = Adw.ActionRow(title=T["help"], subtitle=T["help_sub"],
                               activatable=True)
         helpr.add_suffix(Gtk.Image.new_from_icon_name("help-browser-symbolic"))
@@ -258,6 +292,56 @@ class Store(Adw.Application):
         self.win.present()
         self.count()
         threading.Thread(target=self.icons_worker, daemon=True).start()
+
+    # --- Mac Experience row -------------------------------------------------
+    def exp_bin(self):
+        return os.path.join(SW_ROOT, "bin", "second-wind-experience")
+
+    def exp_status(self):
+        try:
+            out = subprocess.run([self.exp_bin(), "status"], capture_output=True,
+                                 text=True, timeout=10).stdout.strip().split()
+            return (out[0], out[1] if len(out) > 1 else "")
+        except Exception:
+            return ("trial", "")
+
+    def exp_refresh(self):
+        st, extra = self.exp_status()
+        if st == "active":
+            self.exp_row.set_subtitle(T["exp_active"])
+        elif st == "off":
+            self.exp_row.set_subtitle(T["exp_off"])
+        else:
+            self.exp_row.set_subtitle(T["exp_trial"].format(days=extra or "30"))
+
+    def on_exp_key(self, *_):
+        dlg = Adw.AlertDialog(heading=T["exp_key_head"], body=T["exp_key_body"])
+        entry = Adw.EntryRow(title=T["exp_key_ph"])
+        box = Gtk.ListBox(css_classes=["boxed-list"])
+        box.append(entry)
+        dlg.set_extra_child(box)
+        dlg.add_response("cancel", T["cancel"])
+        dlg.add_response("act", T["exp_activate"])
+        dlg.set_response_appearance("act", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("act")
+
+        def on_resp(_d, resp):
+            key = entry.get_text().strip()
+            if resp != "act" or not key:
+                return
+            def work():
+                r = subprocess.run([self.exp_bin(), "activate", key],
+                                   capture_output=True, text=True)
+                GLib.idle_add(self.exp_done, r.returncode == 0)
+            threading.Thread(target=work, daemon=True).start()
+
+        dlg.connect("response", on_resp)
+        dlg.present(self.win)
+
+    def exp_done(self, ok_):
+        self.status.set_label(T["exp_act_okmsg"] if ok_ else T["exp_act_badmsg"])
+        self.exp_refresh()
+        return False
 
     def card(self, app):
         app_id, name, _k, _r, _dom, desc, default = app

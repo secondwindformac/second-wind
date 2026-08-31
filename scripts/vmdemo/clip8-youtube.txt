@@ -1,0 +1,11 @@
+# clip8-youtube — buscar y reproducir video en el Chrome recién instalado (tienda)
+# estado inicial: Chrome maximizado, YouTube home (feed orgánico), caja de búsqueda vacía,
+#                 480p fijado, mouse en 640,120. Query CON "blender": sin anuncio, oficial primero.
+0.5 move 640 120
+0.9 click 583 155
+1.5 type big buck bunny blender
+4.2 key ret
+9.6 click 345 380
+10.8 move 1150 300
+15.2 key f
+# fin 19.8 s — fullscreen los últimos ~4.5 s
