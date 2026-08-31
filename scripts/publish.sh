@@ -44,9 +44,22 @@ if [ "${1:-}" = "--release" ]; then
   info "${MSG[pub_sums]}"
   cat "$out/SHA256SUMS"
 
+  # Manifest for the macOS Creator: what to download and how to verify it.
+  source versions.lock
+  payload_sha="$(awk '{print $1}' "$out/SHA256SUMS")"
+  cat > "$out/creator-manifest.json" <<EOF
+{
+  "version": "$version",
+  "iso_url": "$UBUNTU_ISO_URL",
+  "iso_sha256": "$UBUNTU_ISO_SHA256",
+  "payload_name": "$tarball",
+  "payload_sha256": "$payload_sha"
+}
+EOF
+
   git tag -a "$tag" -m "Second Wind $version"
   git push origin main "$tag"
-  gh release create "$tag" "$out/$tarball" "$out/SHA256SUMS" \
+  gh release create "$tag" "$out/$tarball" "$out/SHA256SUMS" "$out/creator-manifest.json" \
     --verify-tag --title "Second Wind $version" --generate-notes
   rm -rf "$out"
   echo

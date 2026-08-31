@@ -1,0 +1,76 @@
+name: creator-macos
+
+on:
+  push:
+    paths:
+      - "creator/**"
+      - ".github/workflows/creator-macos.yml"
+  workflow_dispatch:
+
+jobs:
+  # The disk engine (GPT patch + FAT32 volume) validated on Linux with the
+  # same tools the Linux USB creator trusts: sgdisk, fsck.vfat, mtools.
+  verify-engine-linux:
+    runs-on: ubuntu-latest
+    container: swift:5.10-jammy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install validation tools
+        run: apt-get update -qq && apt-get install -y -qq gdisk dosfstools mtools git zip zlib1g-dev >/dev/null
+      - name: Unit tests
+        working-directory: creator/macos
+        run: swift test
+      - name: Build the real payload (git archive, like make-usb.sh)
+        run: |
+          git config --global --add safe.directory "$PWD"
+          git archive --prefix=second-wind/ HEAD | gzip > /tmp/payload.tar.gz
+          ls -la /tmp/payload.tar.gz
+      - name: Build seed images with seedtool
+        working-directory: creator/macos
+        run: |
+          swift run seedtool fake-iso /tmp/fake.iso
+          swift run seedtool fat-image /tmp/cidata.img /tmp/payload.tar.gz
+          swift run seedtool build-image /tmp/stick.img /tmp/fake.iso /tmp/payload.tar.gz 1024 | tee /tmp/build.out
+      - name: "Validate: partition table (sgdisk)"
+        run: |
+          sgdisk --verify /tmp/stick.img
+          sgdisk -p /tmp/stick.img | tee /tmp/table.txt
+          grep -q CIDATA /tmp/table.txt
+      - name: "Validate: FAT volume (fsck.vfat)"
+        run: fsck.vfat -n -v /tmp/cidata.img
+      - name: "Validate: seed files readable and intact (mtools)"
+        run: |
+          mdir -i /tmp/cidata.img ::/ | tee /tmp/rootdir.txt
+          grep -qi "user-data" /tmp/rootdir.txt
+          grep -qi "meta-data" /tmp/rootdir.txt
+          grep -qi "second-wind.tar.gz" /tmp/rootdir.txt
+          mdir -i /tmp/cidata.img ::/autoinstall | grep -qi "user-data"
+          mdir -i /tmp/cidata.img ::/firstboot | grep -qi "second-wind-firstboot.sh"
+          # The payload survives byte-identical.
+          mcopy -i /tmp/cidata.img ::/second-wind.tar.gz /tmp/roundtrip.tar.gz
+          cmp /tmp/payload.tar.gz /tmp/roundtrip.tar.gz
+          # The password placeholder was substituted.
+          mcopy -i /tmp/cidata.img ::/user-data /tmp/user-data.out
+          grep -q 'autoinstall' /tmp/user-data.out
+          ! grep -q '@PASSWORD_HASH@' /tmp/user-data.out
+      - name: "Validate: CIDATA volume inside the full stick image"
+        run: |
+          LBA=$(grep -o 'CIDATA at LBA [0-9]*' /tmp/build.out | grep -o '[0-9]*')
+          mdir -i /tmp/stick.img@@$((LBA * 512)) ::/ | grep -qi "second-wind.tar.gz"
+
+  # The real app, built unsigned on a macOS runner.
+  build-app-macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests (macOS)
+        working-directory: creator/macos
+        run: swift test
+      - name: Package the app
+        working-directory: creator/macos
+        run: bash scripts/package-app.sh 0.9.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SecondWindCreator-mac
+          path: creator/macos/dist/*.zip
+          if-no-files-found: error
