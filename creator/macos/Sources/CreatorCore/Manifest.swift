@@ -33,7 +33,7 @@ public enum ManifestSource {
         isoURL: "https://releases.ubuntu.com/24.04/ubuntu-24.04.4-desktop-amd64.iso",
         isoSHA256: "3a4c9877b483ab46d7c3fbe165a0db275e1ae3cfe56a5657e5a47c2f99a99d1e",
         payloadName: "second-wind-0.9.0.tar.gz",
-        payloadSHA256: "",
+        payloadSHA256: "9bd084cec6484e662c35354e146428e8bf37d964840336480af1709736e5513d",
         payloadURL: "https://github.com/arancibiamartin/second-wind/releases/download/v0.9.0/second-wind-0.9.0.tar.gz"
     )
 
