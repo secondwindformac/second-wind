@@ -42,7 +42,7 @@ CATALOG = [
     ("ess", d("Esenciales", "Essentials"), [
         ("chrome", "Google Chrome", "deb",
          "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb",
-         "google.com",
+         "chrome.google.com",  # google.com serves the "G", this one the Chrome ball
          d("El navegador que ya conoces — y la base de las apps web",
            "The browser you already know — and what web apps run on"), True),
         ("quicklook", "Quick Look", "apt", "gnome-sushi", "gnome.org",
@@ -356,7 +356,11 @@ class Store(Adw.Application):
         return False
 
     def card(self, app):
-        app_id, name, _k, _r, _dom, desc, default = app
+        app_id, name, kind, ref, _dom, desc, default = app
+        # Something already on this machine shouldn't come pre-checked
+        # (only probed for default entries, to keep startup snappy).
+        if default and kind != "web" and self.installed(kind, ref, app_id):
+            default = False
         img = Gtk.Image(icon_name="application-x-executable-symbolic",
                         pixel_size=44)
         label = Gtk.Label(label=name, css_classes=["app-name"],
@@ -400,12 +404,18 @@ class Store(Adw.Application):
         self.status.set_label(T["installing"])
         threading.Thread(target=self.worker, args=(sel,), daemon=True).start()
 
-    def installed(self, kind, ref):
+    # deb entries download by URL, so their dpkg names live here.
+    DEB_PKGS = {"chrome": "google-chrome-stable", "zoom": "zoom", "discord": "discord"}
+
+    def installed(self, kind, ref, app_id=None):
         if kind == "apt":
             return not subprocess.run(["dpkg", "-s", ref],
                                       capture_output=True).returncode
         if kind in ("snap", "snap_classic"):
             return not subprocess.run(["snap", "list", ref],
+                                      capture_output=True).returncode
+        if kind == "deb" and app_id in self.DEB_PKGS:
+            return not subprocess.run(["dpkg", "-s", self.DEB_PKGS[app_id]],
                                       capture_output=True).returncode
         return False
 
@@ -417,7 +427,7 @@ class Store(Adw.Application):
                 err = make_webapp(app_id, name, ref, domain)
                 if err:
                     fails.append(err)
-            elif self.installed(kind, ref):
+            elif self.installed(kind, ref, app_id):
                 continue
             elif kind == "apt":
                 apt.append(ref)
