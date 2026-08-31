@@ -18,3 +18,6 @@ Gotchas learned the hard way:
 - Warm up each app once before the take (first launch under llvmpipe ~6 s).
 - The screen locks after ~5 min idle: send a `ctrl` tap before captures.
 - QMP screendump does not compose the cursor plane (clips show no pointer).
+- Burst QMP typing at 60 ms/char DROPS keys on this VM (spaces above all).
+  90 ms (demo.py's pace) has never failed; 170 ms is bulletproof — use
+  `slowtype.py` for setup/off-camera typing.
