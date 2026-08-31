@@ -2,6 +2,10 @@
 
 **Un segundo aire para tu Mac vieja — convierte Ubuntu en una experiencia tipo macOS en un solo paso, sin saber de Linux.**
 
+🌐 **[secondwindformac.com](https://secondwindformac.com/es/)** — el sitio, los videos demo y la lista de espera.
+
+![El mismo Mac después de Second Wind](https://secondwindformac.com/assets/after.png)
+
 *Read in English: [README.md](README.md)*
 
 Apple dejó sin actualizaciones a millones de Macs Intel perfectamente capaces. Con Ubuntu siguen siendo computadores excelentes, pero se sienten ajenos. Second Wind los hace sentirse como en casa:
