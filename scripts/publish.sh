@@ -35,6 +35,13 @@ if [ "${1:-}" = "--release" ]; then
   if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
     warn "${MSG[pub_tag_exists]} ($tag)"; exit 1
   fi
+  # The updater compares the installed VERSION file against release tags:
+  # they must never drift.
+  if [ "$(cat VERSION 2>/dev/null | tr -d '[:space:]')" != "$version" ]; then
+    echo "VERSION file says '$(cat VERSION 2>/dev/null)' but you are releasing '$version'." >&2
+    echo "Update VERSION, commit, then release." >&2
+    exit 1
+  fi
 
   out="$(mktemp -d)"
   tarball="second-wind-$version.tar.gz"
