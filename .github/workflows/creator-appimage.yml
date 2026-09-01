@@ -1,0 +1,61 @@
+name: creator-appimage
+
+# Builds the single-file AppImage (Mac-like: download, double-click, delete to
+# uninstall), runs a headless self-check on the produced file, then publishes it
+# to the release. Same "don't ship blind" gate as the .deb pipeline.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to attach the AppImage to
+        default: v0.9.0
+        required: true
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-test-publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install appimage-builder + helpers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip patchelf strace fakeroot \
+            fuse libfuse2t64 xvfb desktop-file-utils appstream zsync
+          sudo pip3 install --break-system-packages appimage-builder
+
+      - name: Build the AppImage
+        run: bash packaging/build-appimage.sh "$(cat VERSION | tr -d '[:space:]')"
+
+      - name: Rename to a clean, URL-safe filename
+        run: |
+          VER="$(cat VERSION | tr -d '[:space:]')"
+          SRC="$(ls *.AppImage | head -1)"
+          DST="second-wind-usb-creator-${VER}-x86_64.AppImage"
+          mv "$SRC" "$DST"
+          chmod +x "$DST"
+          ls -l "$DST"
+
+      - name: Smoke test (headless self-check, no FUSE)
+        run: xvfb-run -a ./second-wind-usb-creator-*-x86_64.AppImage --appimage-extract-and-run --self-check
+
+      - name: Checksum
+        run: sha256sum second-wind-usb-creator-*-x86_64.AppImage > SHA256SUMS.appimage
+
+      - name: Publish to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          gh release upload "$TAG" \
+            second-wind-usb-creator-*-x86_64.AppImage \
+            SHA256SUMS.appimage \
+            --clobber --repo "$GITHUB_REPOSITORY"
