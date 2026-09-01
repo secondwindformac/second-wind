@@ -1,0 +1,42 @@
+version: 1
+
+AppDir:
+  path: ./build/appimage/AppDir
+
+  app_info:
+    id: app.secondwind.USBCreator
+    name: Second Wind USB Creator
+    icon: second-wind-usb-creator
+    version: !ENV '${VERSION}'
+    # The GTK4/libadwaita Python app. exec is python3 (bundled below); the
+    # first arg is our script inside the mounted AppDir.
+    exec: usr/bin/python3
+    exec_args: "$APPDIR/opt/second-wind-creator/apps/usb-creator.py $@"
+
+  apt:
+    arch:
+      - amd64
+    allow_unauthenticated: true
+    sources:
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble main universe'
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu noble-updates main universe'
+      - sourceline: 'deb [arch=amd64] http://security.ubuntu.com/ubuntu noble-security main universe'
+    include:
+      - python3
+      - python3-gi
+      - gir1.2-gtk-4.0
+      - gir1.2-adw-1
+      - gdisk
+      - dosfstools
+      - parted
+      - libnotify-bin
+      - zenity
+
+  runtime:
+    env:
+      GI_TYPELIB_PATH: '${APPDIR}/usr/lib/x86_64-linux-gnu/girepository-1.0'
+      GSETTINGS_SCHEMA_DIR: '${APPDIR}/usr/share/glib-2.0/schemas'
+
+AppImage:
+  arch: x86_64
+  comp: gzip
