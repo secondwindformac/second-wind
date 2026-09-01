@@ -69,8 +69,7 @@ write_usb() {
     | while read -r p; do sudo umount "$p" || true; done
 
   info "Writing the official ISO (several minutes)…"
-  sudo dd if="$ISO" of="$DEV" bs=4M conv=fsync status=progress
-  sync
+  gentle_dd "$DEV" sudo
 
   info "Adding the CIDATA seed volume…"
   sudo sgdisk -e "$DEV" >/dev/null
@@ -103,6 +102,28 @@ write_usb() {
 EOF
 }
 
+# Write the ISO to the stick WITHOUT freezing low-RAM desktops. Most target
+# users have <=4 GB RAM: a plain buffered dd lets the ~6 GB image pile up as
+# dirty pages faster than a slow stick drains them, and the kernel then blocks
+# the whole UI in write-back (this froze even an 8 GB Mac; 4 GB is worse). We
+# cap the kernel's dirty write-back buffer to a small FIXED size (independent
+# of total RAM) so the write drains continuously and the desktop stays
+# responsive, dropping cached pages as we go. Kernel defaults are restored
+# afterwards (on success or failure). Args: $1=device; $2=privilege prefix
+# ("sudo" when not already root, "" under pkexec).
+gentle_dd() {
+  local DEV="$1" SUDO="${2:-}"
+  local dr dbr rc=0
+  dr="$(cat /proc/sys/vm/dirty_ratio 2>/dev/null || echo 20)"
+  dbr="$(cat /proc/sys/vm/dirty_background_ratio 2>/dev/null || echo 10)"
+  $SUDO sh -c 'echo 50331648 > /proc/sys/vm/dirty_bytes; echo 16777216 > /proc/sys/vm/dirty_background_bytes' 2>/dev/null || true
+  $SUDO dd if="$ISO" of="$DEV" bs=4M conv=fdatasync oflag=nocache iflag=nocache status=progress || rc=$?
+  $SUDO sync || true
+  # Restore the kernel's default (ratio-based) write-back throttling.
+  $SUDO sh -c "echo $dr > /proc/sys/vm/dirty_ratio; echo $dbr > /proc/sys/vm/dirty_background_ratio" 2>/dev/null || true
+  return "$rc"
+}
+
 # Root-only core used by the GUI via pkexec: assumes the seed is staged and
 # every confirmation already happened. NO prompts here.
 write_core() {
@@ -111,8 +132,7 @@ write_core() {
   [ -b "$DEV" ] || die "not a block device: $DEV"
   lsblk -nrpo NAME,MOUNTPOINT "$DEV" | awk '$2 != "" {print $1}' \
     | while read -r p; do umount "$p" || true; done
-  dd if="$ISO" of="$DEV" bs=4M conv=fsync status=progress
-  sync
+  gentle_dd "$DEV"
   sgdisk -e "$DEV" >/dev/null
   sgdisk -n 0:0:+512MiB -t 0:0700 -c 0:CIDATA "$DEV" >/dev/null
   partprobe "$DEV"; sleep 2
