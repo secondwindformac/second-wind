@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # 15-engines — installs, on clean machines, the engines that later modules
-# only configure: Toshy (per-app Mac keyboard), Ulauncher (Spotlight) and the
-# Broadcom WiFi driver common on Intel Macs. On machines that already have
+# only configure: Ulauncher (Spotlight) and the Broadcom WiFi driver common
+# on Intel Macs. (Toshy moved to 32-toshy: it must run AFTER 30-extensions.) On machines that already have
 # them (like the reference MacBook) this module is a silent no-op and never
 # asks for a password. Runs only when the user consented to admin steps.
 
 NEED_WIFI=0
 NEED_UL=0
-NEED_TOSHY=0
 NEED_GIR=0
 
 # Native toolkit bindings for the Second Wind Apps store (GTK4/libadwaita);
@@ -22,9 +21,8 @@ if lspci -n 2>/dev/null | grep -qE '14e4:(43a0|4331|432b|4353|43a9|43ba)' \
   NEED_WIFI=1
 fi
 command -v ulauncher >/dev/null 2>&1 || NEED_UL=1
-systemctl --user list-unit-files 'toshy*' 2>/dev/null | grep -q toshy || NEED_TOSHY=1
 
-if [ "$NEED_WIFI$NEED_UL$NEED_TOSHY$NEED_GIR" = "0000" ]; then
+if [ "$NEED_WIFI$NEED_UL$NEED_GIR" = "000" ]; then
   ok "${MSG[m15_all_ok]}"
   return 0
 fi
@@ -39,11 +37,11 @@ if ! sudo -v; then
   warn "${MSG[m15_no_sudo]}"
   return 1
 fi
-# Keep sudo warm: a slow Toshy build can outlive the 15-minute timestamp,
-# and its internal sudo calls would then stall on a hidden prompt.
+# Keep sudo warm: a slow driver build can outlive the 15-minute timestamp,
+# and later sudo calls would then stall on a hidden prompt.
 ( while sleep 50; do sudo -n true 2>/dev/null || exit; done ) &
 SW_ENGINES_KEEPALIVE=$!
-trap 'kill "$SW_ENGINES_KEEPALIVE" 2>/dev/null || true; sudo -n rm -f /etc/sudoers.d/zz-second-wind-engines 2>/dev/null || true' EXIT
+trap 'kill "$SW_ENGINES_KEEPALIVE" 2>/dev/null || true' EXIT
 sudo apt-get update -qq 2>/dev/null || warn "${MSG[m60_apt_warn]}"
 
 # --- WiFi (needs a wired/tethered connection to download the driver) ---
@@ -69,50 +67,6 @@ if [ "$NEED_UL" = 1 ]; then
   fi
 fi
 
-# --- Toshy (Mac keyboard engine), pinned to the verified commit ---
-if [ "$NEED_TOSHY" = 1 ]; then
-  info "${MSG[m15_toshy]}"
-  # H2, caught by the 31-08 VM certification: Toshy's installer resets sudo
-  # (sudo -k) and prompts for the password mid-run — inside firstboot's
-  # pipeline that prompt fights the tty and the install dies mute at the
-  # 15-minute timeout. Toshy therefore runs UNATTENDED now: a temporary
-  # NOPASSWD drop-in (the person already proved the password to start this
-  # install) covers its internal sudo, and `yes` feeds its [y/n] prompts.
-  # The drop-in is removed right after the attempt — and again in the EXIT
-  # trap above, belt and suspenders.
-  SW_SUDO_DROPIN=/etc/sudoers.d/zz-second-wind-engines
-  printf '%s ALL=(ALL) NOPASSWD:ALL\n' "$(id -un)" | sudo tee "$SW_SUDO_DROPIN" >/dev/null
-  sudo chmod 0440 "$SW_SUDO_DROPIN"
-  if ! sudo visudo -c -q -f "$SW_SUDO_DROPIN" 2>/dev/null; then
-    sudo rm -f "$SW_SUDO_DROPIN"; SW_SUDO_DROPIN=""
-  fi
-  TOSHY_RUN() {
-    cd "$SW_CACHE/toshy" && export PATH="$HOME/.local/bin:$PATH"
-    # PIPESTATUS[1]: under pipefail, `yes` dying of SIGPIPE (141) must not
-    # count as a Toshy failure — the installer's own exit code decides.
-    if ui_has_tty; then
-      info "${MSG[m15_toshy_tty]}"
-      yes | timeout 900 python3 setup_toshy.py install 2>&1 | tee -a "$SW_LOGDIR/toshy-install.log"
-      return "${PIPESTATUS[1]}"
-    else
-      yes | timeout 900 python3 setup_toshy.py install >>"$SW_LOGDIR/toshy-install.log" 2>&1
-      return "${PIPESTATUS[1]}"
-    fi
-  }
-  if clone_pinned "$TOSHY_REPO" "$SW_CACHE/toshy" "$TOSHY_SHA" && ( TOSHY_RUN ); then
-    if systemctl --user list-unit-files 'toshy*' 2>/dev/null | grep -q toshy; then
-      mf note "toshy-installed-by-secondwind"
-      export HAVE_TOSHY=1
-      ok "Toshy OK"
-    else
-      warn "${MSG[m15_toshy_err]}"
-    fi
-  else
-    warn "${MSG[m15_toshy_err]}"
-  fi
-  [ -n "${SW_SUDO_DROPIN:-}" ] && sudo rm -f "$SW_SUDO_DROPIN" || true
-fi
-
 # --- Hide the engines' technical menu entries from the app grid. The person
 # never chose "Toshy" or "Ulauncher" — those names mean nothing to them, and
 # the features keep working (Spotlight via ⌘Space, keyboard via services). ---
@@ -125,8 +79,7 @@ hide_desktop_entry() {
     printf 'NoDisplay=true\n' >> "$f"
   fi
 }
-hide_desktop_entry "$HOME/.local/share/applications/app.toshy.preferences.desktop"
-hide_desktop_entry "$HOME/.local/share/applications/Toshy_Tray.desktop"
+# (Toshy's own entries are hidden by 32-toshy, right after it installs them.)
 # Ulauncher's entry is system-wide: shadow it with a hidden user-level copy.
 if [ -f /usr/share/applications/ulauncher.desktop ] \
    && [ ! -f "$HOME/.local/share/applications/ulauncher.desktop" ]; then
@@ -136,3 +89,8 @@ if [ -f /usr/share/applications/ulauncher.desktop ] \
   track_new_file "$HOME/.local/share/applications/ulauncher.desktop"
 fi
 ok "${MSG[m15_hidden]}"
+
+# Hand the shell back clean: kill our keepalive and release the EXIT trap so
+# a later module (32-toshy) can own it.
+kill "$SW_ENGINES_KEEPALIVE" 2>/dev/null || true
+trap - EXIT
