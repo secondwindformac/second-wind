@@ -6,10 +6,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VERSION="${1:-0.9.0}"
-ARCH="x86_64"   # our audience: Intel Macs (runs on Apple Silicon via Rosetta)
+# Universal binary: runs natively on BOTH Apple Silicon and Intel Macs, so modern
+# Macs never see the Rosetta prompt. The minimum deploy target still covers the old
+# Intel Macs this revives.
+ARCH_FLAGS=(--arch arm64 --arch x86_64)
 
-swift build -c release --arch "$ARCH"
-BIN="$(swift build -c release --arch "$ARCH" --show-bin-path)/SecondWindCreator"
+swift build -c release "${ARCH_FLAGS[@]}"
+BIN="$(swift build -c release "${ARCH_FLAGS[@]}" --show-bin-path)/SecondWindCreator"
 
 APP="dist/Second Wind Creator.app"
 rm -rf dist
