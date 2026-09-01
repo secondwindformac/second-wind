@@ -333,12 +333,15 @@ class Creator(Adw.Application):
         status = os.path.join(LOGDIR, "usb-dd-status")
         open(status, "w").close()
         total = os.path.getsize(ISO)
-        p = subprocess.Popen(["pkexec", "bash",
+        # pkexec runs as root with HOME=/root and a sanitized environment, so the
+        # ISO/seed would be looked up under /root and dd would fail. Pass the real
+        # user's SW_STATE through `env` (as an argument, it survives pkexec's env reset).
+        p = subprocess.Popen(["pkexec", "/usr/bin/env",
+                              f"SW_STATE={SW_STATE}", "SW_DD_STATUS=1", "bash",
                               os.path.join(SW_ROOT, "scripts", "make-usb.sh"),
                               "--write-core", dev],
                              stdout=open(os.path.join(LOGDIR, "usb-creator.log"), "a"),
-                             stderr=open(status, "w"),
-                             env={**os.environ, "SW_DD_STATUS": "1"})
+                             stderr=open(status, "w"))
         while p.poll() is None:
             try:
                 with open(status) as f:
