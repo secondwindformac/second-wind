@@ -28,7 +28,6 @@ try:
 except Exception:
     os.execv("/bin/bash", ["bash", os.path.join(SW_ROOT, "scripts", "make-usb.sh"), "--gui"])
 
-ES = (locale.getlocale()[0] or os.environ.get("LANG", "en")).startswith("es")
 MIN_BYTES = 7 * 1000**3   # real-world "8 GB" sticks are ~7.2 GiB; payload is ~6.5 GB
 
 
@@ -44,7 +43,8 @@ ISO_URL = lock_value("UBUNTU_ISO_URL")
 ISO_SHA = lock_value("UBUNTU_ISO_SHA256")
 ISO = os.path.join(SW_STATE, "cache", "iso", os.path.basename(ISO_URL))
 
-T = {
+def build_T(ES):
+    return {
     "title": "Second Wind USB Creator",
     "intro_t": "Un pendrive que instala la “Mac nueva” completa" if ES
                else "One USB stick that installs the whole “new Mac”",
@@ -102,6 +102,10 @@ T = {
 }
 
 
+LANG_ES = False   # English by default; the first screen offers a manual switch
+T = build_T(LANG_ES)
+
+
 def notify(body):
     subprocess.Popen(["notify-send", "-a", "Second Wind", "-i", "drive-removable-media",
                       T["title"], body])
@@ -134,6 +138,9 @@ class Creator(Adw.Application):
         self.win.present()
 
     def page(self, name, *children):
+        old = self.stack.get_child_by_name(name)
+        if old is not None:
+            self.stack.remove(old)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14,
                       margin_top=28, margin_bottom=28, margin_start=28, margin_end=28,
                       valign=Gtk.Align.CENTER)
@@ -149,11 +156,29 @@ class Creator(Adw.Application):
 
     # ---------- pages ----------
     def page_intro(self):
+        lang_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6,
+                           halign=Gtk.Align.CENTER)
+        en = Gtk.ToggleButton(label="English", css_classes=["pill"], active=not LANG_ES)
+        es = Gtk.ToggleButton(label="Español", css_classes=["pill"], active=LANG_ES)
+        es.set_group(en)
+        en.connect("toggled", lambda b: b.get_active() and self._set_lang(False))
+        es.connect("toggled", lambda b: b.get_active() and self._set_lang(True))
+        lang_row.append(en)
+        lang_row.append(es)
         sp = self.status_page("media-removable-symbolic", T["intro_t"], T["intro_b"])
         b = Gtk.Button(label=T["start"], css_classes=["suggested-action", "pill"],
                        halign=Gtk.Align.CENTER)
         b.connect("clicked", lambda *_: self.page_prepare())
-        self.page("intro", sp, b)
+        self.page("intro", lang_row, sp, b)
+
+    def _set_lang(self, es):
+        global LANG_ES, T
+        if es == LANG_ES:
+            return
+        LANG_ES = es
+        T = build_T(LANG_ES)
+        self.win.set_title(T["title"])
+        self.page_intro()
 
     def page_prepare(self):
         self.prog = Gtk.ProgressBar(show_text=True, fraction=0)
