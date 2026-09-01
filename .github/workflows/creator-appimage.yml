@@ -31,6 +31,9 @@ jobs:
           sudo apt-get install -y python3-pip patchelf strace fakeroot \
             fuse libfuse2t64 xvfb desktop-file-utils appstream zsync
           sudo pip3 install --break-system-packages appimage-builder
+          # appimage-builder chokes on Debian version strings (e.g. 1.22.6ubuntu6)
+          # with packaging>=22 (LegacyVersion removed). Pin a tolerant version.
+          sudo pip3 install --break-system-packages 'packaging==21.3'
 
       - name: Build the AppImage
         run: bash packaging/build-appimage.sh "$(cat VERSION | tr -d '[:space:]')"
