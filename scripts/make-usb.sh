@@ -57,7 +57,7 @@ write_usb() {
   [ "$DEV" != "$ROOTDISK" ] || die "$DEV is the system disk — refusing."
   local SIZE MODEL RM
   read -r SIZE RM MODEL <<<"$(lsblk -dnbo SIZE,RM,MODEL "$DEV")"
-  [ "$SIZE" -ge $((8 * 1024 * 1024 * 1024)) ] || die "The stick must be at least 8 GB."
+  [ "$SIZE" -ge $((7 * 1000 * 1000 * 1000)) ] || die "The stick must be at least 7 GB (a real 8 GB stick works)."
   [ "$RM" = "1" ] || warn "$DEV does not report as removable — make VERY sure it is the USB stick."
   echo
   warn "EVERYTHING on $DEV ($(numfmt --to=iec "$SIZE"), ${MODEL:-?}) will be DESTROYED."
