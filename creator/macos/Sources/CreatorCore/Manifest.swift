@@ -25,7 +25,7 @@ public struct CreatorManifest: Codable {
 }
 
 public enum ManifestSource {
-    public static let repo = "arancibiamartin/second-wind"
+    public static let repo = "secondwindformac/second-wind"
 
     /// Pinned fallback — mirrors versions.lock at the time this app was built.
     public static let builtIn = CreatorManifest(
@@ -34,7 +34,7 @@ public enum ManifestSource {
         isoSHA256: "3a4c9877b483ab46d7c3fbe165a0db275e1ae3cfe56a5657e5a47c2f99a99d1e",
         payloadName: "second-wind-0.9.0.tar.gz",
         payloadSHA256: "9bd084cec6484e662c35354e146428e8bf37d964840336480af1709736e5513d",
-        payloadURL: "https://github.com/arancibiamartin/second-wind/releases/download/v0.9.0/second-wind-0.9.0.tar.gz"
+        payloadURL: "https://github.com/secondwindformac/second-wind/releases/download/v0.9.0/second-wind-0.9.0.tar.gz"
     )
 
     /// Latest manifest from GitHub releases, with the payload URL resolved.

@@ -31,7 +31,7 @@ if [ "${1:-}" = "--test" ]; then
     es*) B="Tu Mac lleva un mes de segunda vida 💨 ¿Nos ayudas a revivir un millón más? (esto es una PRUEBA)"; S="Apoyar"; N="Cerrar" ;;
     *)   B="Your Mac has enjoyed a month of second life 💨 Help us revive a million more? (this is a TEST)"; S="Support"; N="Close" ;;
   esac
-  DONATE_URL="https://github.com/arancibiamartin/second-wind"
+  DONATE_URL="https://github.com/secondwindformac/second-wind"
   [ -f "$SW_STATE/links.conf" ] && . "$SW_STATE/links.conf"
   R=$(notify-send -a "Second Wind" -i emblem-favorite -A support="$S" -A close="$N" "Second Wind" "$B" 2>/dev/null)
   [ "$R" = "support" ] && xdg-open "$DONATE_URL" &
@@ -40,9 +40,9 @@ fi
 
 [ -f "$SW_STATE/news-optout" ] && exit 0
 
-DONATE_URL="https://github.com/arancibiamartin/second-wind"
+DONATE_URL="https://github.com/secondwindformac/second-wind"
 [ -f "$SW_STATE/links.conf" ] && . "$SW_STATE/links.conf"
-REPO_API="https://api.github.com/repos/arancibiamartin/second-wind/releases/latest"
+REPO_API="https://api.github.com/repos/secondwindformac/second-wind/releases/latest"
 
 case "${LANG:-en}" in
   es*)
@@ -61,7 +61,7 @@ if [ -n "$LATEST" ] && [ "$LATEST" != "$(cat "$NEWS/last-seen-release" 2>/dev/nu
   echo "$LATEST" > "$NEWS/last-seen-release"
   R=$(notify-send -a "Second Wind" -i software-update-available \
         -A open="$T_UPD_B" "Second Wind" "$T_UPD ($LATEST)" 2>/dev/null)
-  [ "$R" = "open" ] && xdg-open "https://github.com/arancibiamartin/second-wind/releases" &
+  [ "$R" = "open" ] && xdg-open "https://github.com/secondwindformac/second-wind/releases" &
 fi
 
 # (b) One-time 30-day support nudge — only burned once the notification was

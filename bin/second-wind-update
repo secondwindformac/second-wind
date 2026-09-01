@@ -25,7 +25,7 @@ MANAGED_ROOT="/usr/local/share/second-wind"
 SW_STATE="$HOME/.local/state/second-wind"
 LOGDIR="$SW_STATE/logs"
 UPD="$SW_STATE/updates"
-REPO="arancibiamartin/second-wind"
+REPO="secondwindformac/second-wind"
 
 case "${LANG:-en}" in
   es*)

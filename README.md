@@ -84,7 +84,7 @@ See [docs/roadmap.md](docs/roadmap.md) for the honest feasibility notes (global 
 
 All the code in plain sight, auditable. Free forever for your Mac. Every line of Second Wind is published here for anyone to read, audit, change and use — at home or at work. The one thing the license forbids is taking this code to offer a competing product. Formally: [PolyForm Shield 1.0.0](LICENSE) (see [NOTICE](NOTICE)).
 
-> Required Notice: Copyright Martín Arancibia (https://secondwindformac.com)
+> Required Notice: Copyright Second Wind (https://secondwindformac.com)
 
 Third-party components (themes, extensions, drivers) are **not redistributed**: the installer downloads them from their official sources at verified versions, and they land on your machine under their own licenses; see [THIRD_PARTY.md](THIRD_PARTY.md).
 

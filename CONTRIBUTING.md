@@ -23,7 +23,7 @@ requires a single licensor for the whole work. By submitting a contribution
 (a pull request, a patch, or code posted in an issue) you agree that:
 
 1. The contribution is your own work and you have the right to grant this.
-2. You grant Martín Arancibia a perpetual, worldwide, non-exclusive,
+2. You grant Second Wind a perpetual, worldwide, non-exclusive,
    royalty-free, irrevocable license to use, reproduce, modify, distribute,
    sublicense and relicense your contribution as part of Second Wind or
    related products.

@@ -165,7 +165,7 @@ def links():
         except FileNotFoundError:
             continue
     # Defaults AFTER parsing (a pre-seeded default would shadow the real file)
-    cfg.setdefault("DONATE_URL", "https://github.com/arancibiamartin/second-wind")
+    cfg.setdefault("DONATE_URL", "https://github.com/secondwindformac/second-wind")
     cfg.setdefault("EXPERIENCE_URL", cfg.get("WEBSITE_URL",
                    "https://secondwindformac.com/"))
     return cfg
