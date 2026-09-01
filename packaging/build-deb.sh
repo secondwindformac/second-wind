@@ -40,6 +40,28 @@ Categories=System;Utility;
 StartupNotify=true
 EOF
 
+# AppStream metadata: gives the App Center a real name, publisher, license and
+# icon instead of "Unknown publisher / unknown license".
+mkdir -p "$ROOT/usr/share/metainfo"
+cat > "$ROOT/usr/share/metainfo/app.secondwind.USBCreator.metainfo.xml" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>app.secondwind.USBCreator</id>
+  <name>Second Wind USB Creator</name>
+  <summary>Create a bootable Second Wind USB installer</summary>
+  <developer_name>Second Wind</developer_name>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-PolyForm-Shield-1.0.0</project_license>
+  <description>
+    <p>Creates a bootable Second Wind USB installer from the official, checksum-verified Ubuntu ISO. Download, double-click to install, then open it from your apps.</p>
+  </description>
+  <launchable type="desktop-id">second-wind-usb-creator.desktop</launchable>
+  <icon type="local">$DEST/icon.png</icon>
+  <url type="homepage">https://secondwindformac.com/</url>
+  <content_rating type="oars-1.1"/>
+</component>
+EOF
+
 # Package metadata + dependencies (apt pulls them on install).
 cat > "$ROOT/DEBIAN/control" <<EOF
 Package: $PKG
