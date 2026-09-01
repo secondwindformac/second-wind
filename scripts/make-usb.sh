@@ -102,26 +102,26 @@ write_usb() {
 EOF
 }
 
-# Write the ISO to the stick WITHOUT freezing low-RAM desktops. Most target
-# users have <=4 GB RAM: a plain buffered dd lets the ~6 GB image pile up as
-# dirty pages faster than a slow stick drains them, and the kernel then blocks
-# the whole UI in write-back (this froze even an 8 GB Mac; 4 GB is worse). We
-# cap the kernel's dirty write-back buffer to a small FIXED size (independent
-# of total RAM) so the write drains continuously and the desktop stays
-# responsive, dropping cached pages as we go. Kernel defaults are restored
-# afterwards (on success or failure). Args: $1=device; $2=privilege prefix
-# ("sudo" when not already root, "" under pkexec).
+# Write the ISO STRAIGHT to the stick with O_DIRECT: this bypasses the kernel
+# page cache entirely, so RAM is never used as a growing buffer (that pile-up
+# was what froze the desktop mid-write, even on an 8 GB Mac) AND there is no
+# artificial throttling — the stick runs at its true speed. Note: cheap USB
+# sticks are slow by nature (a few MB/s); a quality USB 3 stick is far faster.
+# If a setup rejects O_DIRECT, fall back to a buffered write with a modest
+# dirty-cache cap so the desktop still can't freeze. Args: $1=device;
+# $2=privilege prefix ("sudo" when not root, "" under pkexec).
 gentle_dd() {
   local DEV="$1" SUDO="${2:-}"
-  local dr dbr rc=0
-  dr="$(cat /proc/sys/vm/dirty_ratio 2>/dev/null || echo 20)"
-  dbr="$(cat /proc/sys/vm/dirty_background_ratio 2>/dev/null || echo 10)"
-  $SUDO sh -c 'echo 50331648 > /proc/sys/vm/dirty_bytes; echo 16777216 > /proc/sys/vm/dirty_background_bytes' 2>/dev/null || true
-  $SUDO dd if="$ISO" of="$DEV" bs=4M conv=fdatasync oflag=nocache iflag=nocache status=progress || rc=$?
-  $SUDO sync || true
-  # Restore the kernel's default (ratio-based) write-back throttling.
-  $SUDO sh -c "echo $dr > /proc/sys/vm/dirty_ratio; echo $dbr > /proc/sys/vm/dirty_background_ratio" 2>/dev/null || true
-  return "$rc"
+  if $SUDO dd if="$ISO" of="$DEV" bs=4M oflag=direct conv=fsync status=progress; then
+    $SUDO sync
+    return 0
+  fi
+  echo "O_DIRECT not accepted — falling back to a capped buffered write" >&2
+  local dr; dr="$(cat /proc/sys/vm/dirty_ratio 2>/dev/null || echo 20)"
+  $SUDO sh -c 'echo 134217728 > /proc/sys/vm/dirty_bytes' 2>/dev/null || true
+  $SUDO dd if="$ISO" of="$DEV" bs=4M conv=fsync status=progress
+  $SUDO sync
+  $SUDO sh -c "echo $dr > /proc/sys/vm/dirty_ratio" 2>/dev/null || true
 }
 
 # Root-only core used by the GUI via pkexec: assumes the seed is staged and
