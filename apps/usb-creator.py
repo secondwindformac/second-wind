@@ -70,6 +70,15 @@ T = {
     "confirm_b": "no tiene vuelta atrás." if ES else "cannot be undone.",
     "cancel": "Cancelar" if ES else "Cancel",
     "erase": "Sí, borrar" if ES else "Yes, erase",
+    "locks_t": "Antes de borrar — dos confirmaciones" if ES
+               else "Before we erase — two promises",
+    "locks_b": "Marca las dos casillas para continuar. Instalar borra TODO este Mac." if ES
+               else "Tick both boxes to continue. Installing erases EVERYTHING on this Mac.",
+    "lock1": "Respaldé mis fotos, archivos y contraseñas (están en otro lugar)" if ES
+             else "I backed up my photos, files and passwords (they're somewhere else)",
+    "lock2": "Entiendo que este Mac se borrará por completo" if ES
+             else "I understand this Mac will be completely erased",
+    "continue": "Continuar" if ES else "Continue",
     "writing": "Escribiendo el pendrive — no lo desconectes" if ES
                else "Writing the stick — do not unplug it",
     "finishing": "Sellando la semilla…" if ES else "Sealing the seed…",
@@ -258,6 +267,29 @@ class Creator(Adw.Application):
         dev = next((c.dev for c in self.checks if c.get_active()), None)
         if not dev:
             return
+        # Lock 1 of 2 — the backup checklist. BOTH promises are required to go on.
+        d = Adw.AlertDialog(heading=T["locks_t"], body=T["locks_b"])
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, margin_top=6)
+        c1 = Gtk.CheckButton(label=T["lock1"])
+        c2 = Gtk.CheckButton(label=T["lock2"])
+        box.append(c1)
+        box.append(c2)
+        d.set_extra_child(box)
+        d.add_response("cancel", T["cancel"])
+        d.add_response("go", T["continue"])
+        d.set_response_appearance("go", Adw.ResponseAppearance.DESTRUCTIVE)
+        d.set_response_enabled("go", False)
+        d.set_default_response("cancel")
+
+        def gate(*_):
+            d.set_response_enabled("go", c1.get_active() and c2.get_active())
+        c1.connect("toggled", gate)
+        c2.connect("toggled", gate)
+        d.connect("response", lambda _d, r: r == "go" and self.confirm_erase(dev))
+        d.present(self.win)
+
+    def confirm_erase(self, dev):
+        # Lock 2 of 2 — the final, unambiguous erase confirmation.
         d = Adw.AlertDialog(heading=T["confirm_t"],
                             body=f"{dev} — {T['confirm_b']}")
         d.add_response("cancel", T["cancel"])
