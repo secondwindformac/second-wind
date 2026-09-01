@@ -20,6 +20,35 @@ SW_STATE = os.path.expanduser("~/.local/state/second-wind")
 LOGDIR = os.path.join(SW_STATE, "logs")
 os.makedirs(LOGDIR, exist_ok=True)
 
+
+def ensure_launcher():
+    """Register our own app icon so the creator opens from the applications
+    grid WITHOUT a terminal. Runs on every start (idempotent, self-heals the
+    path); wrapped so a launcher hiccup never blocks the app."""
+    try:
+        apps = os.path.expanduser("~/.local/share/applications")
+        os.makedirs(apps, exist_ok=True)
+        icon = os.path.join(SW_ROOT, "creator", "macos", "assets", "icon-1024.png")
+        with open(os.path.join(apps, "second-wind-usb-creator.desktop"), "w") as f:
+            f.write(
+                "[Desktop Entry]\n"
+                "Type=Application\n"
+                "Name=Second Wind USB Creator\n"
+                "Comment=Create a bootable Second Wind USB installer\n"
+                f"Exec=python3 {os.path.abspath(__file__)}\n"
+                f"Icon={icon}\n"
+                "Terminal=false\n"
+                "Categories=System;Utility;\n"
+                "StartupNotify=true\n"
+            )
+        subprocess.Popen(["update-desktop-database", apps],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass  # the launcher is a convenience; never let it stop the creator
+
+
+ensure_launcher()
+
 try:
     import gi
     gi.require_version("Gtk", "4.0")
