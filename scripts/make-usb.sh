@@ -120,14 +120,14 @@ EOF
 # $2=privilege prefix ("sudo" when not root, "" under pkexec).
 gentle_dd() {
   local DEV="$1" SUDO="${2:-}"
-  if $SUDO dd if="$ISO" of="$DEV" bs=4M oflag=direct conv=fsync status=progress; then
+  if $SUDO dd if="$ISO" of="$DEV" bs=16M oflag=direct conv=fsync status=progress; then
     $SUDO sync
     return 0
   fi
   echo "O_DIRECT not accepted — falling back to a capped buffered write" >&2
   local dr; dr="$(cat /proc/sys/vm/dirty_ratio 2>/dev/null || echo 20)"
   $SUDO sh -c 'echo 134217728 > /proc/sys/vm/dirty_bytes' 2>/dev/null || true
-  $SUDO dd if="$ISO" of="$DEV" bs=4M conv=fsync status=progress
+  $SUDO dd if="$ISO" of="$DEV" bs=16M conv=fsync status=progress
   $SUDO sync
   $SUDO sh -c "echo $dr > /proc/sys/vm/dirty_ratio" 2>/dev/null || true
 }
