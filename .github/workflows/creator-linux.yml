@@ -1,0 +1,55 @@
+name: creator-linux
+
+# Builds the Linux USB Creator as a .deb, INSTALLS it on a clean Ubuntu 24.04
+# (proving the declared dependencies resolve and the app imports/starts), runs
+# a headless self-check, then publishes the .deb + checksum to the release.
+# This is the "don't ship blind" gate: it must pass before the website links it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to attach the .deb to
+        default: v0.9.0
+        required: true
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-test-publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # git history needed for the payload archive
+
+      - name: Build the .deb
+        run: bash packaging/build-deb.sh "$(cat VERSION | tr -d '[:space:]')"
+
+      - name: Install on a clean Ubuntu (resolves declared deps)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          sudo apt-get install -y ./build/deb/second-wind-usb-creator_*_amd64.deb
+
+      - name: Smoke test (self-check, headless — imports + script parse)
+        run: xvfb-run -a python3 /opt/second-wind-creator/apps/usb-creator.py --self-check
+
+      - name: Checksums
+        run: |
+          cd build/deb
+          sha256sum second-wind-usb-creator_*_amd64.deb > SHA256SUMS.linux
+          cat SHA256SUMS.linux
+
+      - name: Publish to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          gh release upload "$TAG" \
+            build/deb/second-wind-usb-creator_*_amd64.deb \
+            build/deb/SHA256SUMS.linux \
+            --clobber --repo "$GITHUB_REPOSITORY"
