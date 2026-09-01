@@ -29,7 +29,7 @@ except Exception:
     os.execv("/bin/bash", ["bash", os.path.join(SW_ROOT, "scripts", "make-usb.sh"), "--gui"])
 
 ES = (locale.getlocale()[0] or os.environ.get("LANG", "en")).startswith("es")
-MIN_BYTES = 8 * 1024**3
+MIN_BYTES = 7 * 1000**3   # real-world "8 GB" sticks are ~7.2 GiB; payload is ~6.5 GB
 
 
 def lock_value(key):
@@ -57,7 +57,7 @@ T = {
                 "• Feel free to switch apps: a notification tells you when it's done"),
     "start": "Comenzar" if ES else "Start",
     "prep": "Preparando Ubuntu oficial…" if ES else "Preparing official Ubuntu…",
-    "verify": "Verificando firma criptográfica…" if ES else "Verifying cryptographic signature…",
+    "verify": "Verificando la descarga… (puede tardar ~1 min)" if ES else "Verifying the download… (may take ~1 min)",
     "seed": "Preparando la semilla Second Wind…" if ES else "Preparing the Second Wind seed…",
     "pick_t": "Elige el pendrive" if ES else "Choose the stick",
     "pick_b": "Se borrará por completo." if ES else "It will be completely erased.",
@@ -118,6 +118,7 @@ class Creator(Adw.Application):
     def __init__(self):
         super().__init__(application_id="app.secondwind.USBCreator")
         self.writing = False
+        self._pulse_id = None
 
     # ---------- UI scaffolding ----------
     def do_activate(self):
@@ -182,13 +183,13 @@ class Creator(Adw.Application):
                         have += len(chunk)
                         GLib.idle_add(self.set_prog, have / want,
                                       f"{human(have)} / {human(want)}")
-            GLib.idle_add(self.set_prog, 1.0, T["verify"])
+            GLib.idle_add(self.prep_phase, T["verify"])
             out = subprocess.run(["sha256sum", ISO], capture_output=True,
                                  text=True).stdout.split()[0]
             if out != ISO_SHA:
                 os.remove(ISO)
                 raise RuntimeError("checksum")
-            GLib.idle_add(self.set_prog, 1.0, T["seed"])
+            GLib.idle_add(self.prep_phase, T["seed"])
             r = subprocess.run(["bash", os.path.join(SW_ROOT, "scripts", "make-usb.sh"),
                                 "--build"],
                                stdout=open(os.path.join(LOGDIR, "usb-creator.log"), "a"),
@@ -204,6 +205,25 @@ class Creator(Adw.Application):
         self.plabel.set_label(text)
         self.win.set_title(f"{int(frac*100)}% — {T['title']}")
         return False
+
+    def prep_phase(self, text):
+        # Indeterminate steps (verify, seed): pulse so it never looks frozen at 100%.
+        self.plabel.set_label(text)
+        self.win.set_title(f"{T['title']} — {text}")
+        self.prog.set_fraction(0.0)
+        if not self._pulse_id:
+            self.prog.set_pulse_step(0.1)
+            self._pulse_id = GLib.timeout_add(120, self._pulse_tick)
+        return False
+
+    def _pulse_tick(self):
+        self.prog.pulse()
+        return True
+
+    def _stop_pulse(self):
+        if self._pulse_id:
+            GLib.source_remove(self._pulse_id)
+            self._pulse_id = None
 
     def sticks(self):
         out = subprocess.run(["lsblk", "-dbnro", "NAME,SIZE,MODEL,RM"],
@@ -223,6 +243,7 @@ class Creator(Adw.Application):
         return rows
 
     def page_pick(self):
+        self._stop_pulse()
         group = Adw.PreferencesGroup(title=T["pick_t"], description=T["pick_b"])
         rows = self.sticks()
         self.checks = []
@@ -347,6 +368,7 @@ class Creator(Adw.Application):
         self.page("done", sp, b)
 
     def page_fail(self):
+        self._stop_pulse()
         sp = self.status_page("dialog-error-symbolic", T["fail_t"], T["fail_b"])
         b = Gtk.Button(label=T["close"], css_classes=["pill"], halign=Gtk.Align.CENTER)
         b.connect("clicked", lambda *_: self.win.close())
