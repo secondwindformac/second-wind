@@ -42,10 +42,18 @@ build() {
   cp "$STAGE/user-data" "$STAGE/autoinstall/user-data"
   cp usb/firstboot/second-wind-firstboot.sh usb/firstboot/second-wind-firstboot.desktop "$STAGE/firstboot/"
   chmod +x "$STAGE/firstboot/second-wind-firstboot.sh"
-  if ! git diff --quiet HEAD 2>/dev/null; then
-    warn "Repo has uncommitted changes: the payload is built from the last commit (HEAD)."
+  # Payload (the Second Wind files that land on the target Mac). A packaged
+  # install (.deb) has NO git checkout, so prefer a prebuilt payload shipped
+  # with the app; fall back to `git archive` in a dev checkout.
+  if [ -f "$SW_ROOT/payload/second-wind.tar.gz" ]; then
+    cp "$SW_ROOT/payload/second-wind.tar.gz" "$STAGE/second-wind.tar.gz"
+  elif git -C "$SW_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git -C "$SW_ROOT" diff --quiet HEAD 2>/dev/null \
+      || warn "Repo has uncommitted changes: payload built from the last commit (HEAD)."
+    git -C "$SW_ROOT" archive --prefix=second-wind/ HEAD | gzip > "$STAGE/second-wind.tar.gz"
+  else
+    die "No prebuilt payload and not a git checkout — cannot build the seed."
   fi
-  git archive --prefix=second-wind/ HEAD | gzip > "$STAGE/second-wind.tar.gz"
   ok "Seed ready at $STAGE"
 }
 
@@ -130,6 +138,14 @@ write_core() {
   local DEV="$1"
   [ "$(id -u)" -eq 0 ] || die "--write-core runs as root (pkexec)"
   [ -b "$DEV" ] || die "not a block device: $DEV"
+  # Safety (defense in depth for a root path): NEVER touch the system disk, and
+  # require a stick of a sane size — even though the GUI already filtered to a
+  # removable device, this runs as root and must not be able to wipe the host.
+  local ROOTDISK SIZE
+  ROOTDISK="/dev/$(lsblk -no PKNAME "$(findmnt -no SOURCE / 2>/dev/null)" 2>/dev/null | head -1)"
+  [ "$DEV" != "$ROOTDISK" ] || die "refusing: $DEV is the system disk"
+  SIZE="$(lsblk -dnbo SIZE "$DEV" 2>/dev/null | head -1)"
+  [ "${SIZE:-0}" -ge $((7 * 1000 * 1000 * 1000)) ] || die "refusing: $DEV is smaller than 7 GB"
   lsblk -nrpo NAME,MOUNTPOINT "$DEV" | awk '$2 != "" {print $1}' \
     | while read -r p; do umount "$p" || true; done
   gentle_dd "$DEV"

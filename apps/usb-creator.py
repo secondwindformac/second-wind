@@ -439,4 +439,13 @@ class Creator(Adw.Application):
 
 
 if __name__ == "__main__":
+    if "--self-check" in sys.argv:
+        # CI smoke test on a clean Ubuntu: GTK/Adw import (done above), both
+        # translations build, and make-usb.sh parses. No GUI, no USB write.
+        build_T(False)
+        build_T(True)
+        _mk = os.path.join(SW_ROOT, "scripts", "make-usb.sh")
+        _rc = subprocess.run(["bash", "-n", _mk]).returncode
+        print("SELF_CHECK_OK" if _rc == 0 else "SELF_CHECK_FAIL")
+        sys.exit(_rc)
     sys.exit(Creator().run(None))
