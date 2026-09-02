@@ -19,15 +19,17 @@ ext_install_pinned "$EXT_LOGO_UUID" "$EXT_LOGO_TAG" "$EXT_LOGO_SHA256" \
 # SecondWind derived theme = MacTahoe solid + our polish (see 20-look).
 dconf_track /org/gnome/shell/extensions/user-theme/name "'SecondWind-$SW_SHELL_VARIANT'"
 
-# Mac-style top-left menu (Logo Menu): our own ⌘ command-symbol icon (no Apple
-# trademarks), with About, Settings, Lock, Power…; hides the Activities pill
-# (the overview stays on the hot corner and the 3-finger gesture).
-# The icon matches the bar: white strokes on the dark bar, dark on the light one.
-LOGO_ICON="command-symbolic.svg"
-[ "$SW_SHELL_VARIANT" = "Dark" ] && LOGO_ICON="command-symbolic-white.svg"
+# Mac-style top-left menu (Logo Menu): a NEUTRAL Second Wind "wind" mark.
+# ⚠ LEGAL: this extension's built-in DEFAULT logo is the APPLE logo (Apple's
+# registered trademark). We must (a) force our OWN custom icon and (b) never let
+# it fall back to Apple. Earlier we used a ⌘ command-symbol, but ⌘ still evokes
+# Apple — replaced with a neutral wind mark. The icon matches the bar: white
+# strokes on the dark bar, dark on the light one.
+LOGO_ICON="sw-wind-symbolic.svg"
+[ "$SW_SHELL_VARIANT" = "Dark" ] && LOGO_ICON="sw-wind-symbolic-white.svg"
 if [ "$DRY_RUN" != 1 ]; then
   install -d "$SW_SHARE"
-  cp "$SW_ROOT/assets/command-symbolic.svg" "$SW_ROOT/assets/command-symbolic-white.svg" "$SW_SHARE/"
+  cp "$SW_ROOT/assets/sw-wind-symbolic.svg" "$SW_ROOT/assets/sw-wind-symbolic-white.svg" "$SW_SHARE/"
   track_new_file "$SW_SHARE"
 fi
 dconf_track /org/gnome/shell/extensions/Logo-menu/use-custom-icon true
