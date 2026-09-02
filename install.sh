@@ -42,11 +42,16 @@ map_alias() {
 
 ONLY_MODULES=()
 WITH_HARDWARE=1
+FIRSTBOOT=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --yes|-y|--si) ASSUME_YES=1 ;;
     --no-hardware|--sin-hardware) WITH_HARDWARE=0 ;;
+    # Internal: the USB firstboot sets this. It tells us NOT to run our own
+    # end-of-install logout prompt — firstboot reboots the machine itself once
+    # we finish (a fresh GNOME shell is what actually loads the extensions).
+    --firstboot) FIRSTBOOT=1 ;;
     --only|--solo) shift; [ $# -gt 0 ] || die "--only requires a module name"; ONLY_MODULES+=("$1") ;;
     --verify|--verificar) exec ./verify.sh --all ;;
     --uninstall|--desinstalar) exec ./uninstall.sh ;;
@@ -119,7 +124,11 @@ else
 fi
 [ ${#ONLY_MODULES[@]} -eq 0 ] && info "${MSG[trial_note]}"
 
-if [ "$DRY_RUN" != 1 ] && [ ${#ONLY_MODULES[@]} -eq 0 ]; then
+# A standalone run asks (default no) whether to end the session — reboots are
+# manual by design when someone runs this on a machine they are already using.
+# The guided USB firstboot (--firstboot) is different: it is a brand-new machine
+# and firstboot restarts it for us, so we skip the prompt here.
+if [ "$DRY_RUN" != 1 ] && [ ${#ONLY_MODULES[@]} -eq 0 ] && [ "$FIRSTBOOT" != 1 ]; then
   echo
   if ui_yesno "${MSG[ask_logout]}" --default-no; then
     gnome-session-quit --logout --no-prompt
