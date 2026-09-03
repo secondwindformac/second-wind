@@ -23,11 +23,15 @@ gui_error() {
     --text="$1"$'\n\n'"${MSG[gui_err_log]:-Log:} $2" 2>/dev/null || true
 }
 
-# --- one-time graphical privilege escalation (askpass, NOT pkexec) ---
-# pkexec elevates a separate process and does NOT populate sudo's credential
-# cache; the modules use sudo, so we authenticate sudo itself once via a zenity
-# SUDO_ASKPASS helper and keep the timestamp warm for the whole run.
-SW_GUI_ASKPASS=""; SW_GUI_KEEPALIVE=""
+# --- one-time graphical privilege escalation (askpass + temporary NOPASSWD) ---
+# pkexec does NOT populate sudo's credential cache, and a `sudo -n` keepalive
+# dies the moment any module runs `sudo -k` (Toshy does) — after which every
+# privileged module re-prompts. So we authenticate ONCE via a zenity
+# SUDO_ASKPASS helper and then drop a TEMPORARY passwordless sudoers rule for
+# the guided run (same pattern as 32-toshy). It is removed in gui_auth_end AND
+# by the caller's EXIT trap, so it never outlives the install.
+SW_GUI_ASKPASS=""; SW_GUI_SUDOERS=""
+SW_GUI_SUDOERS_PATH="/etc/sudoers.d/zz-second-wind-gui"
 gui_auth_begin() {
   SW_GUI_ASKPASS="$(mktemp)"; chmod 0700 "$SW_GUI_ASKPASS"
   # Helper prints the password to STDOUT ONLY; it never stores or logs it.
@@ -37,9 +41,15 @@ exec zenity --password --title="Second Wind" 2>/dev/null
 EOF
   chmod 0700 "$SW_GUI_ASKPASS"
   export SUDO_ASKPASS="$SW_GUI_ASKPASS"
-  sudo -A -v || { gui_auth_end; return 1; }        # ask once (graphical)
-  ( while sleep 50; do sudo -n true 2>/dev/null || exit; done ) &
-  SW_GUI_KEEPALIVE=$!
+  sudo -A -v || { gui_auth_end; return 1; }        # prove identity once (graphical)
+  # Passwordless for the run so NO module re-prompts (survives `sudo -k`).
+  local f="$SW_GUI_SUDOERS_PATH"
+  if printf '%s ALL=(ALL) NOPASSWD:ALL\n' "$(id -un)" | sudo tee "$f" >/dev/null \
+     && sudo chmod 0440 "$f" && sudo visudo -c -q -f "$f" 2>/dev/null; then
+    SW_GUI_SUDOERS="$f"
+  else
+    sudo -n rm -f "$f" 2>/dev/null || true; SW_GUI_SUDOERS=""
+  fi
   return 0
 }
 # gui_auth_ensure -> 0 if privileged calls will work; else fail LOUD (caller
@@ -50,13 +60,16 @@ gui_auth_ensure() {
   return 1
 }
 gui_auth_end() {
-  [ -n "$SW_GUI_KEEPALIVE" ] && kill "$SW_GUI_KEEPALIVE" 2>/dev/null || true
-  [ -n "$SW_GUI_ASKPASS" ] && rm -f "$SW_GUI_ASKPASS" || true
-  SW_GUI_KEEPALIVE=""; SW_GUI_ASKPASS=""; unset SUDO_ASKPASS 2>/dev/null || true
+  [ -n "$SW_GUI_SUDOERS" ] && sudo -n rm -f "$SW_GUI_SUDOERS" 2>/dev/null || true
+  [ -n "$SW_GUI_ASKPASS" ] && rm -f "$SW_GUI_ASKPASS" 2>/dev/null || true
+  SW_GUI_SUDOERS=""; SW_GUI_ASKPASS=""; unset SUDO_ASKPASS 2>/dev/null || true
 }
 
 # --- phase-based progress window (pulsating; deterministic close) ---
-SW_PROGRESS_FIFO=""; SW_PROGRESS_PID=""; SW_PROGRESS_WFD=""
+# PRESERVE an already-exported SW_PROGRESS_FIFO: install.sh re-sources this file
+# and must keep the parent's FIFO path to update the bar (clobbering it left the
+# text stuck on the first phase). PID/WFD are per-process and reset.
+SW_PROGRESS_FIFO="${SW_PROGRESS_FIFO:-}"; SW_PROGRESS_PID=""; SW_PROGRESS_WFD=""
 gui_progress_open() {
   local dir; dir="$(mktemp -d)"; SW_PROGRESS_FIFO="$dir/p"
   mkfifo "$SW_PROGRESS_FIFO"
@@ -75,8 +88,11 @@ gui_progress_update() {
   printf '# %s\n' "$1" >> "$SW_PROGRESS_FIFO" 2>/dev/null || true
 }
 gui_progress_close() {
+  # KILL zenity rather than wait for EOF: a long-lived daemon that install.sh
+  # spawned (e.g. ulauncher) may have inherited a write end of the FIFO, so EOF
+  # may never arrive. Killing guarantees the window closes and we never hang.
   [ -n "$SW_PROGRESS_WFD" ] && { exec {SW_PROGRESS_WFD}>&- 2>/dev/null || true; SW_PROGRESS_WFD=""; }
-  [ -n "$SW_PROGRESS_PID" ] && wait "$SW_PROGRESS_PID" 2>/dev/null || true
+  [ -n "$SW_PROGRESS_PID" ] && { kill "$SW_PROGRESS_PID" 2>/dev/null || true; wait "$SW_PROGRESS_PID" 2>/dev/null || true; }
   [ -n "$SW_PROGRESS_FIFO" ] && rm -rf "$(dirname "$SW_PROGRESS_FIFO")" 2>/dev/null || true
   SW_PROGRESS_FIFO=""; SW_PROGRESS_PID=""
 }
