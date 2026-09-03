@@ -65,7 +65,9 @@ export DRY_RUN ASSUME_YES
 [ "$(id -u)" -eq 0 ] && die "${MSG[no_root]}"
 
 # ---- question phase (before redirecting output, so whiptail renders fine) ----
-if [ ${#ONLY_MODULES[@]} -eq 0 ]; then
+# The guided USB first boot (--firstboot) shows its ONE graphical consent in the
+# firstboot wrapper, so install.sh asks nothing here and keeps the hardware steps.
+if [ ${#ONLY_MODULES[@]} -eq 0 ] && [ "$FIRSTBOOT" != 1 ]; then
   ui_msg "${MSG[welcome]}"
   ui_yesno "${MSG[confirm]}" || die "${MSG[cancelled]}"
   if [ "$WITH_HARDWARE" = 1 ] && [ "$ASSUME_YES" != 1 ] && ui_has_tty; then

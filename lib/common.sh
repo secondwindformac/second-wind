@@ -261,3 +261,7 @@ case "${LC_ALL:-${LC_MESSAGES:-${LANG:-en}}}" in
   es*) source "$SW_LIB/i18n/es.sh" ;;
   *)   source "$SW_LIB/i18n/en.sh" ;;
 esac
+
+# --- graphical shell (only active when SW_UI=gui; safe no-ops otherwise) ---
+# Defined before ui.sh's ui_step/ui_error may route to it.
+[ -f "$SW_LIB/gui.sh" ] && source "$SW_LIB/gui.sh"
