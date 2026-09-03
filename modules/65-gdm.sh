@@ -17,7 +17,7 @@ if [ ! -f "$YARU_GR" ]; then
 fi
 
 info "${MSG[m60_sudo]}"
-if ! sudo -v; then
+if ! sw_sudo_ready; then
   warn "${MSG[m65_no_sudo]}"
   return 1
 fi

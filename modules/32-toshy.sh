@@ -17,7 +17,7 @@ if [ "$DRY_RUN" = 1 ]; then
 fi
 
 info "${MSG[m60_sudo]}"
-if ! sudo -v; then
+if ! sw_sudo_ready; then
   warn "${MSG[m15_no_sudo]}"
   return 1
 fi

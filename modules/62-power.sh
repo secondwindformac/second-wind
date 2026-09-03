@@ -24,7 +24,7 @@ if ! grep -qE 'platform|shutdown' /sys/power/disk 2>/dev/null; then
 fi
 
 info "${MSG[m60_sudo]}"
-if ! sudo -v; then
+if ! sw_sudo_ready; then
   warn "${MSG[m62_no_sudo]}"
   return 1
 fi

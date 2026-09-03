@@ -60,6 +60,22 @@ mf() {
 
 need_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing required tool '$1'."; }
 
+# sw_sudo_ready — a module's "can I run privileged commands now?" guard.
+# Succeeds WITHOUT prompting whenever possible, else authenticates once.
+#   • Guided GUI firstboot: a temporary NOPASSWD rule is in place, so
+#     `sudo -n true` passes and NOTHING is re-prompted — even after a module
+#     runs `sudo -k` (Toshy does). A bare `sudo -v` would re-ask despite
+#     NOPASSWD (validate needs a password), which is the "asked ~5 times" bug.
+#   • Standalone terminal run: no such rule, so fall back to an interactive
+#     `sudo -v` — exactly one prompt, the original behavior. If a graphical
+#     askpass is set (GUI edge where the NOPASSWD rule could not be written),
+#     re-ask through it instead of a mute failure.
+sw_sudo_ready() {
+  sudo -n true 2>/dev/null && return 0
+  [ -n "${SUDO_ASKPASS:-}" ] && sudo -A -v 2>/dev/null && return 0
+  sudo -v
+}
+
 # apt_track_install PKG... — install only what is missing, recording it for
 # uninstall. Requires an authorized sudo (caller runs `sudo -v` first).
 apt_track_install() {
