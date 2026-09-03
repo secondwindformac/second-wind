@@ -54,3 +54,25 @@ gui_auth_end() {
   [ -n "$SW_GUI_ASKPASS" ] && rm -f "$SW_GUI_ASKPASS" || true
   SW_GUI_KEEPALIVE=""; SW_GUI_ASKPASS=""; unset SUDO_ASKPASS 2>/dev/null || true
 }
+
+# --- phase-based progress window (pulsating; deterministic close) ---
+SW_PROGRESS_FIFO=""; SW_PROGRESS_PID=""; SW_PROGRESS_WFD=""
+gui_progress_open() {
+  local dir; dir="$(mktemp -d)"; SW_PROGRESS_FIFO="$dir/p"
+  mkfifo "$SW_PROGRESS_FIFO"
+  ( zenity --progress --pulsate --no-cancel --auto-close \
+      --title="Second Wind" --text="${1:-…}" < "$SW_PROGRESS_FIFO" 2>/dev/null ) &
+  SW_PROGRESS_PID=$!
+  exec {SW_PROGRESS_WFD}>"$SW_PROGRESS_FIFO"   # hold the write end open across updates
+  export SW_PROGRESS_FIFO
+}
+gui_progress_update() {
+  [ -n "$SW_PROGRESS_FIFO" ] && [ -p "$SW_PROGRESS_FIFO" ] || return 0
+  printf '# %s\n' "$1" >&"$SW_PROGRESS_WFD" 2>/dev/null || true
+}
+gui_progress_close() {
+  [ -n "$SW_PROGRESS_WFD" ] && { exec {SW_PROGRESS_WFD}>&- 2>/dev/null || true; SW_PROGRESS_WFD=""; }
+  [ -n "$SW_PROGRESS_PID" ] && wait "$SW_PROGRESS_PID" 2>/dev/null || true
+  [ -n "$SW_PROGRESS_FIFO" ] && rm -rf "$(dirname "$SW_PROGRESS_FIFO")" 2>/dev/null || true
+  SW_PROGRESS_FIFO=""; SW_PROGRESS_PID=""
+}
