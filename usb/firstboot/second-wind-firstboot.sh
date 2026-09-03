@@ -25,6 +25,13 @@ fi
 
 [ -x "$SWDIR/install.sh" ] || { echo "second-wind payload missing"; exit 0; }
 
+# Load the payload helpers so we can show the friendly graphical conversion
+# (gui_* dialogs + translated MSG strings). Safe if it is missing — we then use
+# the terminal path below.
+export SW_ROOT="$SWDIR"
+# shellcheck disable=SC1091
+[ -f "$SWDIR/lib/common.sh" ] && source "$SWDIR/lib/common.sh"
+
 ATTEMPT_FILE="$SW_STATE/firstboot-attempt"
 ATTEMPT=$(( $(cat "$ATTEMPT_FILE" 2>/dev/null || echo 0) + 1 ))
 echo "$ATTEMPT" > "$ATTEMPT_FILE"
@@ -64,9 +71,47 @@ until net_ok; do
   notify-send -i network-wireless "Second Wind" "$T_NET" 2>/dev/null || true
   sleep 40
 done
-notify-send -i emblem-ok-symbolic "Second Wind" "$T_GO" 2>/dev/null || true
+# Shared success tail: announce, then reboot ONCE so a FRESH gnome-shell loads
+# the Mac look (extensions only take effect on a new shell; this also boots the
+# GA kernel). Called only after a successful install (STAMP set, autostart gone),
+# so it fires exactly once and never loops.
+reboot_to_finish() {
+  notify-send -i emblem-ok-symbolic "Second Wind" "$T_DONE" 2>/dev/null || true
+  sleep 6
+  gnome-session-quit --reboot --no-prompt 2>/dev/null \
+    || systemctl reboot 2>/dev/null \
+    || sudo -n systemctl reboot 2>/dev/null \
+    || true
+}
 
-# The wrapped run disarms the autostart ONLY after install.sh exits happily.
+# Preferred path: the friendly GRAPHICAL conversion — ONE consent, ONE graphical
+# password, a progress window — with install.sh running hidden. Only taken when a
+# real dialog can be shown; otherwise we fall through to the terminal path below
+# (never to an invisible whiptail in a session with no terminal).
+if command -v gui_available >/dev/null 2>&1 && gui_available; then
+  if gui_consent "${MSG[gui_consent]}" && gui_auth_begin; then
+    gui_progress_open "${MSG[gui_phase_prep]}"
+    SW_UI=gui "$SWDIR/install.sh" --firstboot
+    rc=$?
+    gui_progress_close
+    gui_auth_end
+    if [ "$rc" = 0 ]; then
+      touch "$STAMP"; rm -f "$AUTOSTART"
+      reboot_to_finish
+    else
+      # A visible, dismissable error. The autostart stays armed, so the next
+      # login retries where it stopped (install.sh is idempotent).
+      gui_error "${MSG[gui_err_body]}" "$LOGDIR"
+    fi
+  else
+    # "Not now" or a cancelled password: stay armed and quiet; retry next login.
+    gui_auth_end 2>/dev/null || true
+  fi
+  exit 0
+fi
+
+# --- Terminal fallback (no usable zenity/display): the original behavior. ---
+notify-send -i emblem-ok-symbolic "Second Wind" "$T_GO" 2>/dev/null || true
 # --firstboot tells install.sh to skip its own logout prompt: we restart below.
 RUN="cd '$SWDIR' && ./install.sh --firstboot && touch '$STAMP' && rm -f '$AUTOSTART'"
 
@@ -83,27 +128,12 @@ else
 fi
 
 sleep 2
-
-# Success (STAMP present ⇒ install finished, autostart already disarmed above)?
-# The GNOME extensions we just installed only take effect in a FRESH shell:
-# THIS session's gnome-shell started before they existed on disk and never
-# rescanned them, so the top bar stays Ubuntu's until a new shell starts. One
-# reboot finishes the conversion (and boots the freshly-installed GA kernel).
-# The stamp is set and the autostart removed, so this fires exactly once and
-# never loops. (ptyxis returns immediately ⇒ STAMP not yet written ⇒ no reboot;
-# gnome-terminal, Ubuntu's default, waits — see WAITED.)
 if [ -f "$STAMP" ]; then
-  notify-send -i emblem-ok-symbolic "Second Wind" "$T_DONE" 2>/dev/null || true
-  sleep 6
-  gnome-session-quit --reboot --no-prompt 2>/dev/null \
-    || systemctl reboot 2>/dev/null \
-    || sudo -n systemctl reboot 2>/dev/null \
-    || true
+  reboot_to_finish
   exit 0
 fi
-
-# Still armed after a run we actually waited for? Tell the person it will
-# resume on its own (the stamp is the single source of truth).
+# Still armed after a run we actually waited for? Tell the person it resumes on
+# its own (the stamp is the single source of truth).
 if [ "$WAITED" = 1 ] && [ ! -f "$STAMP" ] && [ -f "$AUTOSTART" ]; then
   notify-send -i view-refresh-symbolic "Second Wind" "$T_AGAIN" 2>/dev/null || true
 fi
