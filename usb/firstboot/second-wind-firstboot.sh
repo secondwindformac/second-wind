@@ -25,6 +25,19 @@ fi
 
 [ -x "$SWDIR/install.sh" ] || { echo "second-wind payload missing"; exit 0; }
 
+# R9 polish: Ubuntu's first-login windows (the "Complete your setup" wizard and
+# "Software Updater") launch WITH the session — before module 85-quiet, which
+# runs near the end of the install, can write its overrides. Close them here
+# (and once more right before the conversion starts) so the person's very
+# first screen stays clean; 85-quiet then prevents every FUTURE login.
+# Killing is safe: the wizard is optional and update-notifier only pops a
+# window — apt, updates and security are untouched.
+quiet_first_login() {
+  pkill -f gnome-initial-setup 2>/dev/null || true
+  pkill -f update-notifier 2>/dev/null || true
+}
+quiet_first_login
+
 # Load the payload helpers so we can show the friendly graphical conversion
 # (gui_* dialogs + translated MSG strings). Safe if it is missing — we then use
 # the terminal path below.
@@ -71,6 +84,9 @@ until net_ok; do
   notify-send -i network-wireless "Second Wind" "$T_NET" 2>/dev/null || true
   sleep 40
 done
+# Second sweep: anything Ubuntu popped while we waited for the network dies
+# now, right before the conversion window takes the screen.
+quiet_first_login
 # Shared success tail: announce, then reboot ONCE so a FRESH gnome-shell loads
 # the Mac look (extensions only take effect on a new shell; this also boots the
 # GA kernel). Called only after a successful install (STAMP set, autostart gone),
