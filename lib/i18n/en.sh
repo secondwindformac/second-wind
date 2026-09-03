@@ -47,6 +47,7 @@ Disable automatic login to fix it? (You will type your password at startup, like
 
   [mod_20]="macOS look (theme, icons, cursor, fonts, wallpaper)"
   [mod_30]="Desktop extensions (panel theme, blur, keyboard)"
+  [mod_32]="Mac keyboard engine (⌘ shortcuts)"
   [mod_35]="macOS-style dock"
   [mod_40]="Top bar and window behavior"
   [mod_45]="Mac-style keyboard"
