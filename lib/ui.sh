@@ -37,4 +37,21 @@ ui_yesno() {
   fi
 }
 
-ui_step() { printf '\n%s[%s/%s] %s%s\n' "$C_INFO" "$1" "$2" "$3" "$C_OFF"; }
+# ui_step CURRENT TOTAL LABEL — a step marker. In the guided GUI first boot
+# (SW_UI=gui) it drives the graphical progress window instead of printing.
+ui_step() {
+  if [ "${SW_UI:-terminal}" = gui ]; then
+    gui_progress_update "$3"
+  else
+    printf '\n%s[%s/%s] %s%s\n' "$C_INFO" "$1" "$2" "$3" "$C_OFF"
+  fi
+}
+
+# ui_error TEXT [LOGPATH] — a visible error. GUI: a dialog; terminal: stderr.
+ui_error() {
+  if [ "${SW_UI:-terminal}" = gui ]; then
+    gui_error "$1" "${2:-}"
+  else
+    printf '%s\n' "$1" >&2
+  fi
+}
