@@ -47,6 +47,7 @@ Todo se puede revertir después con ./uninstall.sh"
 
   [mod_20]="Apariencia macOS (tema, iconos, cursor, fuentes, fondo)"
   [mod_30]="Extensiones del escritorio (tema del panel, transparencias, teclado)"
+  [mod_32]="Motor de teclado Mac (atajos ⌘)"
   [mod_35]="Dock estilo macOS"
   [mod_40]="Barra superior y comportamiento de ventanas"
   [mod_45]="Teclado estilo Mac"
