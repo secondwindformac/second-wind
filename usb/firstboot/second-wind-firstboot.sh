@@ -90,6 +90,9 @@ reboot_to_finish() {
 # (never to an invisible whiptail in a session with no terminal).
 if command -v gui_available >/dev/null 2>&1 && gui_available; then
   if gui_consent "${MSG[gui_consent]}" && gui_auth_begin; then
+    # Safety net: whatever happens, remove the temporary passwordless rule and
+    # close the progress window (the normal paths below also do this).
+    trap 'gui_auth_end 2>/dev/null || true; gui_progress_close 2>/dev/null || true' EXIT
     gui_progress_open "${MSG[gui_phase_prep]}"
     SW_UI=gui "$SWDIR/install.sh" --firstboot
     rc=$?
