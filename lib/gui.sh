@@ -67,8 +67,12 @@ gui_progress_open() {
   export SW_PROGRESS_FIFO
 }
 gui_progress_update() {
-  [ -n "$SW_PROGRESS_FIFO" ] && [ -p "$SW_PROGRESS_FIFO" ] || return 0
-  printf '# %s\n' "$1" >&"$SW_PROGRESS_WFD" 2>/dev/null || true
+  # Write BY PATH (SW_PROGRESS_FIFO is exported), so install.sh — a child
+  # process — can update the bar too. The parent holds a write fd open
+  # (SW_PROGRESS_WFD) for the FIFO's whole life, so zenity never sees EOF
+  # between these short opens.
+  [ -n "${SW_PROGRESS_FIFO:-}" ] && [ -p "${SW_PROGRESS_FIFO:-}" ] || return 0
+  printf '# %s\n' "$1" >> "$SW_PROGRESS_FIFO" 2>/dev/null || true
 }
 gui_progress_close() {
   [ -n "$SW_PROGRESS_WFD" ] && { exec {SW_PROGRESS_WFD}>&- 2>/dev/null || true; SW_PROGRESS_WFD=""; }
