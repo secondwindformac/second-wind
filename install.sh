@@ -88,12 +88,17 @@ source modules/10-backup.sh
 
 MODULES=()
 [ "$WITH_HARDWARE" = 1 ] && MODULES+=(15-engines)
-MODULES+=(20-look 30-extensions 35-dock 40-panel 45-keyboard 50-spotlight 55-browsers)
+MODULES+=(20-look 30-extensions)
+# 32-toshy (the ⌘ keyboard engine) MUST run after 30-extensions (it needs the
+# Xremap extension already in place) and before 45-keyboard (which checks its
+# units). It asks for the admin password, so it is gated like 60/62/65.
+[ "$WITH_HARDWARE" = 1 ] && MODULES+=(32-toshy)
+MODULES+=(35-dock 40-panel 45-keyboard 50-spotlight 55-browsers)
 [ "$WITH_HARDWARE" = 1 ] && MODULES+=(60-hardware 62-power 65-gdm)
 MODULES+=(70-apps 75-news 76-experience 80-updater 85-quiet 90-postlogin)
 
 if [ ${#ONLY_MODULES[@]} -gt 0 ]; then
-  ALL=(15-engines 20-look 30-extensions 35-dock 40-panel 45-keyboard 50-spotlight 55-browsers 60-hardware 62-power 65-gdm 70-apps 75-news 76-experience 80-updater 85-quiet 90-postlogin)
+  ALL=(15-engines 20-look 30-extensions 32-toshy 35-dock 40-panel 45-keyboard 50-spotlight 55-browsers 60-hardware 62-power 65-gdm 70-apps 75-news 76-experience 80-updater 85-quiet 90-postlogin)
   MODULES=()
   for m in "${ALL[@]}"; do
     for wanted in "${ONLY_MODULES[@]}"; do
