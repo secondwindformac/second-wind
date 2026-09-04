@@ -61,15 +61,18 @@ chmod +x "$SW_TOSHY_SHIM/gnome-extensions"
 
 TOSHY_RUN() {
   cd "$SW_CACHE/toshy" && export PATH="$SW_TOSHY_SHIM:$HOME/.local/bin:$PATH"
-  # PIPESTATUS[1]: under pipefail, `yes` dying of SIGPIPE (141) must not
-  # count as a Toshy failure — the installer's own exit code decides.
+  # R10: `yes` cannot pass Toshy's "secret code" attention gates (a random
+  # code printed on screen must be typed back), so the install died there.
+  # toshy-driver.py runs the installer under a pty and answers every prompt
+  # shape the PINNED version has (y/n, inline code, deferred code, Enter).
   if ui_has_tty; then
     info "${MSG[m15_toshy_tty]}"
-    yes | timeout 900 python3 setup_toshy.py install 2>&1 | tee -a "$SW_LOGDIR/toshy-install.log"
-    return "${PIPESTATUS[1]}"
+    timeout 960 python3 "$SW_LIB/toshy-driver.py" python3 setup_toshy.py install 2>&1 \
+      | tee -a "$SW_LOGDIR/toshy-install.log"
+    return "${PIPESTATUS[0]}"
   else
-    yes | timeout 900 python3 setup_toshy.py install >>"$SW_LOGDIR/toshy-install.log" 2>&1
-    return "${PIPESTATUS[1]}"
+    timeout 960 python3 "$SW_LIB/toshy-driver.py" python3 setup_toshy.py install \
+      >>"$SW_LOGDIR/toshy-install.log" 2>&1
   fi
 }
 if clone_pinned "$TOSHY_REPO" "$SW_CACHE/toshy" "$TOSHY_SHA" && ( TOSHY_RUN ); then
