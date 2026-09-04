@@ -85,8 +85,14 @@ until net_ok; do
   sleep 40
 done
 # Second sweep: anything Ubuntu popped while we waited for the network dies
-# now, right before the conversion window takes the screen.
+# now, right before the conversion window takes the screen. And KEEP them dead
+# DURING the conversion: update-notifier re-launches on apt activity (R10
+# caught it popping mid-install), so a watchdog sweeps every few seconds until
+# this script exits (the success path reboots right after). User-level only.
 quiet_first_login
+( while :; do quiet_first_login; sleep 8; done ) &
+QUIET_LOOP=$!
+trap 'kill "$QUIET_LOOP" 2>/dev/null || true' EXIT
 # Shared success tail: announce, then reboot ONCE so a FRESH gnome-shell loads
 # the Mac look (extensions only take effect on a new shell; this also boots the
 # GA kernel). Called only after a successful install (STAMP set, autostart gone),
@@ -108,7 +114,7 @@ if command -v gui_available >/dev/null 2>&1 && gui_available; then
   if gui_consent "${MSG[gui_consent]}" && gui_auth_begin; then
     # Safety net: whatever happens, remove the temporary passwordless rule and
     # close the progress window (the normal paths below also do this).
-    trap 'gui_auth_end 2>/dev/null || true; gui_progress_close 2>/dev/null || true' EXIT
+    trap 'kill "$QUIET_LOOP" 2>/dev/null || true; gui_auth_end 2>/dev/null || true; gui_progress_close 2>/dev/null || true' EXIT
     gui_progress_open "${MSG[gui_phase_prep]}"
     SW_UI=gui "$SWDIR/install.sh" --firstboot
     rc=$?
