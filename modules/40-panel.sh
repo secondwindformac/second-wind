@@ -9,10 +9,9 @@ gset_track org.gnome.desktop.wm.preferences button-layout "'close,minimize,maxim
 gset_track org.gnome.desktop.interface clock-show-weekday true
 # New windows centered
 gset_track org.gnome.mutter center-new-windows true
-# Battery: automatically switch to power saver when low, like macOS
-# (the rest is handled by power-profiles-daemon, thermald and mbpfan —
-# TLP is deliberately NOT used: it breaks GNOME's power profile selector)
-gset_track org.gnome.settings-daemon.plugins.power power-saver-profile-on-low-battery true
+# Battery preferences live in 47-power-defaults (power-saver-on-low moved
+# there). The rest is handled by power-profiles-daemon, thermald and mbpfan —
+# TLP is deliberately NOT used: it breaks GNOME's power profile selector.
 # Note: overlay-key is left empty on purpose (pressing Cmd alone opens
 # nothing, just like on a Mac); the overview lives on the hot corner and the
 # 3-finger-up gesture.
