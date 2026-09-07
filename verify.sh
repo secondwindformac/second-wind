@@ -48,6 +48,10 @@ echo "${MSG[v_sec_kbd]}"
 chk "${MSG[v_xkb]}"           eq org.gnome.desktop.input-sources xkb-options "@as []"
 chk "${MSG[v_cmdtab_all]}"    eq org.gnome.shell.app-switcher current-workspace-only "false"
 chk "${MSG[v_lowbat]}"        eq org.gnome.settings-daemon.plugins.power power-saver-profile-on-low-battery "true"
+chk "${MSG[v_sleep_bat]}"     eq org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout "900"
+chk "${MSG[v_sleep_ac]}"      eq org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'"
+chk "${MSG[v_screen_off]}"    eq org.gnome.desktop.session idle-delay "uint32 300"
+chk "${MSG[v_lock_wake]}"     eq org.gnome.desktop.screensaver lock-enabled "true"
 # The Experience layer (⌘ keyboard, Spotlight, ⌘Tab) is stateful: trial and
 # active mean ON; off (day-30, unlicensed) means the OPPOSITE must hold.
 EXP_STATE="$("$SW_ROOT/bin/second-wind-experience" status 2>/dev/null | cut -d' ' -f1)"
