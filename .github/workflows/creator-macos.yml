@@ -68,7 +68,18 @@ jobs:
         run: swift test
       - name: Package the app
         working-directory: creator/macos
-        run: bash scripts/package-app.sh 0.9.0
+        run: bash scripts/package-app.sh "$(cat ../../VERSION)"
+      - name: "Guard: macOS 11 back-deploy libs are inside the app"
+        working-directory: creator/macos
+        run: |
+          BIN="dist/Second Wind Creator.app/Contents/MacOS/SecondWindCreator"
+          otool -L "$BIN" | awk '/@rpath\/libswift/ {print $1}' | sed 's|@rpath/||' \
+            | while read -r lib; do
+                if [ ! -f "dist/Second Wind Creator.app/Contents/lib/$lib" ]; then
+                  echo "MISSING $lib in Contents/lib — the app would crash at launch on macOS 11"
+                  exit 1
+                fi
+              done
       - uses: actions/upload-artifact@v4
         with:
           name: SecondWindCreator-mac

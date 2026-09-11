@@ -21,6 +21,22 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/SecondWindCreator"
 sed "s/@VERSION@/$VERSION/g" scripts/Info.plist > "$APP/Contents/Info.plist"
 
+# Swift back-deployment libraries: the deploy floor is macOS 11, but Swift
+# Concurrency only ships with the OS from macOS 12. The binary links it as
+# @rpath/libswift_Concurrency.dylib with rpath @executable_path/../lib, and
+# dyld's /usr/lib/swift fallback only helps on 12+ — on Big Sur (the OS our
+# 2013–2014 audience actually runs) there is no copy anywhere, so the app is
+# killed at launch. Bundle the toolchain's back-deploy copies at Contents/lib,
+# the rpath the binary already carries. Xcode does this same copy for .apps.
+LIBDIR="$APP/Contents/lib"
+BACKDEPLOY="$(dirname "$(xcrun --find swiftc)")/../lib/swift-5.5/macosx"
+mkdir -p "$LIBDIR"
+otool -L "$APP/Contents/MacOS/SecondWindCreator" \
+  | awk '/@rpath\/libswift/ {print $1}' | sed 's|@rpath/||' \
+  | while read -r lib; do
+      cp "$BACKDEPLOY/$lib" "$LIBDIR/$lib"
+    done
+
 # Icon: .icns from the 1024 PNG.
 ICONSET="dist/AppIcon.iconset"
 mkdir -p "$ICONSET"
