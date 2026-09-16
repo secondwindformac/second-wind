@@ -264,7 +264,11 @@ struct WritingView: View {
             Text(L10n.writingBody)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 6) {
-                Text(state.phaseLabel).font(.callout)
+                HStack {
+                    Text(state.phaseLabel).font(.callout)
+                    Spacer()
+                    Text("\(Int(state.writeProgress * 100)) %").foregroundColor(.secondary)
+                }
                 ProgressView(value: state.writeProgress)
             }
             Spacer()
