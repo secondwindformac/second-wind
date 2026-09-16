@@ -52,6 +52,26 @@ final class AppState: ObservableObject {
     private var payloadData: Data?
     private var downloading = false
 
+    // Keeps the Mac from idle-sleeping while we download or write. System
+    // sleep suspends the USB bus and kills the raw-disk descriptor mid-write
+    // — seen live on the reference Air as verify failures on two different
+    // sticks (16-Sep). A closed lid still sleeps; the writing screen warns.
+    private var keepAwakeToken: NSObjectProtocol?
+
+    private func beginKeepAwake(_ reason: String) {
+        endKeepAwake()
+        keepAwakeToken = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiated, .idleSystemSleepDisabled],
+            reason: reason)
+    }
+
+    private func endKeepAwake() {
+        if let token = keepAwakeToken {
+            ProcessInfo.processInfo.endActivity(token)
+            keepAwakeToken = nil
+        }
+    }
+
     var supportDir: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("SecondWindCreator")
@@ -68,6 +88,7 @@ final class AppState: ObservableObject {
         guard !downloading else { return }
         downloading = true
         downloadError = nil
+        beginKeepAwake("Second Wind Creator is downloading the system")
         Task {
             do {
                 let manifest = await ManifestSource.resolve()
@@ -102,10 +123,12 @@ final class AppState: ObservableObject {
                 isoDone = true
                 isoProgress = 1
                 downloading = false
+                endKeepAwake()
                 refreshDisks()
                 stage = .pickDisk
             } catch {
                 downloading = false
+                endKeepAwake()
                 downloadError = "\(L10n.downloadFailed)\n(\(error))"
             }
         }
@@ -140,6 +163,7 @@ final class AppState: ObservableObject {
         writeError = nil
         writeProgress = 0
         phaseLabel = L10n.phaseUnmount
+        beginKeepAwake("Second Wind Creator is writing the USB stick")
 
         Task.detached {
             do {
@@ -165,14 +189,19 @@ final class AppState: ObservableObject {
                         }
                     }
                 }
-                await MainActor.run { self.stage = .done }
+                await MainActor.run {
+                    self.endKeepAwake()
+                    self.stage = .done
+                }
             } catch let error as AuthOpenError {
                 await MainActor.run {
+                    self.endKeepAwake()
                     self.writeError = error == .notAuthorized ? L10n.authDeclined : "\(L10n.writeFailed)\n(\(error))"
                     self.stage = .confirm
                 }
             } catch {
                 await MainActor.run {
+                    self.endKeepAwake()
                     self.writeError = "\(L10n.writeFailed)\n(\(error))"
                     self.stage = .confirm
                 }

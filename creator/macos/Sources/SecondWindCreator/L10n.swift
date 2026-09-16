@@ -95,8 +95,8 @@ struct L10n {
     // --- Writing ---
     static var writingTitle: String { t("Creating your stick", "Creando tu pendrive") }
     static var writingBody: String { t(
-        "Several minutes. Don't unplug the stick; you can keep using the Mac.",
-        "Son varios minutos. No desconectes el pendrive; puedes seguir usando el Mac.") }
+        "Several minutes. Don't unplug the stick or close the lid; you can keep using the Mac.",
+        "Son varios minutos. No desconectes el pendrive ni cierres la tapa; puedes seguir usando el Mac.") }
     static var phaseUnmount: String { t("Releasing the stick…", "Liberando el pendrive…") }
     static var phaseISO: String { t("Copying the system…", "Copiando el sistema…") }
     static var phaseSeed: String { t("Adding Second Wind…", "Agregando Second Wind…") }
