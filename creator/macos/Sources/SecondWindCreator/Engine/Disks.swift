@@ -1,9 +1,12 @@
 // USB stick discovery with the safety guards the council demanded:
-// external + physical + removable only, never the boot disk, 8 GB minimum.
+// external + physical + removable only, never the boot disk. Sticks too
+// small for the payload are still listed — greyed out with the reason — so
+// nobody stares at an empty picker wondering where their stick went.
 // Uses diskutil's stable plist output — Apple's own tool, no parsing of
 // human-readable text.
 #if os(macOS)
 import Foundation
+import CreatorCore
 
 struct USBDisk: Identifiable, Equatable {
     let id: String          // "disk4"
@@ -19,7 +22,19 @@ struct USBDisk: Identifiable, Equatable {
 }
 
 enum DiskEnumerator {
-    static let minimumBytes: UInt64 = 8_000_000_000
+    /// Fallback gate for the moment the ISO size is not known yet: the
+    /// smallest honest "8 GB" stick on the market.
+    static let fallbackMinimumBytes: UInt64 = 7_200_000_000
+
+    /// Bytes a stick must actually hold: the ISO written as-is + the fixed
+    /// 512 MiB CIDATA seed partition + GPT/alignment slack. A marketing
+    /// "8 GB" stick reports 7.3–8.0 × 10⁹ real bytes and DOES fit — the old
+    /// hardcoded 8_000_000_000 gate silently rejected the exact sticks the
+    /// site tells people to bring (found live on the reference Air, 16-Sep).
+    static func requiredBytes(isoBytes: UInt64?) -> UInt64 {
+        guard let isoBytes, isoBytes > 0 else { return fallbackMinimumBytes }
+        return isoBytes + GPT.cidataSizeBytes + 16 * 1024 * 1024
+    }
 
     static func externalSticks() -> [USBDisk] {
         guard let listPlist = runDiskutil(["list", "-plist", "external", "physical"]),
@@ -37,10 +52,13 @@ enum DiskEnumerator {
                 ?? (info["Size"] as? NSNumber)?.uint64Value ?? 0
             let mediaName = (info["MediaName"] as? String) ?? "USB"
 
+            // Size is deliberately NOT filtered here: too-small sticks are
+            // shown disabled with the reason. size == 0 means an empty card
+            // reader slot — nothing to show.
             guard !internalDisk,
                   removableOrExternal,
                   virtualOrPhysical == "Physical",
-                  size >= minimumBytes,
+                  size > 0,
                   disk != bootWholeDisk()
             else { continue }
 

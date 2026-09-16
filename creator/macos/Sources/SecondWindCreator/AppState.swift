@@ -32,6 +32,15 @@ final class AppState: ObservableObject {
     // Disks
     @Published var disks: [USBDisk] = []
     @Published var selected: USBDisk?
+    /// What the chosen stick must hold — refined to the exact number once the
+    /// ISO is on disk, so the picker never rejects a stick that actually fits.
+    @Published var requiredStickBytes: UInt64 = DiskEnumerator.fallbackMinimumBytes
+
+    func fits(_ disk: USBDisk) -> Bool { disk.sizeBytes >= requiredStickBytes }
+
+    var requiredLabel: String {
+        String(format: "%.1f GB", Double(requiredStickBytes) / 1_000_000_000)
+    }
 
     // Confirm + write
     @Published var confirmText = ""
@@ -105,11 +114,17 @@ final class AppState: ObservableObject {
     // --- Disk step ---
 
     func refreshDisks() {
+        if let isoFile,
+           let attrs = try? FileManager.default.attributesOfItem(atPath: isoFile.path),
+           let isoBytes = (attrs[.size] as? NSNumber)?.uint64Value {
+            requiredStickBytes = DiskEnumerator.requiredBytes(isoBytes: isoBytes)
+        }
         Task.detached {
             let found = DiskEnumerator.externalSticks()
             await MainActor.run {
                 self.disks = found
-                if let selected = self.selected, !found.contains(selected) {
+                if let selected = self.selected,
+                   !found.contains(selected) || !self.fits(selected) {
                     self.selected = nil
                 }
             }
@@ -119,7 +134,8 @@ final class AppState: ObservableObject {
     // --- Write step ---
 
     func startWrite() {
-        guard let disk = selected, let isoFile = isoFile, let payload = payloadData else { return }
+        guard let disk = selected, fits(disk),
+              let isoFile = isoFile, let payload = payloadData else { return }
         stage = .writing
         writeError = nil
         writeProgress = 0

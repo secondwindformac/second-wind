@@ -159,26 +159,47 @@ struct PickDiskView: View {
             } else {
                 VStack(spacing: 8) {
                     ForEach(state.disks) { disk in
-                        Button(action: { state.selected = disk }) {
+                        if state.fits(disk) {
+                            Button(action: { state.selected = disk }) {
+                                HStack {
+                                    Text("💾")
+                                    VStack(alignment: .leading) {
+                                        Text(disk.name).fontWeight(.semibold)
+                                        Text(disk.sizeLabel).font(.callout).foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                    if state.selected == disk {
+                                        Text("✓").fontWeight(.bold).foregroundColor(.accentColor)
+                                    }
+                                }
+                                .padding(10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(state.selected == disk ? Color.accentColor : Color.gray.opacity(0.4))
+                                )
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        } else {
+                            // Too small for the payload: visible but not
+                            // selectable, with the reason. A silently missing
+                            // stick reads as "broken app" (learned live from
+                            // an 8 GB stick that reported 7.7 real GB).
                             HStack {
-                                Text("💾")
+                                Text("💾").opacity(0.4)
                                 VStack(alignment: .leading) {
-                                    Text(disk.name).fontWeight(.semibold)
-                                    Text(disk.sizeLabel).font(.callout).foregroundColor(.secondary)
+                                    Text(disk.name).fontWeight(.semibold).foregroundColor(.secondary)
+                                    Text("\(disk.sizeLabel) — \(L10n.pickTooSmall(state.requiredLabel))")
+                                        .font(.callout).foregroundColor(.secondary)
                                 }
                                 Spacer()
-                                if state.selected == disk {
-                                    Text("✓").fontWeight(.bold).foregroundColor(.accentColor)
-                                }
                             }
                             .padding(10)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(state.selected == disk ? Color.accentColor : Color.gray.opacity(0.4))
+                                    .stroke(Color.gray.opacity(0.25))
                             )
-                            .contentShape(Rectangle())
                         }
-                        .buttonStyle(PlainButtonStyle())
                     }
                 }
             }
