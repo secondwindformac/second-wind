@@ -75,6 +75,9 @@ struct L10n {
         "No stick detected. Plug one in (8 GB or more) and it will appear here.",
         "No se detecta ningún pendrive. Conecta uno (de 8 GB o más) y aparecerá aquí.") }
     static var refresh: String { t("Look again", "Buscar de nuevo") }
+    static func pickTooSmall(_ needed: String) -> String { t(
+        "too small — the installer needs \(needed)",
+        "muy chico — el instalador necesita \(needed)") }
 
     // --- Confirm ---
     static var confirmTitle: String { t("Last confirmation", "Última confirmación") }
