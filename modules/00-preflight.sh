@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# 00-preflight — pre-flight checks. Changes nothing on disk.
-# Sourced by install.sh in the main shell: its variables persist.
+# 00-preflight — pre-flight checks. Changes nothing on disk, with ONE exception:
+# it installs curl+git if they are missing (see below). Sourced by install.sh in
+# the main shell: its variables persist.
 
 info "${MSG[pre_checking]}"
 
@@ -19,6 +20,19 @@ while read -r sid; do
   [ "$(loginctl show-session "$sid" -p Type --value 2>/dev/null)" = "wayland" ] && WAYLAND_OK=1
 done < <(loginctl list-sessions --no-legend 2>/dev/null | awk -v u="$(id -un)" '$3 == u {print $1}')
 [ "$WAYLAND_OK" = 1 ] || die "${MSG[pre_need_wayland]}"
+
+# curl and git are the ONLY tools Ubuntu Desktop 24.04 does not already ship.
+# The offline autoinstall can no longer add them at install time (a Broadcom Mac
+# has no internet until its WiFi driver is in place), so install them here — we
+# reach this point at firstboot, which has already waited for connectivity
+# (phone USB-tether). Everything else in the gate below ships with the desktop.
+# Best-effort: if it still fails, the need_cmd gate stops with a clear message
+# and firstboot retries on the next login (install.sh is idempotent).
+if ! command -v curl >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
+  info "${MSG[pre_checking]}"
+  sudo apt-get update -qq 2>/dev/null || true
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y curl git 2>/dev/null || true
+fi
 
 for c in curl unzip python3 gsettings dconf gnome-extensions git rsync; do need_cmd "$c"; done
 

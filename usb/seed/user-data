@@ -63,20 +63,31 @@ autoinstall:
         - model: "APPLE*"
         - model: "QEMU*"
 
-  # Third-party drivers (Broadcom WiFi on Intel Macs) and media codecs
+  # Third-party drivers (Broadcom WiFi on Intel Macs) and media codecs.
+  # OFFLINE FIX (22-09, real Air 2013): these fetch from the network DURING the
+  # install. On a Broadcom Mac there is NO internet at install time (its WiFi
+  # needs the very driver these would fetch — chicken-and-egg), so the installer
+  # aborted deterministically. We defer BOTH to firstboot, which waits for
+  # connectivity (phone USB-tether) and then runs Second Wind's install.sh —
+  # module 15 installs broadcom-sta, so WiFi works after that first online run.
   drivers:
-    install: true
+    install: false
   codecs:
-    install: true
+    install: false
 
+  # geoip has its own timeout and falls back cleanly offline (kept). `updates`
+  # is dropped: fetching updates mid-install needs the network and must never be
+  # able to abort an offline install. Security updates happen post-firstboot.
   timezone: geoip
-  updates: security
 
   late-commands:
     # Ubuntu Desktop's default install ships WITHOUT curl and git, which
     # Second Wind needs (bug caught in the first full VM rehearsal: the
     # firstboot net-check failed forever on a machine with perfect internet).
-    - curtin in-target -- apt-get install -y curl git
+    # Best-effort only: `|| true` so an OFFLINE install (Broadcom Mac, no net
+    # yet) never aborts here. When there is no network these stay uninstalled,
+    # and firstboot's 00-preflight installs them once online (phone tether).
+    - curtin in-target -- apt-get install -y curl git || true
     # Council blocker "the installed product breaks itself": the HWE kernel
     # rolls to new majors (6.8→6.14→…) and each roll can break the Broadcom
     # wl WiFi driver. New installs pin to the GA 6.8 series instead —
