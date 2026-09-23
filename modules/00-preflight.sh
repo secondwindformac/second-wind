@@ -39,6 +39,23 @@ for c in curl unzip python3 gsettings dconf gnome-extensions git rsync; do need_
 curl -fsI --max-time 10 https://extensions.gnome.org >/dev/null 2>&1 \
   || die "${MSG[pre_no_net]}"
 
+# Clock: an OFFLINE install cannot detect the country, so Ubuntu leaves the
+# clock on UTC (seen on the real Air, 23-09: 17:15 shown at 14:15 in Chile).
+# Now that we are online, ask Ubuntu's own geolocation service once (with a
+# public fallback) and set the
+# time zone — only if it is still UTC (never override a zone the person chose).
+if [ "$(timedatectl show -p Timezone --value 2>/dev/null)" = "Etc/UTC" ] \
+   || [ "$(timedatectl show -p Timezone --value 2>/dev/null)" = "UTC" ]; then
+  tz="$(curl -fs --max-time 8 https://geoip.ubuntu.com/lookup 2>/dev/null \
+        | sed -n 's|.*<TimeZone>\([^<]*\)</TimeZone>.*|\1|p')"
+  # Fallback when Ubuntu's service is down (it returned HTTP 500 on 23-09):
+  # a public IP-to-time-zone lookup. Sends only the request itself (no data).
+  [ -n "$tz" ] || tz="$(curl -fs --max-time 8 'http://ip-api.com/line/?fields=timezone' 2>/dev/null | head -1)"
+  if [ -n "$tz" ] && [ -f "/usr/share/zoneinfo/$tz" ]; then
+    sudo timedatectl set-timezone "$tz" 2>/dev/null && info "${MSG[pre_tz]:-Time zone} $tz"
+  fi
+fi
+
 avail_kb="$(df --output=avail "$HOME" | tail -1 | tr -d ' ')"
 [ "$avail_kb" -ge $((2 * 1024 * 1024)) ] || die "${MSG[pre_no_space]}"
 

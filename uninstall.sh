@@ -118,6 +118,11 @@ if [ "$NEED_SUDO" = 1 ]; then
             sudo mv "$path.bak" "$path"
             ok "${MSG[un_gdm_bak_ok]}"
           fi ;;
+        /etc/gdm3/greeter.dconf-defaults)
+          if [ -f "$SW_BACKUP/greeter.dconf-defaults" ]; then
+            sudo cp "$SW_BACKUP/greeter.dconf-defaults" "$path"
+            ok "${MSG[un_gdm_ok]}"
+          fi ;;
       esac
     done < <(python3 -c "import json,sys; [print(x['path']) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get system)")
 

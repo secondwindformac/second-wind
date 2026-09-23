@@ -31,6 +31,14 @@ fi
 if ( cd "$SW_CACHE/MacTahoe-gtk-theme" && sudo ./tweaks.sh -g >/dev/null 2>&1 ); then
   mf system-file "$YARU_GR"
   mf note "gdm-installed"
+  # Ubuntu stamps its own logo under the login box through a separate greeter
+  # setting (seen on the real Air, 23-09: Mac-style screen + "Ubuntu" logo).
+  # Blank it; the original file is backed up and restored by uninstall.
+  GREETER=/etc/gdm3/greeter.dconf-defaults
+  if [ -f "$GREETER" ] && grep -qE "^[#[:space:]]*logo=" "$GREETER"; then
+    [ -f "$SW_BACKUP/greeter.dconf-defaults" ] || cp "$GREETER" "$SW_BACKUP/greeter.dconf-defaults"
+    sudo sed -i -E "s|^[#[:space:]]*logo=.*|logo=''|" "$GREETER" && mf system-file "$GREETER"
+  fi
   ok "${MSG[m65_ok]}"
 else
   warn "${MSG[m65_fail]}"
