@@ -39,9 +39,23 @@ ui_yesno() {
 
 # ui_step CURRENT TOTAL LABEL — a step marker. In the guided GUI first boot
 # (SW_UI=gui) it drives the graphical progress window instead of printing.
+# _ui_msg KEY DEFAULT — translated string, or DEFAULT when MSG is not loaded.
+_ui_msg() {
+  if declare -p MSG >/dev/null 2>&1 && [ -n "${MSG[$1]+x}" ]; then printf '%s' "${MSG[$1]}"; else printf '%s' "$2"; fi
+}
+
+# ui_step I TOTAL LABEL [PERCENT] [MINUTES_LEFT]
 ui_step() {
   if [ "${SW_UI:-terminal}" = gui ]; then
-    gui_progress_update "$3"
+    local left
+    if [ -n "${5:-}" ] && [ "$5" -gt 1 ]; then
+      # shellcheck disable=SC2059
+      left="$(printf "$(_ui_msg gui_left 'about %s min left')" "$5")"
+    else
+      left="$(_ui_msg gui_almost 'almost done')"
+    fi
+    # shellcheck disable=SC2059
+    gui_progress_update "$(printf "$(_ui_msg gui_step 'Step %s of %s: %s')" "$1" "$2" "$3") · $left" "${4:-}"
   else
     printf '\n%s[%s/%s] %s%s\n' "$C_INFO" "$1" "$2" "$3" "$C_OFF"
   fi

@@ -34,9 +34,9 @@ done
 sleep 3
 
 if "$SW_ROOT/verify.sh" --quick >/dev/null 2>&1; then
-  notify-send -i preferences-desktop-theme "Second Wind" "${MSG[notify_ok]}" 2>/dev/null || true
+  notify-send -a "Second Wind" -i preferences-desktop-theme "Second Wind" "${MSG[notify_ok]}" 2>/dev/null || true
 else
-  notify-send -i dialog-warning "Second Wind" "${MSG[notify_warn]}" 2>/dev/null || true
+  notify-send -a "Second Wind" -i dialog-warning "Second Wind" "${MSG[notify_warn]}" 2>/dev/null || true
 fi
 rm -f "$AUTOSTART"
 rm -f "$POSTLOGIN"

@@ -82,7 +82,7 @@ fi
 sleep 15
 
 if [ "$ATTEMPT" -gt 1 ]; then
-  notify-send -i view-refresh-symbolic "Second Wind" "$T_RETRY" 2>/dev/null || true
+  notify-send -a "Second Wind" -i view-refresh-symbolic "Second Wind" "$T_RETRY" 2>/dev/null || true
 fi
 
 # Wait for connectivity, reminding gently. Never depend on curl alone:
@@ -93,7 +93,7 @@ net_ok() {
   command -v curl >/dev/null 2>&1 && curl -fsI -m 5 https://extensions.gnome.org >/dev/null 2>&1
 }
 until net_ok; do
-  notify-send -i network-wireless "Second Wind" "$T_NET" 2>/dev/null || true
+  notify-send -a "Second Wind" -i network-wireless "Second Wind" "$T_NET" 2>/dev/null || true
   sleep 40
 done
 # Second sweep: anything Ubuntu popped while we waited for the network dies
@@ -122,7 +122,7 @@ NoDisplay=true
 Exec=sh -c 'sleep 20; "$SWDIR/bin/second-wind-mymac" --gui; rm -f "\$HOME/.config/autostart/second-wind-mymac.desktop"'
 X-GNOME-Autostart-enabled=true
 EOD
-  notify-send -i emblem-ok-symbolic "Second Wind" "$T_DONE" 2>/dev/null || true
+  notify-send -a "Second Wind" -i emblem-ok-symbolic "Second Wind" "$T_DONE" 2>/dev/null || true
   sleep 6
   gnome-session-quit --reboot --no-prompt 2>/dev/null \
     || systemctl reboot 2>/dev/null \
@@ -160,7 +160,7 @@ if command -v gui_available >/dev/null 2>&1 && gui_available; then
 fi
 
 # --- Terminal fallback (no usable zenity/display): the original behavior. ---
-notify-send -i emblem-ok-symbolic "Second Wind" "$T_GO" 2>/dev/null || true
+notify-send -a "Second Wind" -i emblem-ok-symbolic "Second Wind" "$T_GO" 2>/dev/null || true
 # --firstboot tells install.sh to skip its own logout prompt: we restart below.
 RUN="cd '$SWDIR' && ./install.sh --firstboot && touch '$STAMP' && rm -f '$AUTOSTART'"
 
@@ -184,6 +184,6 @@ fi
 # Still armed after a run we actually waited for? Tell the person it resumes on
 # its own (the stamp is the single source of truth).
 if [ "$WAITED" = 1 ] && [ ! -f "$STAMP" ] && [ -f "$AUTOSTART" ]; then
-  notify-send -i view-refresh-symbolic "Second Wind" "$T_AGAIN" 2>/dev/null || true
+  notify-send -a "Second Wind" -i view-refresh-symbolic "Second Wind" "$T_AGAIN" 2>/dev/null || true
 fi
 exit 0

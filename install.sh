@@ -109,12 +109,24 @@ if [ ${#ONLY_MODULES[@]} -gt 0 ]; then
 fi
 
 total=${#MODULES[@]}
+# Rough seconds per module on a 2013-2015 Mac, measured on the reference Air
+# (downloads + driver builds dominate). Only used to show an honest percent and
+# "about N minutes left" in the guided first boot; unknown modules count 20 s.
+declare -A MOD_SECONDS=([15-engines]=150 [20-look]=120 [30-extensions]=45 [32-toshy]=240
+  [35-dock]=10 [40-panel]=10 [45-keyboard]=10 [47-power-defaults]=5 [50-spotlight]=20
+  [55-browsers]=60 [60-hardware]=150 [62-power]=15 [65-gdm]=30 [70-apps]=60 [75-news]=5
+  [76-experience]=5 [80-updater]=10 [85-quiet]=5 [90-postlogin]=10)
+TOTAL_W=0; for m in "${MODULES[@]}"; do TOTAL_W=$((TOTAL_W + ${MOD_SECONDS[$m]:-20})); done
+DONE_W=0
 i=0
 SKIPPED=()
 for m in "${MODULES[@]}"; do
   i=$((i + 1))
   key="mod_${m%%-*}"
-  ui_step "$i" "$total" "${MSG[$key]:-$m}"
+  pct=$((DONE_W * 100 / TOTAL_W)); [ "$pct" -gt 99 ] && pct=99
+  mins_left=$(( (TOTAL_W - DONE_W + 59) / 60 ))
+  ui_step "$i" "$total" "${MSG[$key]:-$m}" "$pct" "$mins_left"
+  DONE_W=$((DONE_W + ${MOD_SECONDS[$m]:-20}))
   if ( set -Eeuo pipefail; source "modules/$m.sh" ); then
     ok "${MSG[$key]:-$m}: ${MSG[mod_done]}"
   else

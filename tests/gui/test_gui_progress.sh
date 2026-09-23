@@ -19,11 +19,12 @@ source "$ROOT/lib/gui.sh"
 gui_progress_open "Working"
 [ -p "${SW_PROGRESS_FIFO:-/none}" ] || { echo "FAIL: fifo missing"; exit 1; }
 gui_progress_update "Preparando"
-gui_progress_update "Instalando"
+gui_progress_update "Instalando" 42
 sleep 0.5                                     # let the reader consume before close
 gui_progress_close
 grep -q "# Preparando" "$ZP_LOG" || { echo "FAIL: phase 1 missing"; exit 1; }
 grep -q "# Instalando" "$ZP_LOG" || { echo "FAIL: phase 2 missing"; exit 1; }
+grep -qx "42" "$ZP_LOG" || { echo "FAIL: percent line missing"; exit 1; }
 [ -e "${SW_PROGRESS_FIFO:-}" ] && { echo "FAIL: fifo not cleaned"; exit 1; }
 gui_progress_update "late" || { echo "FAIL: update-after-close errored"; exit 1; }
 

@@ -18,6 +18,7 @@ grep -q PROG "$CALLS" && { echo "FAIL: terminal must not call progress"; exit 1;
 
 # gui mode: ui_step -> gui_progress_update; ui_error -> gui_error
 : > "$CALLS"; SW_UI=gui
-ui_step 4 17 "Afinando"; grep -q "PROG:Afinando" "$CALLS" || { echo "FAIL: gui step routing"; exit 1; }
+ui_step 4 17 "Afinando" 30 9; grep -q "PROG:Step 4 of 17: Afinando" "$CALLS" || { echo "FAIL: gui step routing"; exit 1; }
+grep -q "about 9 min left" "$CALLS" || { echo "FAIL: minutes left missing"; exit 1; }
 ui_error "boom"; grep -q "ERR:boom" "$CALLS" || { echo "FAIL: gui error routing"; exit 1; }
 echo "PASS test_ui_routing"

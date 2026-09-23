@@ -65,7 +65,7 @@ gui_auth_end() {
   SW_GUI_SUDOERS=""; SW_GUI_ASKPASS=""; unset SUDO_ASKPASS 2>/dev/null || true
 }
 
-# --- phase-based progress window (pulsating; deterministic close) ---
+# --- phase-based progress window (percent + step + time left; deterministic close) ---
 # PRESERVE an already-exported SW_PROGRESS_FIFO: install.sh re-sources this file
 # and must keep the parent's FIFO path to update the bar (clobbering it left the
 # text stuck on the first phase). PID/WFD are per-process and reset.
@@ -73,8 +73,8 @@ SW_PROGRESS_FIFO="${SW_PROGRESS_FIFO:-}"; SW_PROGRESS_PID=""; SW_PROGRESS_WFD=""
 gui_progress_open() {
   local dir; dir="$(mktemp -d)"; SW_PROGRESS_FIFO="$dir/p"
   mkfifo "$SW_PROGRESS_FIFO"
-  ( zenity --progress --pulsate --no-cancel --auto-close \
-      --title="Second Wind" --text="${1:-…}" < "$SW_PROGRESS_FIFO" 2>/dev/null ) &
+  ( zenity --progress --no-cancel --auto-close --percentage=0 \
+      --width=520 --title="${MSG[gui_progress_title]:-Second Wind}" --text="${1:-…}" < "$SW_PROGRESS_FIFO" 2>/dev/null ) &
   SW_PROGRESS_PID=$!
   exec {SW_PROGRESS_WFD}>"$SW_PROGRESS_FIFO"   # hold the write end open across updates
   export SW_PROGRESS_FIFO
@@ -84,8 +84,10 @@ gui_progress_update() {
   # process — can update the bar too. The parent holds a write fd open
   # (SW_PROGRESS_WFD) for the FIFO's whole life, so zenity never sees EOF
   # between these short opens.
+  # gui_progress_update TEXT [PERCENT] — PERCENT (0-99) moves the bar; the
+  # window only closes via gui_progress_close (never auto-closes at 100).
   [ -n "${SW_PROGRESS_FIFO:-}" ] && [ -p "${SW_PROGRESS_FIFO:-}" ] || return 0
-  printf '# %s\n' "$1" >> "$SW_PROGRESS_FIFO" 2>/dev/null || true
+  { [ -n "${2:-}" ] && printf '%s\n' "$2"; printf '# %s\n' "$1"; } >> "$SW_PROGRESS_FIFO" 2>/dev/null || true
 }
 gui_progress_close() {
   # KILL zenity rather than wait for EOF: a long-lived daemon that install.sh
