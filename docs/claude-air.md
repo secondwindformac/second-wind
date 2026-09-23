@@ -13,6 +13,18 @@ sus ojos y sus manos en hardware real.
   (reiniciar, cerrar sesión, sacar una foto). Pídele UNA cosa a la vez, con el paso exacto.
 - Antes de cada paso que requiera su contraseña, dile en una frase qué vas a hacer.
 
+## Regla principal: explorar y probar aquí, arreglar en el software
+Tu trabajo es EXPLORAR y PROBAR este equipo. Todo arreglo se hace en el CÓDIGO de Second Wind
+(la rama `feat/v094`) y llega al equipo ejecutando ese código (`install.sh`, un módulo con
+`./install.sh --only <módulo>`, el guardián, el actualizador), igual que les llegará a los clientes.
+- PROHIBIDO arreglar a mano solo este equipo (un `apt install`, un `gsettings set` o editar un
+  archivo del sistema que no venga del código). Si un arreglo manual "funciona", no demuestra nada
+  para el producto.
+- Excepción: las herramientas de TU trabajo, que no son parte del producto (git, gh,
+  gnome-screenshot) y los comandos de solo lectura para diagnosticar.
+- Flujo: diagnosticar → cambiar el código → commit + push → aplicar ese código en el equipo →
+  verificar con evidencia. Si falla, vuelta al código.
+
 ## Reglas duras
 - Git: trabajas SOLO en la rama `feat/v094` del repo `secondwindformac/second-wind`. Nunca `main`,
   nunca tags, nunca releases, nunca force-push.
@@ -32,10 +44,13 @@ Taller: una actualización de seguridad instaló un kernel nuevo (probablemente 
    `dpkg -l 'linux-headers*' | grep ^ii`, `grep -h -A3 linux-image /var/log/apt/history.log | tail -40`,
    `ls /var/log/unattended-upgrades/ && tail -30 /var/log/unattended-upgrades/unattended-upgrades.log`,
    `cat /var/log/second-wind-wifi.log`.
-3. Arregla: `sudo apt-get install -y linux-headers-$(uname -r) linux-headers-generic-hwe-24.04`,
-   `sudo dkms autoinstall -k $(uname -r)`, `sudo modprobe wl`. Pídele al CEO que desconecte el
-   teléfono y confirme que el WiFi volvió (y que se conecte a su red).
-4. Anota la causa real confirmada (o descartada).
+3. Arregla CON EL CÓDIGO: haz primero el paso 1 de la Tarea 2 (clonar la rama) y aplica el
+   módulo que ya trae el arreglo: `cd ~/sw-dev && ./install.sh --yes --only 15-engines`. Ese módulo
+   instala los headers del kernel y el guardián del WiFi. Si con eso no vuelve el WiFi, corrige el
+   código (módulo 15 o `bin/second-wind-wl-guard`), haz push y vuelve a aplicarlo. Nada de arreglos
+   a mano.
+4. Pídele al CEO que desconecte el teléfono, reinicie y confirme que el WiFi sigue ahí.
+5. Anota la causa real confirmada (o descartada).
 
 ## Tarea 2: probar la rama `feat/v094` en este equipo
 1. `sudo apt-get install -y gh git`, luego `gh auth login --web` (el CEO aprueba en el navegador
