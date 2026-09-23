@@ -7,6 +7,7 @@ import CreatorCore
 
 enum Stage {
     case welcome
+    case whichMac
     case locks
     case download
     case pickDisk
@@ -18,6 +19,36 @@ enum Stage {
 @MainActor
 final class AppState: ObservableObject {
     @Published var stage: Stage = .welcome
+
+    // Which Mac will receive Second Wind (asked before anything is erased).
+    /// Catalog rows for the Mac this app is running on (empty on Apple
+    /// Silicon or unknown models).
+    let thisMac: [MacModel] = MacCatalog.models(identifier: AppState.hardwareModel())
+    @Published var targetModel: MacModel?
+    @Published var otherMac = false
+    @Published var aNumberInput = ""
+    @Published var betaAccepted = false
+
+    var aNumberMatches: [MacModel] { MacCatalog.models(aNumber: aNumberInput) }
+
+    var canContinueFromWhichMac: Bool {
+        guard let m = targetModel else { return false }
+        return m.support.allowsInstall && (!m.support.needsAcknowledgement || betaAccepted)
+    }
+
+    func chooseTarget(_ m: MacModel?) {
+        targetModel = m
+        betaAccepted = false
+    }
+
+    /// sysctl hw.model, e.g. "MacBookAir6,2".
+    static func hardwareModel() -> String {
+        var size = 0
+        guard sysctlbyname("hw.model", nil, &size, nil, 0) == 0, size > 0 else { return "" }
+        var buf = [CChar](repeating: 0, count: size)
+        guard sysctlbyname("hw.model", &buf, &size, nil, 0) == 0 else { return "" }
+        return String(cString: buf)
+    }
 
     // Locks
     @Published var lockBackup = false

@@ -2,6 +2,7 @@
 // House rule: plain words only — the person reading this has never used a
 // terminal and never will. No "flash", "image", "GPT", "checksum".
 import Foundation
+import CreatorCore
 
 struct L10n {
     static let isSpanish = Locale.preferredLanguages.first?.hasPrefix("es") ?? false
@@ -35,6 +36,42 @@ struct L10n {
         "You'll need: a USB stick of 8 GB or more (it gets erased too), internet, and about half an hour.",
         "Vas a necesitar: un pendrive de 8 GB o más (también se borra), internet y una media hora.") }
     static var start: String { t("Start", "Empezar") }
+
+    // --- Which Mac? ---
+    static var whichTitle: String { t("Which Mac will get Second Wind?", "¿En qué Mac vas a instalar Second Wind?") }
+    static func thisMacIs(_ name: String, _ a: String) -> String { t(
+        "This Mac is a \(name) (model \(a)).",
+        "Este Mac es un \(name) (modelo \(a)).") }
+    static var installHere: String { t("Is this the Mac you want to give a second wind?",
+                                         "¿Es este el Mac al que le quieres dar un segundo aire?") }
+    static var yesThisMac: String { t("Yes, this Mac", "Sí, este Mac") }
+    static var otherMacBtn: String { t("No, another Mac", "No, otro Mac") }
+    static var askANumber: String { t(
+        "Type the model number of the Mac you'll install on:",
+        "Escribe el número de modelo del Mac donde lo vas a instalar:") }
+    static var whereANumber: String { t(
+        "It's printed in small letters on the bottom case, like \"Model A1466\". Its year is in Apple menu > About This Mac.",
+        "Está impreso en letra pequeña en la tapa de abajo, como \"Model A1466\". El año está en Menú Apple > Acerca de este Mac.") }
+    static var pickYear: String { t("Several Macs share that number. Pick yours by its year:",
+                                    "Varios Mac comparten ese número. Elige el tuyo por su año:") }
+    static var aNumberUnknown: String { t(
+        "That number isn't an Intel Mac we know. Check it on the bottom case (Macs with Apple chips, M1 and later, don't need Second Wind).",
+        "Ese número no es un Mac Intel que conozcamos. Revísalo en la tapa de abajo (los Mac con chip Apple, M1 o posterior, no necesitan Second Wind).") }
+    static func modelLine(_ a: String, _ year: Int) -> String { t("Model \(a) · \(year)", "Modelo \(a) · \(year)") }
+    static func supportLabel(_ s: MacModel.Support) -> String {
+        switch s {
+        case .verified: return t("Tested by us: everything works", "Probado por nosotros: todo funciona")
+        case .expected: return t("Should work fully", "Debería funcionar completo")
+        case .partial: return t("Works, with one limit", "Funciona, con un límite")
+        case .beta: return t("Beta: works with rough edges", "Beta: funciona con detalles")
+        case .unsupported: return t("Not supported yet", "Todavía no es compatible")
+        }
+    }
+    static var betaAck: String { t("I understand these limits and want to continue",
+                                   "Entiendo estos límites y quiero seguir") }
+    static var dontWrite: String { t(
+        "Please don't install Second Wind on this Mac for now: it would not work well. Nothing has been erased.",
+        "Por ahora no instales Second Wind en este Mac: no funcionaría bien. No se ha borrado nada.") }
 
     // --- The two mandatory locks ---
     static var locksTitle: String { t("Two promises before we begin", "Dos promesas antes de empezar") }

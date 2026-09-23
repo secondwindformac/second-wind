@@ -2,6 +2,7 @@
 // friendly text, one primary action per screen. macOS 11-safe SwiftUI only.
 #if os(macOS)
 import SwiftUI
+import CreatorCore
 import AppKit
 
 struct RootView: View {
@@ -11,6 +12,7 @@ struct RootView: View {
         Group {
             switch state.stage {
             case .welcome: WelcomeView()
+            case .whichMac: WhichMacView()
             case .locks: LocksView()
             case .download: DownloadView()
             case .pickDisk: PickDiskView()
@@ -51,10 +53,107 @@ struct WelcomeView: View {
             Spacer()
             HStack {
                 Spacer()
-                Button(L10n.start) { state.stage = .locks }
+                Button(L10n.start) { state.stage = .whichMac }
                     .keyboardShortcut(.defaultAction)
             }
         }
+    }
+}
+
+struct WhichMacView: View {
+    @EnvironmentObject var state: AppState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            StepHeader(title: L10n.whichTitle)
+            if let m = state.targetModel {
+                CompatibilityCard(model: m)
+            } else if !state.thisMac.isEmpty && !state.otherMac {
+                Text(L10n.thisMacIs(state.thisMac[0].name, state.thisMac[0].aNumbers.joined(separator: ", ")))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(L10n.installHere).fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Button(L10n.yesThisMac) { state.chooseTarget(state.thisMac[0]) }
+                        .keyboardShortcut(.defaultAction)
+                    Button(L10n.otherMacBtn) { state.otherMac = true }
+                }
+            } else {
+                Text(L10n.askANumber).fixedSize(horizontal: false, vertical: true)
+                TextField("A1466", text: $state.aNumberInput)
+                    .frame(maxWidth: 160)
+                Text(L10n.whereANumber)
+                    .font(.footnote).foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if MacCatalog.normalizeANumber(state.aNumberInput) != nil {
+                    if state.aNumberMatches.isEmpty {
+                        Text(L10n.aNumberUnknown).foregroundColor(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        Text(L10n.pickYear).font(.callout)
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 6) {
+                                ForEach(state.aNumberMatches) { m in
+                                    Button(m.name) { state.chooseTarget(m) }
+                                }
+                            }
+                        }
+                        .frame(maxHeight: 150)
+                    }
+                }
+            }
+            Spacer()
+            HStack {
+                Button(L10n.backBtn) {
+                    if state.targetModel != nil { state.chooseTarget(nil) }
+                    else if state.otherMac { state.otherMac = false }
+                    else { state.stage = .welcome }
+                }
+                Spacer()
+                Button(L10n.continueBtn) { state.stage = .locks }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!state.canContinueFromWhichMac)
+            }
+        }
+    }
+}
+
+struct CompatibilityCard: View {
+    @EnvironmentObject var state: AppState
+    let model: MacModel
+
+    var color: Color {
+        switch model.support {
+        case .verified, .expected: return .green
+        case .partial: return .yellow
+        case .beta: return .orange
+        case .unsupported: return .red
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(model.name).font(.headline)
+            Text(L10n.modelLine(model.aNumbers.joined(separator: ", "), model.year))
+                .font(.callout).foregroundColor(.secondary)
+            HStack(spacing: 8) {
+                Circle().fill(color).frame(width: 12, height: 12)
+                Text(L10n.supportLabel(model.support)).fontWeight(.semibold)
+            }
+            Text(L10n.isSpanish ? model.noteES : model.noteEN)
+                .fixedSize(horizontal: false, vertical: true)
+            if model.support.needsAcknowledgement {
+                Toggle(isOn: $state.betaAccepted) {
+                    Text(L10n.betaAck).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            if !model.support.allowsInstall {
+                Text(L10n.dontWrite).foregroundColor(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .background(Color.gray.opacity(0.08))
+        .cornerRadius(12)
     }
 }
 
@@ -79,7 +178,7 @@ struct LocksView: View {
             }
             Spacer()
             HStack {
-                Button(L10n.backBtn) { state.stage = .welcome }
+                Button(L10n.backBtn) { state.stage = .whichMac }
                 Spacer()
                 Button(L10n.continueBtn) {
                     state.stage = .download

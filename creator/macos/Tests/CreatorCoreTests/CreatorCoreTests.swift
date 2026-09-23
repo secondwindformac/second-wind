@@ -168,4 +168,28 @@ final class SeedTests: XCTestCase {
             String(decoding: $0.data, as: UTF8.self).contains("$6$")
         })
     }
+
+    // --- "Which Mac?" catalog ---
+    func testCatalogLoadsEveryIntelMac() {
+        XCTAssertGreaterThan(MacCatalog.all.count, 100)
+    }
+
+    func testANumberIsNormalizedAndAmbiguousAcrossYears() {
+        XCTAssertEqual(MacCatalog.normalizeANumber("Model a1466"), "A1466")
+        XCTAssertNil(MacCatalog.normalizeANumber("A14"))
+        let airs = MacCatalog.models(aNumber: "1466")
+        XCTAssertTrue(airs.contains { $0.year == 2012 })
+        XCTAssertTrue(airs.contains { $0.year == 2017 })
+        XCTAssertEqual(airs.first?.year, 2017, "newest first")
+    }
+
+    func testT2MacsAreBlockedAndTouchBarIsBeta() {
+        let t2 = MacCatalog.models(identifier: "MacBookPro15,1")
+        XCTAssertFalse(t2.isEmpty)
+        XCTAssertTrue(t2.allSatisfy { !$0.support.allowsInstall })
+        let touchBar = MacCatalog.models(aNumber: "A1706")
+        XCTAssertFalse(touchBar.isEmpty)
+        XCTAssertTrue(touchBar.allSatisfy { $0.support.needsAcknowledgement })
+        XCTAssertTrue(MacCatalog.models(identifier: "MacBookAir6,2").allSatisfy { $0.support.allowsInstall })
+    }
 }
