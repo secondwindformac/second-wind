@@ -1,0 +1,32 @@
+#!/bin/sh
+# second-wind-wl-guard — runs at every boot, before NetworkManager.
+# A Broadcom Mac needs Broadcom's `wl` driver built for the EXACT running
+# kernel. Normally DKMS builds it while a kernel update installs; if that did
+# not happen (headers missing at the time, a failed build), the Mac would boot
+# with no WiFi and no way to download a fix. So: if this kernel has no wl but
+# its headers are on disk, build it now, offline, and load it.
+# (Real case, MacBook Air A1466, 23-Sep-2026: security kernel update → reboot
+# → WiFi gone.)
+LOG=/var/log/second-wind-wifi.log
+k="$(uname -r)"
+chip=""
+for dev in /sys/bus/pci/devices/*; do
+  id="$(sed 's/^0x//' "$dev/vendor" 2>/dev/null):$(sed 's/^0x//' "$dev/device" 2>/dev/null)"
+  case "$id" in
+    14e4:4313|14e4:4727|14e4:432a|14e4:432b|14e4:432d|14e4:4358|14e4:4359|14e4:4365|14e4:43a0|14e4:43b1|14e4:4331) chip="$id" ;;
+  esac
+done
+[ -n "$chip" ] || exit 0
+if modinfo -k "$k" wl >/dev/null 2>&1; then
+  grep -q '^wl ' /proc/modules || modprobe wl 2>/dev/null || true
+  exit 0
+fi
+{
+  echo "== wl guard $(date -u +%FT%TZ): kernel $k has no wl (chip $chip)"
+  if [ -d "/usr/src/linux-headers-$k" ] || [ -d "/lib/modules/$k/build" ]; then
+    dkms autoinstall -k "$k" && modprobe wl && echo "OK: wl rebuilt for $k"
+  else
+    echo "FAIL: no headers for $k on disk; WiFi needs a cable/phone connection once"
+  fi
+} >>"$LOG" 2>&1
+exit 0

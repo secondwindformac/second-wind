@@ -30,7 +30,22 @@ if [ -f /var/lib/second-wind/wl-preinstalled ] \
 fi
 command -v ulauncher >/dev/null 2>&1 || NEED_UL=1
 
-if [ "$NEED_WIFI$NEED_WL_DKMS$NEED_UL$NEED_GIR" = "0000" ]; then
+# WiFi across kernel updates (Air, 23-Sep: after a security kernel update the
+# Mac rebooted into a kernel with no wl, i.e. no WiFi at all). Two layers:
+#  - the kernel HEADERS meta-package, so every future kernel arrives with the
+#    headers DKMS needs to rebuild wl automatically while it installs;
+#  - a boot guard that rebuilds wl offline if a kernel still lacks it.
+WL_GUARD=/usr/local/sbin/second-wind-wl-guard
+NEED_WL_GUARD=0
+if [ -f /etc/modprobe.d/second-wind-wl.conf ] || [ -f /var/lib/second-wind/wl-preinstalled ] \
+   || dpkg-query -W -f '${Status}' broadcom-sta-dkms 2>/dev/null | grep -q 'ok installed'; then
+  [ -x "$WL_GUARD" ] || NEED_WL_GUARD=1
+fi
+HDR_META=linux-headers-generic
+dpkg-query -W -f '${Status}' linux-image-generic-hwe-24.04 2>/dev/null | grep -q 'ok installed' \
+  && HDR_META=linux-headers-generic-hwe-24.04
+
+if [ "$NEED_WIFI$NEED_WL_DKMS$NEED_UL$NEED_GIR$NEED_WL_GUARD" = "00000" ]; then
   ok "${MSG[m15_all_ok]}"
   return 0
 fi
@@ -55,8 +70,9 @@ sudo apt-get update -qq 2>/dev/null || warn "${MSG[m60_apt_warn]}"
 # --- WiFi (needs a wired/tethered connection to download the driver) ---
 if [ "$NEED_WIFI" = 1 ]; then
   info "${MSG[m15_wifi]}"
-  apt_track_install "linux-headers-$(uname -r)" build-essential dkms broadcom-sta-dkms \
+  apt_track_install "linux-headers-$(uname -r)" "$HDR_META" build-essential dkms broadcom-sta-dkms \
     && sudo modprobe wl 2>/dev/null || warn "${MSG[m15_wifi_err]}"
+  NEED_WL_GUARD=1
 fi
 
 # --- WiFi handover: prebuilt wl -> DKMS (keeps working across kernel updates).
@@ -64,7 +80,7 @@ fi
 # WiFi is never left without a driver.
 if [ "$NEED_WL_DKMS" = 1 ]; then
   info "${MSG[m15_wifi_dkms]}"
-  if apt_track_install "linux-headers-$(uname -r)" build-essential dkms broadcom-sta-dkms \
+  if apt_track_install "linux-headers-$(uname -r)" "$HDR_META" build-essential dkms broadcom-sta-dkms \
      && dkms status broadcom-sta 2>/dev/null | grep -q "$(uname -r).*installed"; then
     sudo rm -f "/lib/modules/$(uname -r)/extra/second-wind/wl.ko"
     sudo depmod -a
@@ -73,6 +89,33 @@ if [ "$NEED_WL_DKMS" = 1 ]; then
   else
     warn "${MSG[m15_wifi_err]}"
   fi
+fi
+
+# --- WiFi boot guard (see NEED_WL_GUARD above) ---
+if [ "$NEED_WL_GUARD" = 1 ]; then
+  sudo install -D -m 0755 "$SW_ROOT/bin/second-wind-wl-guard" "$WL_GUARD" && mf system-file "$WL_GUARD"
+  sudo tee /etc/systemd/system/second-wind-wl-guard.service >/dev/null <<'UNIT'
+[Unit]
+Description=Second Wind: make sure the Broadcom WiFi driver exists for this kernel
+DefaultDependencies=no
+After=local-fs.target systemd-modules-load.service
+Before=NetworkManager.service network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/second-wind-wl-guard
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+  mf system-file /etc/systemd/system/second-wind-wl-guard.service
+  sudo systemctl daemon-reload && sudo systemctl enable second-wind-wl-guard.service >/dev/null 2>&1 \
+    || warn "WiFi guard could not be enabled"
+  # Headers meta for machines installed before 0.9.4 (the Air): future
+  # kernels then bring their headers and DKMS rebuilds wl by itself.
+  apt_track_install "$HDR_META" || true
 fi
 
 # --- Store toolkit (GTK4/libadwaita python bindings) ---
