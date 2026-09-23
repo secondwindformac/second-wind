@@ -2,8 +2,10 @@
 """Second Wind Apps — store v3: a compact visual grid of popular apps.
 
 ~21 curated apps as icon cards with checkboxes, grouped by what people do.
-Icons are fetched at runtime from each project's own site (favicon service),
-so no trademarked artwork ships in this repository. One system password
+Icons are fetched at runtime (official app icons via Flathub, site icons for
+web apps), so no trademarked artwork ships in this repository. They are
+prefetched during setup (module 70) and retried while the window is open;
+offline, a card shows a colored initial instead of a generic gear. One system password
 window installs the whole selection. Official sources only.
 """
 import locale
@@ -21,13 +23,21 @@ ICONDIR = os.path.join(SW_SHARE, "store-icons")
 os.makedirs(LOGDIR, exist_ok=True)
 os.makedirs(ICONDIR, exist_ok=True)
 
+if __name__ == "__main__" and "--prefetch-icons" in sys.argv:
+    PREFETCH = True
+else:
+    PREFETCH = False
+
 try:
+    if PREFETCH:
+        raise ImportError  # no GTK needed (nor wanted) to warm the icon cache
     import gi
     gi.require_version("Gtk", "4.0")
     gi.require_version("Adw", "1")
     from gi.repository import Adw, Gdk, GLib, Gtk  # noqa: E402
 except Exception:
-    os.execv("/bin/bash", ["bash", os.path.join(SW_ROOT, "apps", "second-wind-apps.sh")])
+    if not PREFETCH:
+        os.execv("/bin/bash", ["bash", os.path.join(SW_ROOT, "apps", "second-wind-apps.sh")])
 
 ES = (locale.getlocale()[0] or os.environ.get("LANG", "en")).startswith("es")
 
@@ -101,6 +111,33 @@ CATALOG = [
     ]),
 ]
 
+# Where each card's icon comes from, best first; the favicon services for the
+# catalog domain are always the last resort. "flathub:<id>" = the app's
+# official 128px icon, resolved through Flathub's appstream API (the media URL
+# carries a hash, so it is never hardcoded). "theme:<name>" = a local icon that
+# works offline. Plain URLs are fetched as-is. (Favicons alone were blurry:
+# WhatsApp came back 23px, and the Air got none at all while offline.)
+ICON_SRC = {
+    "chrome": ["flathub:com.google.Chrome"],
+    "quicklook": ["theme:org.gnome.Nautilus"],
+    "vlc": ["flathub:org.videolan.VLC"],
+    "transmission": ["flathub:com.transmissionbt.Transmission"],
+    "gimp": ["flathub:org.gimp.GIMP"],
+    "spotify": ["flathub:com.spotify.Client"],
+    "audacity": ["flathub:org.audacityteam.Audacity"],
+    "obs": ["flathub:com.obsproject.Studio"],
+    "kdenlive": ["flathub:org.kde.kdenlive"],
+    "steam": ["flathub:com.valvesoftware.Steam"],
+    "zoom": ["flathub:us.zoom.Zoom"],
+    "telegram": ["flathub:org.telegram.desktop"],
+    "discord": ["flathub:com.discordapp.Discord"],
+    "slack": ["flathub:com.slack.Slack"],
+    "onlyoffice": ["flathub:org.onlyoffice.desktopeditors"],
+    "blender": ["flathub:org.blender.Blender"],
+    "whatsapp": ["https://web.whatsapp.com/apple-touch-icon.png"],
+    "claude": ["https://claude.ai/apple-touch-icon.png"],
+}
+
 T = {
     "title": "Second Wind Apps",
     "install": d("Instalar", "Install"),
@@ -148,6 +185,10 @@ CSS = b"""
 .app-card:checked { background: alpha(@accent_bg_color, .18);
                     outline: 2px solid @accent_bg_color; outline-offset: -2px; }
 .app-name { font-weight: 600; font-size: 12px; }
+.mono { border-radius: 11px; color: white; font-weight: 800; font-size: 22px; }
+.mono-0 { background: #2563EB; } .mono-1 { background: #0D9488; }
+.mono-2 { background: #EA580C; } .mono-3 { background: #7C3AED; }
+.mono-4 { background: #DB2777; } .mono-5 { background: #059669; }
 """
 
 
@@ -177,25 +218,81 @@ def mf(*args):
                    check=False)
 
 
+IMG_MAGIC = (b"\x89PNG", b"\xff\xd8\xff", b"GIF8", b"\x00\x00\x01\x00", b"RIFF")
+
+
+def is_image(path):
+    # Some sites answer a missing favicon with an HTML page and status 200
+    # (office.com did); caching that showed a broken card forever.
+    try:
+        with open(path, "rb") as f:
+            head = f.read(256)
+    except OSError:
+        return False
+    return head.startswith(IMG_MAGIC) or (b"<svg" in head and b"<html" not in head.lower())
+
+
+def icon_log(msg):
+    with open(os.path.join(LOGDIR, "apps-icons.log"), "a") as f:
+        f.write(msg + "\n")
+
+
+def flathub_icon_url(fid):
+    r = subprocess.run(["curl", "-fsL", "-m", "10",
+                        f"https://flathub.org/api/v2/appstream/{fid}"],
+                       capture_output=True, text=True, check=False)
+    try:
+        import json
+        return json.loads(r.stdout).get("icon") if r.returncode == 0 else None
+    except ValueError:
+        return None
+
+
 def fetch_icon(app_id, domain):
-    path = os.path.join(ICONDIR, f"{app_id}.png")
-    if os.path.exists(path) and os.path.getsize(path) > 0:
+    # "-v2" retires caches from the favicon-only era (low-res, sometimes HTML)
+    path = os.path.join(ICONDIR, f"{app_id}-v2.png")
+    if os.path.exists(path) and is_image(path):
         return path
-    # Several sources, in order: some domains 404 on one service but not the
-    # next (VLC/GIMP did, caught in the E2E clips). GdkPixbuf sniffs content,
-    # so an .ico body behind a .png name still renders. Icons are cached, and
-    # deliberately NOT shipped in the repo (third-party logos stay upstream).
-    for url in (f"https://www.google.com/s2/favicons?domain={domain}&sz=128",
-                f"https://icons.duckduckgo.com/ip3/{domain}.ico",
-                f"https://{domain}/favicon.ico"):
-        subprocess.run(["curl", "-fsSL", "-m", "10", "-o", path, url], check=False)
-        if os.path.exists(path) and os.path.getsize(path) > 0:
+    urls = []
+    for src in ICON_SRC.get(app_id, []):
+        if src.startswith("theme:"):
+            continue  # resolved locally by the window, nothing to download
+        if src.startswith("flathub:"):
+            src = flathub_icon_url(src[len("flathub:"):])
+        if src:
+            urls.append(src)
+    # Fallbacks, in order: some domains 404 on one service but not the next
+    # (VLC/GIMP did, caught in the E2E clips). GdkPixbuf sniffs content, so an
+    # .ico body behind a .png name still renders. Deliberately NOT shipped in
+    # the repo (third-party logos stay upstream).
+    urls += [f"https://www.google.com/s2/favicons?domain={domain}&sz=128",
+             f"https://icons.duckduckgo.com/ip3/{domain}.ico",
+             f"https://{domain}/favicon.ico"]
+    tmp = path + ".part"
+    for url in urls:
+        subprocess.run(["curl", "-fsL", "-m", "10", "-A", "Mozilla/5.0",
+                        "-o", tmp, url], check=False)
+        if is_image(tmp):
+            os.replace(tmp, path)
             return path
     try:
-        os.remove(path)  # leave no empty cache file behind
+        os.remove(tmp)  # leave no half/HTML file behind
     except FileNotFoundError:
         pass
+    icon_log(f"{app_id}: no icon (offline or all sources failed)")
     return None
+
+
+def prefetch_icons():
+    got = 0
+    for _gid, _title, apps in CATALOG:
+        for app in apps:
+            if any(x.startswith("theme:") for x in ICON_SRC.get(app[0], [])) \
+                    or fetch_icon(app[0], app[4]):
+                got += 1
+    total = sum(len(a) for _g, _t, a in CATALOG)
+    print(f"icons: {got}/{total}")
+    return 0
 
 
 def make_webapp(app_id, name, url, domain):
@@ -212,10 +309,15 @@ def make_webapp(app_id, name, url, domain):
     return None
 
 
+if PREFETCH:
+    sys.exit(prefetch_icons())  # before Store: Adw isn't imported in this mode
+
+
 class Store(Adw.Application):
     def __init__(self):
         super().__init__(application_id="app.secondwind.Apps")
         self.cards = {}
+        self.stacks = {}
 
     def do_activate(self):
         prov = Gtk.CssProvider()
@@ -361,24 +463,51 @@ class Store(Adw.Application):
         # (only probed for default entries, to keep startup snappy).
         if default and kind != "web" and self.installed(kind, ref, app_id):
             default = False
-        img = Gtk.Image(icon_name="application-x-executable-symbolic",
-                        pixel_size=44)
+        # Until (or unless) the real icon arrives: a colored initial, never a
+        # generic gear — a grid of gears reads as "broken" (Air, 23-Sep).
+        mono = Gtk.Label(label=name[:1].upper(), css_classes=[
+            "mono", f"mono-{sum(map(ord, app_id)) % 6}"], halign=Gtk.Align.CENTER)
+        mono.set_size_request(44, 44)
+        img = Gtk.Image(pixel_size=44)
+        stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE)
+        stack.add_named(mono, "mono")
+        stack.add_named(img, "img")
+        theme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
+        for src in ICON_SRC.get(app_id, []):
+            if src.startswith("theme:") and theme.has_icon(src[6:]):
+                img.set_from_icon_name(src[6:])
+                stack.set_visible_child_name("img")
         label = Gtk.Label(label=name, css_classes=["app-name"],
                           ellipsize=3, max_width_chars=12)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        box.append(img)
+        box.append(stack)
         box.append(label)
         btn = Gtk.ToggleButton(child=box, css_classes=["app-card", "flat"],
                                active=default, tooltip_text=desc)
         btn.connect("toggled", lambda *_: self.count())
         self.cards[app_id] = (btn, img, app)
+        self.stacks[app_id] = stack
         return btn
 
+    def show_icon(self, app_id, path):
+        self.cards[app_id][1].set_from_file(path)
+        self.stacks[app_id].set_visible_child_name("img")
+        return False
+
     def icons_worker(self):
-        for app_id, (_btn, img, app) in list(self.cards.items()):
-            path = fetch_icon(app_id, app[4])
-            if path:
-                GLib.idle_add(img.set_from_file, path)
+        # The window may open before the network is up (first login, WiFi
+        # still joining), so keep retrying the missing ones for ~10 minutes.
+        import time
+        todo = [a for a, s in self.stacks.items() if s.get_visible_child_name() == "mono"]
+        for wait in (0, 5, 10, 20, 30, 60, 60, 120, 120, 180):
+            time.sleep(wait)
+            for app_id in list(todo):
+                path = fetch_icon(app_id, self.cards[app_id][2][4])
+                if path:
+                    GLib.idle_add(self.show_icon, app_id, path)
+                    todo.remove(app_id)
+            if not todo:
+                return
 
     def count(self):
         n = sum(1 for b, _i, _a in self.cards.values() if b.get_active())

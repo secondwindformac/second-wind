@@ -15,7 +15,7 @@ if [ "$DRY_RUN" = 1 ]; then
   return 0
 fi
 
-install -d "$SW_SHARE" "$HOME/.local/share/applications"
+install -d "$SW_SHARE" "$SW_STATE/logs" "$HOME/.local/share/applications"
 # Clean the pre-rename spelling so upgrades don't grow a duplicate grid entry
 rm -f "$HOME/.local/share/applications/second-wind-apps.desktop"
 cp "$SW_ROOT/assets/second-wind-apps.svg" "$SW_SHARE/second-wind-apps.svg"
@@ -31,6 +31,13 @@ Categories=System;Utility;
 EOF
 track_new_file "$DESK"
 track_new_file "$SW_SHARE/second-wind-apps.svg"
+
+# Warm the store's icon cache now, while setup is online: the first time the
+# user opens the store its cards already show real icons (on the Air, 23-Sep,
+# the store opened before the network and showed a grid of gears). Never
+# fatal; the store itself keeps retrying whatever is still missing.
+timeout 90 python3 "$SW_ROOT/apps/second-wind-apps.py" --prefetch-icons \
+  >>"$SW_STATE/logs/apps-icons.log" 2>&1 || true
 
 # Into the dock, like the App Store on a Mac
 favorite_add app.secondwind.Apps.desktop
