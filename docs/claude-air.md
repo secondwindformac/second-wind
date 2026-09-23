@@ -30,6 +30,16 @@ Tu trabajo es EXPLORAR y PROBAR este equipo. Todo arreglo se hace en el CÓDIGO 
 - Flujo: diagnosticar → cambiar el código → commit + push → aplicar ese código en el equipo →
   verificar con evidencia. Si falla, vuelta al código.
 
+## Pantallazos para aprobar
+Puedes (y debes) probar todo lo que quieras en este equipo y mostrar el resultado con pantallazos.
+- Cada cambio visual se aprueba mirando: después de aplicarlo, toma la captura, mírala tú primero
+  y, si se ve bien, muéstrasela al CEO (ábrela con `xdg-open <archivo>.png` para que la vea en
+  pantalla) y pregúntale si la aprueba. Si hay un "antes", muestra antes y después.
+- Guarda cada captura en `docs/reports/img/` con un nombre claro (por ejemplo
+  `barra-superior-despues.png`) y haz commit + push, para que el Taller también las vea.
+- Un cambio visual queda "aprobado" solo cuando el CEO dice que sí; anótalo en el informe con su
+  captura. Si dice que no, vuelve al código y repite.
+
 ## Reglas duras
 - Git: trabajas SOLO en la rama `feat/v094` del repo `secondwindformac/second-wind`. Nunca `main`,
   nunca tags, nunca releases, nunca force-push.
