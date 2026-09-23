@@ -107,6 +107,13 @@ if [ "$MODE" = "--all" ]; then
     chk "${MSG[v_hib]}" bash -c "grep -q suspend-then-hibernate /etc/systemd/logind.conf.d/secondwind.conf && grep -q 'resume=' /etc/default/grub.d/secondwind-hibernate.cfg"
   fi
   chk "${MSG[v_thermald]}" systemctl is-active thermald
+  # Broadcom Macs: the wl driver must exist ON DISK for this kernel, not just
+  # be loaded (Air, 23-Sep: it ran from memory after its file was deleted,
+  # and the next boot had no WiFi). `dkms status` is not proof either.
+  if grep -qixF -f <(grep -v '^#' "$SW_ROOT/usb/drivers/wl-pci-ids" 2>/dev/null) \
+       <(for d in /sys/bus/pci/devices/*; do echo "$(sed 's/^0x//' "$d/vendor"):$(sed 's/^0x//' "$d/device")"; done) 2>/dev/null; then
+    chk "WiFi (Broadcom wl) — driver on disk for $(uname -r)" bash -c 'f="$(modinfo -n wl 2>/dev/null)" && [ -e "$f" ]'
+  fi
 fi
 
 if [ -f "$HOME/.config/systemd/user/second-wind-update.timer" ]; then
