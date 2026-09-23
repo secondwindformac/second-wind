@@ -53,6 +53,27 @@ autoinstall:
           exit 1
           ;;
       esac
+    # Macs with Apple's T2 chip (2018-2020) need a patched kernel and WiFi
+    # files that only exist inside macOS — this stick cannot run them yet.
+    # Stop BEFORE any disk is touched, with a clear message (their Mac stays
+    # exactly as it was). Detected by the T2 bridge's PCI IDs, plus the model
+    # identifier as a second signal.
+    - |
+      t2=""
+      for dev in /sys/bus/pci/devices/*; do
+        case "$(cat "$dev/vendor" 2>/dev/null):$(cat "$dev/device" 2>/dev/null)" in
+          0x106b:0x1801|0x106b:0x1802) t2=yes ;;
+        esac
+      done
+      model="$(cat /sys/class/dmi/id/product_name 2>/dev/null || echo unknown)"
+      case "$model" in
+        MacBookPro15,*|MacBookPro16,*|MacBookAir8,*|MacBookAir9,*|Macmini8,*|iMac20,*|iMacPro1,*|MacPro7,*) t2=yes ;;
+      esac
+      if [ -n "$t2" ]; then
+        echo "Second Wind: this Mac ($model) has Apple's T2 chip, which Second Wind does not support yet. Nothing was erased; you can turn it off and remove the stick." >&2
+        echo "Second Wind: este Mac ($model) tiene el chip T2 de Apple, que Second Wind todavía no soporta. No se borró nada; puedes apagarlo y sacar el pendrive." >&2
+        exit 1
+      fi
 
   # Wipe the whole disk with the standard direct layout — but only a disk
   # that matches the guard above.
@@ -138,6 +159,11 @@ autoinstall:
         echo "$HIT $WL_KERNEL" > /target/var/lib/second-wind/wl-preinstalled
         curtin in-target -- update-initramfs -u -k "$WL_KERNEL" || echo "WARN: initramfs not refreshed"
         echo "OK: wl preinstalled for $WL_KERNEL"
+        # Keep this kernel until the driver is handed to DKMS (module 15,
+        # first online run — normally the first boot, since WiFi now works).
+        # Bounded: module 15 lifts the hold right after the handover.
+        curtin in-target -- apt-mark hold linux-generic-hwe-24.04 linux-image-generic-hwe-24.04 linux-headers-generic-hwe-24.04 \
+          && echo "kernel updates held until DKMS handover" || echo "WARN: could not hold kernel"
       else
         echo "FAIL: depmod does not resolve wl"
         rm -f "/target/lib/modules/$WL_KERNEL/extra/second-wind/wl.ko" /target/etc/modprobe.d/second-wind-wl.conf

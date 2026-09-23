@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# second-wind-mymac — "Your Mac": which Mac this is (name + Apple model
+# number, e.g. A1466) and, component by component, whether it REALLY works
+# right now (WiFi connected, sound device present, camera present...), not
+# merely whether a driver was installed. Shown once after the final reboot of
+# the first boot, and available any time.
+#
+#   second-wind-mymac          plain text report
+#   second-wind-mymac --gui    same report in a window
+#   second-wind-mymac --json   machine-readable (also saved to the state dir)
+set -uo pipefail
+SW_ROOT="${SW_ROOT:-/usr/local/share/second-wind}"
+SW_STATE="${SW_STATE:-$HOME/.local/state/second-wind}"
+mkdir -p "$SW_STATE"
+case "${LANG:-en}" in es*) L=es ;; *) L=en ;; esac
+t() { if [ "$L" = es ]; then printf '%s' "$1"; else printf '%s' "$2"; fi; }
+
+ident="${SW_MYMAC_IDENT:-$(cat /sys/class/dmi/id/product_name 2>/dev/null || echo unknown)}"
+# Name, Apple model number(s), support level and note, from data/macs.json.
+read -r -d '' PY <<'PYEOF'
+import json, sys
+ident, lang, path = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    rows = [r for r in json.load(open(path))["models"] if ident in r["identifiers"]]
+except Exception:
+    rows = []
+if not rows:
+    print(ident); print(""); print(""); print(""); sys.exit()
+names = sorted({r["name"] for r in rows})
+anums = sorted({a for r in rows for a in r["a_numbers"]})
+r = rows[0]
+print(" / ".join(names)); print(", ".join(anums)); print(r["support"])
+print(r["note_es"] if lang == "es" else r["note_en"])
+PYEOF
+{ read -r NAME; read -r ANUM; read -r SUPPORT; read -r NOTE; } < <(python3 -c "$PY" "$ident" "$L" "$SW_ROOT/data/macs.json" 2>/dev/null || printf '%s\n\n\n\n' "$ident")
+
+OK="✔"; NO="✖"; WAIT="…"
+has_pci() { local d; for d in /sys/bus/pci/devices/*; do [ "$(cat "$d/vendor" 2>/dev/null):$(cat "$d/device" 2>/dev/null)" = "$1" ] && return 0; done; return 1; }
+
+# WiFi
+if nmcli -t -f TYPE,STATE device 2>/dev/null | grep -q '^wifi:connected'; then
+  WIFI="$OK $(t 'WiFi: conectado' 'WiFi: connected')"; WIFI_S=ok
+elif nmcli -t -f TYPE device 2>/dev/null | grep -q '^wifi$'; then
+  WIFI="$OK $(t 'WiFi: listo (elige tu red arriba a la derecha)' 'WiFi: ready (pick your network at the top right)')"; WIFI_S=ready
+else
+  WIFI="$NO $(t 'WiFi: sin driver (revisa /var/log/second-wind-wifi.log)' 'WiFi: no driver (see /var/log/second-wind-wifi.log)')"; WIFI_S=missing
+fi
+# Sound: a real output device (not the dummy sink)
+if pactl list short sinks 2>/dev/null | grep -vq 'auto_null'; then
+  SND="$OK $(t 'Sonido' 'Sound')"; SND_S=ok
+else
+  SND="$NO $(t 'Sonido: sin salida de audio' 'Sound: no audio output')"; SND_S=missing
+fi
+# Camera
+if ls /dev/video* >/dev/null 2>&1; then
+  CAM="$OK $(t 'Cámara' 'Camera')"; CAM_S=ok
+elif has_pci "0x14e4:0x1570"; then
+  CAM="$WAIT $(t 'Cámara: se activa sola al conectarte a internet' 'Camera: turns on by itself once you are online')"; CAM_S=pending
+else
+  CAM="$NO $(t 'Cámara: no detectada' 'Camera: not detected')"; CAM_S=missing
+fi
+# Keyboard / trackpad (laptops only)
+BAT=""; BAT_S=na; KBD=""; KBD_S=na
+if ls -d /sys/class/power_supply/BAT* >/dev/null 2>&1; then
+  cap="$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1)"
+  BAT="$OK $(t "Batería: ${cap:-?}%" "Battery: ${cap:-?}%")"; BAT_S=ok
+  if grep -qiE 'touchpad|bcm5974|applespi|trackpad' /proc/bus/input/devices 2>/dev/null; then
+    KBD="$OK $(t 'Teclado y trackpad' 'Keyboard and trackpad')"; KBD_S=ok
+  else
+    KBD="$NO $(t 'Trackpad: no detectado' 'Trackpad: not detected')"; KBD_S=missing
+  fi
+fi
+# Bluetooth
+if ls -d /sys/class/bluetooth/hci* >/dev/null 2>&1; then
+  BT="$OK Bluetooth"; BT_S=ok
+else
+  BT="$NO $(t 'Bluetooth: no detectado' 'Bluetooth: not detected')"; BT_S=missing
+fi
+
+TITLE="$(t 'Tu Mac' 'Your Mac')"
+HEAD="${NAME:-$ident}"
+[ -n "$ANUM" ] && HEAD="$HEAD"$'\n'"$(t 'Número de modelo' 'Model number'): $ANUM  ·  $ident"
+BODY="$WIFI"$'\n'"$SND"$'\n'"$CAM"
+[ -n "$KBD" ] && BODY="$BODY"$'\n'"$KBD"
+BODY="$BODY"$'\n'"$BT"
+[ -n "$BAT" ] && BODY="$BODY"$'\n'"$BAT"
+[ -n "$NOTE" ] && BODY="$BODY"$'\n\n'"$NOTE"
+
+python3 - "$SW_STATE/mymac.json" <<PYEOF 2>/dev/null || true
+import json, sys
+json.dump({"identifier": "$ident", "name": """$NAME""", "a_numbers": "$ANUM", "support": "$SUPPORT",
+  "wifi": "$WIFI_S", "sound": "$SND_S", "camera": "$CAM_S", "keyboard_trackpad": "$KBD_S",
+  "bluetooth": "$BT_S", "battery": "$BAT_S"}, open(sys.argv[1], "w"), ensure_ascii=False, indent=1)
+PYEOF
+
+case "${1:-}" in
+  --json) cat "$SW_STATE/mymac.json" ;;
+  --gui)  zenity --info --no-wrap --title="$TITLE" --icon=computer \
+            --text="<b>$HEAD</b>"$'\n\n'"$BODY" 2>/dev/null || printf '%s\n\n%s\n' "$HEAD" "$BODY" ;;
+  *)      printf '%s\n%s\n\n%s\n' "$TITLE" "$HEAD" "$BODY" ;;
+esac

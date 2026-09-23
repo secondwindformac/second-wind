@@ -110,6 +110,18 @@ trap 'kill "$QUIET_LOOP" 2>/dev/null || true' EXIT
 # GA kernel). Called only after a successful install (STAMP set, autostart gone),
 # so it fires exactly once and never loops.
 reboot_to_finish() {
+  # After this reboot, show "Your Mac" ONCE: the model (with its Apple model
+  # number, e.g. A1466) and a real check of WiFi, sound, camera, trackpad...
+  # The entry removes itself after showing.
+  mkdir -p "$HOME/.config/autostart"
+  cat > "$HOME/.config/autostart/second-wind-mymac.desktop" <<EOD
+[Desktop Entry]
+Type=Application
+Name=Second Wind
+NoDisplay=true
+Exec=sh -c 'sleep 20; "$SWDIR/bin/second-wind-mymac" --gui; rm -f "\$HOME/.config/autostart/second-wind-mymac.desktop"'
+X-GNOME-Autostart-enabled=true
+EOD
   notify-send -i emblem-ok-symbolic "Second Wind" "$T_DONE" 2>/dev/null || true
   sleep 6
   gnome-session-quit --reboot --no-prompt 2>/dev/null \

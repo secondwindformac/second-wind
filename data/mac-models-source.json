@@ -1,0 +1,2448 @@
+{
+ "source_notes": [
+  "Fetched 2026-09-23. Names, years and Model Identifiers are verbatim from Apple \"Identify your <X> model\" pages: MacBook Air support.apple.com/en-us/102869, MacBook Pro 108052, MacBook 103257, iMac 108054 (includes iMac Pro), Mac mini 102852, Mac Pro 102887.",
+  "IMPORTANT: Apple identify pages do NOT list A-numbers (Model Number A####); they list order Part Numbers (e.g. MQD32xx/A). ALL a_numbers come from everymac.com (systems/by-identifier/all-<family>-model-numbers.html and ultimate-mac-lookup/?identify=A####).",
+  "t2 from Apple \"Mac computers with the Apple T2 Security Chip\" (support.apple.com/en-us/103265): MacBook Pro 2018-2020 (excl. M1), MacBook Air 2018-2020 (excl. M1), iMac (Retina 5K, 27-inch, 2020), iMac Pro, Mac mini (2018), Mac Pro 2019. iMac 2019 = no T2. MacBook Pro 2016/2017 Touch Bar = T1, not T2.",
+  "efi32: every Mac introduced 2008+ has 64-bit EFI, so efi32=false for all rows. 32-bit EFI Macs are 2006-2007 (MacBook1,1/2,1, MacBookPro1,x/2,x, iMac4,x/5,x, Macmini1,1/2,1, MacPro1,1/2,1, Xserve1,1): out of scope, but some share A-numbers with in-scope rows (see efi32_shared_a_numbers).",
+  "Apple pages start at ~2009 for most families; 2008 rows (MacBook Air Early/Late 2008, MacBook Early 2008 + Aluminum Late 2008, iMac Early 2008, iMac Mid 2009 20-inch, Mac Pro Early 2008) are everymac-sourced and their names are NOT Apple-verbatim.",
+  "MacBook Pro 17-inch Late 2008 = same machine as 17-inch Early 2008 (MacBookPro4,1, A1261) per everymac; Apple lists only the Early 2008 row.",
+  "Identifiers appended from everymac (not on Apple pages): MacBookPro15,3 (2018/2019 15-inch Vega configs; Apple lists 15,3 only under 2019), iMac14,3 (21.5-inch Late 2013 NVIDIA configs), Macmini5,3 (Mid 2011 server). iMac 21.5-inch Early 2013 i3 edu model = iMac13,1 per everymac (folded into Late 2012 row).",
+  "No 2008 Mac mini exists (Mid 2007 Macmini2,1, A1176, 32-bit EFI, sold until Mar 2009): out of scope.",
+  "UX: an A-number alone is ambiguous for most Intel Macs (see ambiguous_a_numbers). Ask for year/size, or read the Model Identifier (System Information / About This Mac) to disambiguate."
+ ],
+ "models": [
+  {
+   "family": "Mac Pro",
+   "name": "Mac Pro (Early 2008)",
+   "year": 2008,
+   "identifiers": [
+    "MacPro3,1"
+   ],
+   "a_numbers": [
+    "A1186"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://everymac.com/ultimate-mac-lookup/?identify=A1186",
+   "confidence": "everymac",
+   "note": "Not on Apple page. everymac: Jan-2008 = MacPro3,1. A1186 shared with 32-bit-EFI MacPro1,1/2,1."
+  },
+  {
+   "family": "Mac Pro",
+   "name": "Mac Pro (Early 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacPro4,1"
+   ],
+   "a_numbers": [
+    "A1289"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102887",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac Pro",
+   "name": "Mac Pro (Mid 2010)",
+   "year": 2010,
+   "identifiers": [
+    "MacPro5,1"
+   ],
+   "a_numbers": [
+    "A1289"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102887",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac Pro",
+   "name": "Mac Pro Server (Mid 2010)",
+   "year": 2010,
+   "identifiers": [
+    "MacPro5,1"
+   ],
+   "a_numbers": [
+    "A1289"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102887",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac Pro",
+   "name": "Mac Pro (Mid 2012)",
+   "year": 2012,
+   "identifiers": [
+    "MacPro5,1"
+   ],
+   "a_numbers": [
+    "A1289"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102887",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac Pro",
+   "name": "Mac Pro Server (Mid 2012)",
+   "year": 2012,
+   "identifiers": [
+    "MacPro5,1"
+   ],
+   "a_numbers": [
+    "A1289"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102887",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac Pro",
+   "name": "Mac Pro (Late 2013)",
+   "year": 2013,
+   "identifiers": [
+    "MacPro6,1"
+   ],
+   "a_numbers": [
+    "A1481"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102887",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac Pro",
+   "name": "Mac Pro (2019)",
+   "year": 2019,
+   "identifiers": [
+    "MacPro7,1"
+   ],
+   "a_numbers": [
+    "A1991"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102887",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac Pro",
+   "name": "Mac Pro (Rack, 2019)",
+   "year": 2019,
+   "identifiers": [
+    "MacPro7,1"
+   ],
+   "a_numbers": [
+    "A2304"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102887",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac mini",
+   "name": "Mac mini (Early 2009)",
+   "year": 2009,
+   "identifiers": [
+    "Macmini3,1"
+   ],
+   "a_numbers": [
+    "A1283"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102852",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac mini",
+   "name": "Mac mini (Late 2009)",
+   "year": 2009,
+   "identifiers": [
+    "Macmini3,1"
+   ],
+   "a_numbers": [
+    "A1283"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102852",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac mini",
+   "name": "Mac mini (Mid 2010)",
+   "year": 2010,
+   "identifiers": [
+    "Macmini4,1"
+   ],
+   "a_numbers": [
+    "A1347"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102852",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac mini",
+   "name": "Mac mini (Mid 2011)",
+   "year": 2011,
+   "identifiers": [
+    "Macmini5,1",
+    "Macmini5,2",
+    "Macmini5,3"
+   ],
+   "a_numbers": [
+    "A1347"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102852",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)",
+   "note": "Identifier(s) ['Macmini5,3'] not on Apple page; added from everymac."
+  },
+  {
+   "family": "Mac mini",
+   "name": "Mac mini (Late 2012)",
+   "year": 2012,
+   "identifiers": [
+    "Macmini6,1",
+    "Macmini6,2"
+   ],
+   "a_numbers": [
+    "A1347"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102852",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac mini",
+   "name": "Mac mini (Late 2014)",
+   "year": 2014,
+   "identifiers": [
+    "Macmini7,1"
+   ],
+   "a_numbers": [
+    "A1347"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102852",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "Mac mini",
+   "name": "Mac mini (2018)",
+   "year": 2018,
+   "identifiers": [
+    "Macmini8,1"
+   ],
+   "a_numbers": [
+    "A1993"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102852",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook",
+   "name": "MacBook (13-inch, Aluminum, Late 2008)",
+   "year": 2008,
+   "identifiers": [
+    "MacBook5,1"
+   ],
+   "a_numbers": [
+    "A1278"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://everymac.com/ultimate-mac-lookup/?identify=A1278",
+   "confidence": "everymac",
+   "note": "Not on Apple page. Shares A1278 with 13-inch MacBook Pro 2009-2012. everymac: Unibody Oct-2008 = MacBook5,1."
+  },
+  {
+   "family": "MacBook",
+   "name": "MacBook (13-inch, Early 2008)",
+   "year": 2008,
+   "identifiers": [
+    "MacBook4,1"
+   ],
+   "a_numbers": [
+    "A1181"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://everymac.com/ultimate-mac-lookup/?identify=A1181",
+   "confidence": "everymac",
+   "note": "Not on Apple page. everymac: White-08/Black-08 Feb-2008 = MacBook4,1 (also sold as Late 2008 white)."
+  },
+  {
+   "family": "MacBook",
+   "name": "MacBook (13-inch, Early 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacBook5,2"
+   ],
+   "a_numbers": [
+    "A1181"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/103257",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook",
+   "name": "MacBook (13-inch, Late 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacBook6,1"
+   ],
+   "a_numbers": [
+    "A1342"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/103257",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook",
+   "name": "MacBook (13-inch, Mid 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacBook5,2"
+   ],
+   "a_numbers": [
+    "A1181"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/103257",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook",
+   "name": "MacBook (13-inch, Mid 2010)",
+   "year": 2010,
+   "identifiers": [
+    "MacBook7,1"
+   ],
+   "a_numbers": [
+    "A1342"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/103257",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook",
+   "name": "MacBook (Retina, 12-inch, Early 2015)",
+   "year": 2015,
+   "identifiers": [
+    "MacBook8,1"
+   ],
+   "a_numbers": [
+    "A1534"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/103257",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook",
+   "name": "MacBook (Retina, 12-inch, Early 2016)",
+   "year": 2016,
+   "identifiers": [
+    "MacBook9,1"
+   ],
+   "a_numbers": [
+    "A1534"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/103257",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook",
+   "name": "MacBook (Retina, 12-inch, 2017)",
+   "year": 2017,
+   "identifiers": [
+    "MacBook10,1"
+   ],
+   "a_numbers": [
+    "A1534"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/103257",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (Late 2008)",
+   "year": 2008,
+   "identifiers": [
+    "MacBookAir2,1"
+   ],
+   "a_numbers": [
+    "A1304"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://everymac.com/ultimate-mac-lookup/?identify=A1304",
+   "confidence": "everymac",
+   "note": "Not on Apple page. everymac: A1304 1.6/1.86 NVIDIA Oct-2008 = MacBookAir2,1."
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (Original, Early 2008)",
+   "year": 2008,
+   "identifiers": [
+    "MacBookAir1,1"
+   ],
+   "a_numbers": [
+    "A1237"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://everymac.com/ultimate-mac-lookup/?identify=A1237",
+   "confidence": "unverified",
+   "note": "Not on Apple page. Name everymac-style (not Apple-verbatim). A1237 confirmed on everymac MacBook Air list; identifier MacBookAir1,1 not re-confirmed on a fetched page."
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (Mid 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacBookAir2,1"
+   ],
+   "a_numbers": [
+    "A1304"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (11-inch, Late 2010)",
+   "year": 2010,
+   "identifiers": [
+    "MacBookAir3,1"
+   ],
+   "a_numbers": [
+    "A1370"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (13-inch, Late 2010)",
+   "year": 2010,
+   "identifiers": [
+    "MacBookAir3,2"
+   ],
+   "a_numbers": [
+    "A1369"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (11-inch, Mid 2011)",
+   "year": 2011,
+   "identifiers": [
+    "MacBookAir4,1"
+   ],
+   "a_numbers": [
+    "A1370"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (13-inch, Mid 2011)",
+   "year": 2011,
+   "identifiers": [
+    "MacBookAir4,2"
+   ],
+   "a_numbers": [
+    "A1369"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (11-inch, Mid 2012)",
+   "year": 2012,
+   "identifiers": [
+    "MacBookAir5,1"
+   ],
+   "a_numbers": [
+    "A1465"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (13-inch, Mid 2012)",
+   "year": 2012,
+   "identifiers": [
+    "MacBookAir5,2"
+   ],
+   "a_numbers": [
+    "A1466"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (11-inch, Mid 2013)",
+   "year": 2013,
+   "identifiers": [
+    "MacBookAir6,1"
+   ],
+   "a_numbers": [
+    "A1465"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (13-inch, Mid 2013)",
+   "year": 2013,
+   "identifiers": [
+    "MacBookAir6,2"
+   ],
+   "a_numbers": [
+    "A1466"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (11-inch, Early 2014)",
+   "year": 2014,
+   "identifiers": [
+    "MacBookAir6,1"
+   ],
+   "a_numbers": [
+    "A1465"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (13-inch, Early 2014)",
+   "year": 2014,
+   "identifiers": [
+    "MacBookAir6,2"
+   ],
+   "a_numbers": [
+    "A1466"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (11-inch, Early 2015)",
+   "year": 2015,
+   "identifiers": [
+    "MacBookAir7,1"
+   ],
+   "a_numbers": [
+    "A1465"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (13-inch, Early 2015)",
+   "year": 2015,
+   "identifiers": [
+    "MacBookAir7,2"
+   ],
+   "a_numbers": [
+    "A1466"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (13-inch, 2017)",
+   "year": 2017,
+   "identifiers": [
+    "MacBookAir7,2"
+   ],
+   "a_numbers": [
+    "A1466"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (Retina, 13-inch, 2018)",
+   "year": 2018,
+   "identifiers": [
+    "MacBookAir8,1"
+   ],
+   "a_numbers": [
+    "A1932"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (Retina, 13-inch, 2019)",
+   "year": 2019,
+   "identifiers": [
+    "MacBookAir8,2"
+   ],
+   "a_numbers": [
+    "A1932"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Air",
+   "name": "MacBook Air (Retina, 13-inch, 2020)",
+   "year": 2020,
+   "identifiers": [
+    "MacBookAir9,1"
+   ],
+   "a_numbers": [
+    "A2179"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/102869",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, Mid 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacBookPro5,5"
+   ],
+   "a_numbers": [
+    "A1278"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, Mid 2010)",
+   "year": 2010,
+   "identifiers": [
+    "MacBookPro7,1"
+   ],
+   "a_numbers": [
+    "A1278"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, Early 2011)",
+   "year": 2011,
+   "identifiers": [
+    "MacBookPro8,1"
+   ],
+   "a_numbers": [
+    "A1278"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, Late 2011)",
+   "year": 2011,
+   "identifiers": [
+    "MacBookPro8,1"
+   ],
+   "a_numbers": [
+    "A1278"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, Mid 2012)",
+   "year": 2012,
+   "identifiers": [
+    "MacBookPro9,2"
+   ],
+   "a_numbers": [
+    "A1278"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (Retina, 13-inch, Late 2012)",
+   "year": 2012,
+   "identifiers": [
+    "MacBookPro10,2"
+   ],
+   "a_numbers": [
+    "A1425"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (Retina, 13-inch, Early 2013)",
+   "year": 2013,
+   "identifiers": [
+    "MacBookPro10,2"
+   ],
+   "a_numbers": [
+    "A1425"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (Retina, 13-inch, Late 2013)",
+   "year": 2013,
+   "identifiers": [
+    "MacBookPro11,1"
+   ],
+   "a_numbers": [
+    "A1502"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (Retina, 13-inch, Mid 2014)",
+   "year": 2014,
+   "identifiers": [
+    "MacBookPro11,1"
+   ],
+   "a_numbers": [
+    "A1502"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (Retina, 13-inch, Early 2015)",
+   "year": 2015,
+   "identifiers": [
+    "MacBookPro12,1"
+   ],
+   "a_numbers": [
+    "A1502"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, 2016, Four Thunderbolt 3 ports)",
+   "year": 2016,
+   "identifiers": [
+    "MacBookPro13,2"
+   ],
+   "a_numbers": [
+    "A1706"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)",
+   "note": "Touch Bar model with Apple T1 chip (not T2)."
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, 2016, Two Thunderbolt 3 ports)",
+   "year": 2016,
+   "identifiers": [
+    "MacBookPro13,1"
+   ],
+   "a_numbers": [
+    "A1708"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, 2017, Four Thunderbolt 3 ports)",
+   "year": 2017,
+   "identifiers": [
+    "MacBookPro14,2"
+   ],
+   "a_numbers": [
+    "A1706"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)",
+   "note": "Touch Bar model with Apple T1 chip (not T2)."
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, 2017, Two Thunderbolt 3 ports)",
+   "year": 2017,
+   "identifiers": [
+    "MacBookPro14,1"
+   ],
+   "a_numbers": [
+    "A1708"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, 2018, Four Thunderbolt 3 ports)",
+   "year": 2018,
+   "identifiers": [
+    "MacBookPro15,2"
+   ],
+   "a_numbers": [
+    "A1989"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, 2019, Four Thunderbolt 3 ports)",
+   "year": 2019,
+   "identifiers": [
+    "MacBookPro15,2"
+   ],
+   "a_numbers": [
+    "A1989"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, 2019, Two Thunderbolt 3 ports)",
+   "year": 2019,
+   "identifiers": [
+    "MacBookPro15,4"
+   ],
+   "a_numbers": [
+    "A2159"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, 2020, Four Thunderbolt 3 ports)",
+   "year": 2020,
+   "identifiers": [
+    "MacBookPro16,2"
+   ],
+   "a_numbers": [
+    "A2251"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 13-inch",
+   "name": "MacBook Pro (13-inch, 2020, Two Thunderbolt 3 ports)",
+   "year": 2020,
+   "identifiers": [
+    "MacBookPro16,3"
+   ],
+   "a_numbers": [
+    "A2289"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, Early 2008)",
+   "year": 2008,
+   "identifiers": [
+    "MacBookPro4,1"
+   ],
+   "a_numbers": [
+    "A1260"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, Late 2008)",
+   "year": 2008,
+   "identifiers": [
+    "MacBookPro5,1"
+   ],
+   "a_numbers": [
+    "A1286"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, 2.53GHz, Mid 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacBookPro5,3"
+   ],
+   "a_numbers": [
+    "A1286"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, Mid 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacBookPro5,3"
+   ],
+   "a_numbers": [
+    "A1286"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, Mid 2010)",
+   "year": 2010,
+   "identifiers": [
+    "MacBookPro6,2"
+   ],
+   "a_numbers": [
+    "A1286"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, Early 2011)",
+   "year": 2011,
+   "identifiers": [
+    "MacBookPro8,2"
+   ],
+   "a_numbers": [
+    "A1286"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, Late 2011)",
+   "year": 2011,
+   "identifiers": [
+    "MacBookPro8,2"
+   ],
+   "a_numbers": [
+    "A1286"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, Mid 2012)",
+   "year": 2012,
+   "identifiers": [
+    "MacBookPro9,1"
+   ],
+   "a_numbers": [
+    "A1286"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (Retina, 15-inch, Mid 2012)",
+   "year": 2012,
+   "identifiers": [
+    "MacBookPro10,1"
+   ],
+   "a_numbers": [
+    "A1398"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (Retina, 15-inch, Early 2013)",
+   "year": 2013,
+   "identifiers": [
+    "MacBookPro10,1"
+   ],
+   "a_numbers": [
+    "A1398"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (Retina, 15-inch, Late 2013)",
+   "year": 2013,
+   "identifiers": [
+    "MacBookPro11,2",
+    "MacBookPro11,3"
+   ],
+   "a_numbers": [
+    "A1398"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (Retina, 15-inch, Mid 2014)",
+   "year": 2014,
+   "identifiers": [
+    "MacBookPro11,2",
+    "MacBookPro11,3"
+   ],
+   "a_numbers": [
+    "A1398"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (Retina, 15-inch, Mid 2015)",
+   "year": 2015,
+   "identifiers": [
+    "MacBookPro11,4",
+    "MacBookPro11,5"
+   ],
+   "a_numbers": [
+    "A1398"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, 2016)",
+   "year": 2016,
+   "identifiers": [
+    "MacBookPro13,3"
+   ],
+   "a_numbers": [
+    "A1707"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)",
+   "note": "Touch Bar model with Apple T1 chip (not T2)."
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, 2017)",
+   "year": 2017,
+   "identifiers": [
+    "MacBookPro14,3"
+   ],
+   "a_numbers": [
+    "A1707"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)",
+   "note": "Touch Bar model with Apple T1 chip (not T2)."
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, 2018)",
+   "year": 2018,
+   "identifiers": [
+    "MacBookPro15,1",
+    "MacBookPro15,3"
+   ],
+   "a_numbers": [
+    "A1990"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)",
+   "note": "Identifier(s) ['MacBookPro15,3'] not on Apple page; added from everymac. MacBookPro15,3 = Radeon Pro Vega GPU configs (everymac)."
+  },
+  {
+   "family": "MacBook Pro 15-inch",
+   "name": "MacBook Pro (15-inch, 2019)",
+   "year": 2019,
+   "identifiers": [
+    "MacBookPro15,1",
+    "MacBookPro15,3"
+   ],
+   "a_numbers": [
+    "A1990"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)",
+   "note": "MacBookPro15,3 = Radeon Pro Vega GPU configs (everymac)."
+  },
+  {
+   "family": "MacBook Pro 16-inch",
+   "name": "MacBook Pro (16-inch, 2019)",
+   "year": 2019,
+   "identifiers": [
+    "MacBookPro16,1",
+    "MacBookPro16,4"
+   ],
+   "a_numbers": [
+    "A2141"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 17-inch",
+   "name": "MacBook Pro (17-inch, Early 2008)",
+   "year": 2008,
+   "identifiers": [
+    "MacBookPro4,1"
+   ],
+   "a_numbers": [
+    "A1261"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 17-inch",
+   "name": "MacBook Pro (17-inch, Early 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacBookPro5,2"
+   ],
+   "a_numbers": [
+    "A1297"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 17-inch",
+   "name": "MacBook Pro (17-inch, Mid 2009)",
+   "year": 2009,
+   "identifiers": [
+    "MacBookPro5,2"
+   ],
+   "a_numbers": [
+    "A1297"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 17-inch",
+   "name": "MacBook Pro (17-inch, Mid 2010)",
+   "year": 2010,
+   "identifiers": [
+    "MacBookPro6,1"
+   ],
+   "a_numbers": [
+    "A1297"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 17-inch",
+   "name": "MacBook Pro (17-inch, Early 2011)",
+   "year": 2011,
+   "identifiers": [
+    "MacBookPro8,3"
+   ],
+   "a_numbers": [
+    "A1297"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "MacBook Pro 17-inch",
+   "name": "MacBook Pro (17-inch, Late 2011)",
+   "year": 2011,
+   "identifiers": [
+    "MacBookPro8,3"
+   ],
+   "a_numbers": [
+    "A1297"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108052",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (20-inch, Early 2008)",
+   "year": 2008,
+   "identifiers": [
+    "iMac8,1"
+   ],
+   "a_numbers": [
+    "A1224"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://everymac.com/ultimate-mac-lookup/?identify=A1224",
+   "confidence": "everymac",
+   "note": "Not on Apple page. everymac: Apr-2008 = iMac8,1."
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (24-inch, Early 2008)",
+   "year": 2008,
+   "identifiers": [
+    "iMac8,1"
+   ],
+   "a_numbers": [
+    "A1225"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://everymac.com/ultimate-mac-lookup/?identify=A1225",
+   "confidence": "everymac",
+   "note": "Not on Apple page. From everymac iMac model-number list; A1225 lookup not individually fetched."
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (20-inch, Early 2009)",
+   "year": 2009,
+   "identifiers": [
+    "iMac9,1"
+   ],
+   "a_numbers": [
+    "A1224"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (20-inch, Mid 2009)",
+   "year": 2009,
+   "identifiers": [
+    "iMac9,1"
+   ],
+   "a_numbers": [
+    "A1224"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://everymac.com/ultimate-mac-lookup/?identify=A1224",
+   "confidence": "everymac",
+   "note": "Not on Apple page (low-end 20-inch refresh). everymac: 2.0/2.26 20-inch = iMac9,1."
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (21.5-inch, Late 2009)",
+   "year": 2009,
+   "identifiers": [
+    "iMac10,1"
+   ],
+   "a_numbers": [
+    "A1311"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (24-inch, Early 2009)",
+   "year": 2009,
+   "identifiers": [
+    "iMac9,1"
+   ],
+   "a_numbers": [
+    "A1225"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (27-inch, Late 2009)",
+   "year": 2009,
+   "identifiers": [
+    "iMac10,1"
+   ],
+   "a_numbers": [
+    "A1312"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (21.5-inch, Mid 2010)",
+   "year": 2010,
+   "identifiers": [
+    "iMac11,2"
+   ],
+   "a_numbers": [
+    "A1311"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (27-inch, Mid 2010)",
+   "year": 2010,
+   "identifiers": [
+    "iMac11,3"
+   ],
+   "a_numbers": [
+    "A1312"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (21.5-inch, Mid 2011)",
+   "year": 2011,
+   "identifiers": [
+    "iMac12,1"
+   ],
+   "a_numbers": [
+    "A1311"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (27-inch, Mid 2011)",
+   "year": 2011,
+   "identifiers": [
+    "iMac12,2"
+   ],
+   "a_numbers": [
+    "A1312"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (21.5-inch, Late 2012)",
+   "year": 2012,
+   "identifiers": [
+    "iMac13,1"
+   ],
+   "a_numbers": [
+    "A1418"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (27-inch, Late 2012)",
+   "year": 2012,
+   "identifiers": [
+    "iMac13,2"
+   ],
+   "a_numbers": [
+    "A1419"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (21.5-inch, Late 2013)",
+   "year": 2013,
+   "identifiers": [
+    "iMac14,1",
+    "iMac14,3"
+   ],
+   "a_numbers": [
+    "A1418"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)",
+   "note": "Identifier(s) ['iMac14,3'] not on Apple page; added from everymac."
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (27-inch, Late 2013)",
+   "year": 2013,
+   "identifiers": [
+    "iMac14,2"
+   ],
+   "a_numbers": [
+    "A1419"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (21.5-inch, Mid 2014)",
+   "year": 2014,
+   "identifiers": [
+    "iMac14,4"
+   ],
+   "a_numbers": [
+    "A1418"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (Retina 5K, 27-inch, Late 2014)",
+   "year": 2014,
+   "identifiers": [
+    "iMac15,1"
+   ],
+   "a_numbers": [
+    "A1419"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (21.5-inch, Late 2015)",
+   "year": 2015,
+   "identifiers": [
+    "iMac16,1"
+   ],
+   "a_numbers": [
+    "A1418"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (Retina 4K, 21.5-inch, Late 2015)",
+   "year": 2015,
+   "identifiers": [
+    "iMac16,2"
+   ],
+   "a_numbers": [
+    "A1418"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (Retina 5K, 27-inch, Late 2015)",
+   "year": 2015,
+   "identifiers": [
+    "iMac17,1"
+   ],
+   "a_numbers": [
+    "A1419"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (Retina 5K, 27-inch, Mid 2015)",
+   "year": 2015,
+   "identifiers": [
+    "iMac15,1"
+   ],
+   "a_numbers": [
+    "A1419"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (21.5-inch, 2017)",
+   "year": 2017,
+   "identifiers": [
+    "iMac18,1"
+   ],
+   "a_numbers": [
+    "A1418"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (Retina 4K, 21.5-inch, 2017)",
+   "year": 2017,
+   "identifiers": [
+    "iMac18,2"
+   ],
+   "a_numbers": [
+    "A1418"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (Retina 5K, 27-inch, 2017)",
+   "year": 2017,
+   "identifiers": [
+    "iMac18,3"
+   ],
+   "a_numbers": [
+    "A1419"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (Retina 4K, 21.5-inch, 2019)",
+   "year": 2019,
+   "identifiers": [
+    "iMac19,2"
+   ],
+   "a_numbers": [
+    "A2116"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (Retina 5K, 27-inch, 2019)",
+   "year": 2019,
+   "identifiers": [
+    "iMac19,1"
+   ],
+   "a_numbers": [
+    "A2115"
+   ],
+   "t2": false,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac",
+   "name": "iMac (Retina 5K, 27-inch, 2020)",
+   "year": 2020,
+   "identifiers": [
+    "iMac20,1",
+    "iMac20,2"
+   ],
+   "a_numbers": [
+    "A2115"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  },
+  {
+   "family": "iMac Pro",
+   "name": "iMac Pro (2017)",
+   "year": 2017,
+   "identifiers": [
+    "iMacPro1,1"
+   ],
+   "a_numbers": [
+    "A1862"
+   ],
+   "t2": true,
+   "efi32": false,
+   "source_url": "https://support.apple.com/en-us/108054",
+   "confidence": "apple(name,identifier,t2)+everymac(a_numbers)"
+  }
+ ],
+ "ambiguous_a_numbers": {
+  "A1181": {
+   "identifiers": [
+    "MacBook4,1",
+    "MacBook5,2"
+   ],
+   "years": [
+    2008,
+    2009
+   ],
+   "models": [
+    "MacBook (13-inch, Early 2008)",
+    "MacBook (13-inch, Early 2009)",
+    "MacBook (13-inch, Mid 2009)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1224": {
+   "identifiers": [
+    "iMac8,1",
+    "iMac9,1"
+   ],
+   "years": [
+    2008,
+    2009
+   ],
+   "models": [
+    "iMac (20-inch, Early 2008)",
+    "iMac (20-inch, Early 2009)",
+    "iMac (20-inch, Mid 2009)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1225": {
+   "identifiers": [
+    "iMac8,1",
+    "iMac9,1"
+   ],
+   "years": [
+    2008,
+    2009
+   ],
+   "models": [
+    "iMac (24-inch, Early 2008)",
+    "iMac (24-inch, Early 2009)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1278": {
+   "identifiers": [
+    "MacBook5,1",
+    "MacBookPro5,5",
+    "MacBookPro7,1",
+    "MacBookPro8,1",
+    "MacBookPro9,2"
+   ],
+   "years": [
+    2008,
+    2009,
+    2010,
+    2011,
+    2012
+   ],
+   "models": [
+    "MacBook (13-inch, Aluminum, Late 2008)",
+    "MacBook Pro (13-inch, Mid 2009)",
+    "MacBook Pro (13-inch, Mid 2010)",
+    "MacBook Pro (13-inch, Early 2011)",
+    "MacBook Pro (13-inch, Late 2011)",
+    "MacBook Pro (13-inch, Mid 2012)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1283": {
+   "identifiers": [
+    "Macmini3,1"
+   ],
+   "years": [
+    2009
+   ],
+   "models": [
+    "Mac mini (Early 2009)",
+    "Mac mini (Late 2009)"
+   ],
+   "identifier_ambiguous": false
+  },
+  "A1286": {
+   "identifiers": [
+    "MacBookPro5,1",
+    "MacBookPro5,3",
+    "MacBookPro6,2",
+    "MacBookPro8,2",
+    "MacBookPro9,1"
+   ],
+   "years": [
+    2008,
+    2009,
+    2010,
+    2011,
+    2012
+   ],
+   "models": [
+    "MacBook Pro (15-inch, Late 2008)",
+    "MacBook Pro (15-inch, 2.53GHz, Mid 2009)",
+    "MacBook Pro (15-inch, Mid 2009)",
+    "MacBook Pro (15-inch, Mid 2010)",
+    "MacBook Pro (15-inch, Early 2011)",
+    "MacBook Pro (15-inch, Late 2011)",
+    "MacBook Pro (15-inch, Mid 2012)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1289": {
+   "identifiers": [
+    "MacPro4,1",
+    "MacPro5,1"
+   ],
+   "years": [
+    2009,
+    2010,
+    2012
+   ],
+   "models": [
+    "Mac Pro (Early 2009)",
+    "Mac Pro (Mid 2010)",
+    "Mac Pro Server (Mid 2010)",
+    "Mac Pro (Mid 2012)",
+    "Mac Pro Server (Mid 2012)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1297": {
+   "identifiers": [
+    "MacBookPro5,2",
+    "MacBookPro6,1",
+    "MacBookPro8,3"
+   ],
+   "years": [
+    2009,
+    2010,
+    2011
+   ],
+   "models": [
+    "MacBook Pro (17-inch, Early 2009)",
+    "MacBook Pro (17-inch, Mid 2009)",
+    "MacBook Pro (17-inch, Mid 2010)",
+    "MacBook Pro (17-inch, Early 2011)",
+    "MacBook Pro (17-inch, Late 2011)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1304": {
+   "identifiers": [
+    "MacBookAir2,1"
+   ],
+   "years": [
+    2008,
+    2009
+   ],
+   "models": [
+    "MacBook Air (Late 2008)",
+    "MacBook Air (Mid 2009)"
+   ],
+   "identifier_ambiguous": false
+  },
+  "A1311": {
+   "identifiers": [
+    "iMac10,1",
+    "iMac11,2",
+    "iMac12,1"
+   ],
+   "years": [
+    2009,
+    2010,
+    2011
+   ],
+   "models": [
+    "iMac (21.5-inch, Late 2009)",
+    "iMac (21.5-inch, Mid 2010)",
+    "iMac (21.5-inch, Mid 2011)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1312": {
+   "identifiers": [
+    "iMac10,1",
+    "iMac11,3",
+    "iMac12,2"
+   ],
+   "years": [
+    2009,
+    2010,
+    2011
+   ],
+   "models": [
+    "iMac (27-inch, Late 2009)",
+    "iMac (27-inch, Mid 2010)",
+    "iMac (27-inch, Mid 2011)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1342": {
+   "identifiers": [
+    "MacBook6,1",
+    "MacBook7,1"
+   ],
+   "years": [
+    2009,
+    2010
+   ],
+   "models": [
+    "MacBook (13-inch, Late 2009)",
+    "MacBook (13-inch, Mid 2010)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1347": {
+   "identifiers": [
+    "Macmini4,1",
+    "Macmini5,1",
+    "Macmini5,2",
+    "Macmini5,3",
+    "Macmini6,1",
+    "Macmini6,2",
+    "Macmini7,1"
+   ],
+   "years": [
+    2010,
+    2011,
+    2012,
+    2014
+   ],
+   "models": [
+    "Mac mini (Mid 2010)",
+    "Mac mini (Mid 2011)",
+    "Mac mini (Late 2012)",
+    "Mac mini (Late 2014)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1369": {
+   "identifiers": [
+    "MacBookAir3,2",
+    "MacBookAir4,2"
+   ],
+   "years": [
+    2010,
+    2011
+   ],
+   "models": [
+    "MacBook Air (13-inch, Late 2010)",
+    "MacBook Air (13-inch, Mid 2011)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1370": {
+   "identifiers": [
+    "MacBookAir3,1",
+    "MacBookAir4,1"
+   ],
+   "years": [
+    2010,
+    2011
+   ],
+   "models": [
+    "MacBook Air (11-inch, Late 2010)",
+    "MacBook Air (11-inch, Mid 2011)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1398": {
+   "identifiers": [
+    "MacBookPro10,1",
+    "MacBookPro11,2",
+    "MacBookPro11,3",
+    "MacBookPro11,4",
+    "MacBookPro11,5"
+   ],
+   "years": [
+    2012,
+    2013,
+    2014,
+    2015
+   ],
+   "models": [
+    "MacBook Pro (Retina, 15-inch, Mid 2012)",
+    "MacBook Pro (Retina, 15-inch, Early 2013)",
+    "MacBook Pro (Retina, 15-inch, Late 2013)",
+    "MacBook Pro (Retina, 15-inch, Mid 2014)",
+    "MacBook Pro (Retina, 15-inch, Mid 2015)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1418": {
+   "identifiers": [
+    "iMac13,1",
+    "iMac14,1",
+    "iMac14,3",
+    "iMac14,4",
+    "iMac16,1",
+    "iMac16,2",
+    "iMac18,1",
+    "iMac18,2"
+   ],
+   "years": [
+    2012,
+    2013,
+    2014,
+    2015,
+    2017
+   ],
+   "models": [
+    "iMac (21.5-inch, Late 2012)",
+    "iMac (21.5-inch, Late 2013)",
+    "iMac (21.5-inch, Mid 2014)",
+    "iMac (21.5-inch, Late 2015)",
+    "iMac (Retina 4K, 21.5-inch, Late 2015)",
+    "iMac (21.5-inch, 2017)",
+    "iMac (Retina 4K, 21.5-inch, 2017)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1419": {
+   "identifiers": [
+    "iMac13,2",
+    "iMac14,2",
+    "iMac15,1",
+    "iMac17,1",
+    "iMac18,3"
+   ],
+   "years": [
+    2012,
+    2013,
+    2014,
+    2015,
+    2017
+   ],
+   "models": [
+    "iMac (27-inch, Late 2012)",
+    "iMac (27-inch, Late 2013)",
+    "iMac (Retina 5K, 27-inch, Late 2014)",
+    "iMac (Retina 5K, 27-inch, Late 2015)",
+    "iMac (Retina 5K, 27-inch, Mid 2015)",
+    "iMac (Retina 5K, 27-inch, 2017)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1425": {
+   "identifiers": [
+    "MacBookPro10,2"
+   ],
+   "years": [
+    2012,
+    2013
+   ],
+   "models": [
+    "MacBook Pro (Retina, 13-inch, Late 2012)",
+    "MacBook Pro (Retina, 13-inch, Early 2013)"
+   ],
+   "identifier_ambiguous": false
+  },
+  "A1465": {
+   "identifiers": [
+    "MacBookAir5,1",
+    "MacBookAir6,1",
+    "MacBookAir7,1"
+   ],
+   "years": [
+    2012,
+    2013,
+    2014,
+    2015
+   ],
+   "models": [
+    "MacBook Air (11-inch, Mid 2012)",
+    "MacBook Air (11-inch, Mid 2013)",
+    "MacBook Air (11-inch, Early 2014)",
+    "MacBook Air (11-inch, Early 2015)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1466": {
+   "identifiers": [
+    "MacBookAir5,2",
+    "MacBookAir6,2",
+    "MacBookAir7,2"
+   ],
+   "years": [
+    2012,
+    2013,
+    2014,
+    2015,
+    2017
+   ],
+   "models": [
+    "MacBook Air (13-inch, Mid 2012)",
+    "MacBook Air (13-inch, Mid 2013)",
+    "MacBook Air (13-inch, Early 2014)",
+    "MacBook Air (13-inch, Early 2015)",
+    "MacBook Air (13-inch, 2017)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1502": {
+   "identifiers": [
+    "MacBookPro11,1",
+    "MacBookPro12,1"
+   ],
+   "years": [
+    2013,
+    2014,
+    2015
+   ],
+   "models": [
+    "MacBook Pro (Retina, 13-inch, Late 2013)",
+    "MacBook Pro (Retina, 13-inch, Mid 2014)",
+    "MacBook Pro (Retina, 13-inch, Early 2015)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1534": {
+   "identifiers": [
+    "MacBook10,1",
+    "MacBook8,1",
+    "MacBook9,1"
+   ],
+   "years": [
+    2015,
+    2016,
+    2017
+   ],
+   "models": [
+    "MacBook (Retina, 12-inch, Early 2015)",
+    "MacBook (Retina, 12-inch, Early 2016)",
+    "MacBook (Retina, 12-inch, 2017)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1706": {
+   "identifiers": [
+    "MacBookPro13,2",
+    "MacBookPro14,2"
+   ],
+   "years": [
+    2016,
+    2017
+   ],
+   "models": [
+    "MacBook Pro (13-inch, 2016, Four Thunderbolt 3 ports)",
+    "MacBook Pro (13-inch, 2017, Four Thunderbolt 3 ports)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1707": {
+   "identifiers": [
+    "MacBookPro13,3",
+    "MacBookPro14,3"
+   ],
+   "years": [
+    2016,
+    2017
+   ],
+   "models": [
+    "MacBook Pro (15-inch, 2016)",
+    "MacBook Pro (15-inch, 2017)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1708": {
+   "identifiers": [
+    "MacBookPro13,1",
+    "MacBookPro14,1"
+   ],
+   "years": [
+    2016,
+    2017
+   ],
+   "models": [
+    "MacBook Pro (13-inch, 2016, Two Thunderbolt 3 ports)",
+    "MacBook Pro (13-inch, 2017, Two Thunderbolt 3 ports)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1932": {
+   "identifiers": [
+    "MacBookAir8,1",
+    "MacBookAir8,2"
+   ],
+   "years": [
+    2018,
+    2019
+   ],
+   "models": [
+    "MacBook Air (Retina, 13-inch, 2018)",
+    "MacBook Air (Retina, 13-inch, 2019)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A1989": {
+   "identifiers": [
+    "MacBookPro15,2"
+   ],
+   "years": [
+    2018,
+    2019
+   ],
+   "models": [
+    "MacBook Pro (13-inch, 2018, Four Thunderbolt 3 ports)",
+    "MacBook Pro (13-inch, 2019, Four Thunderbolt 3 ports)"
+   ],
+   "identifier_ambiguous": false
+  },
+  "A1990": {
+   "identifiers": [
+    "MacBookPro15,1",
+    "MacBookPro15,3"
+   ],
+   "years": [
+    2018,
+    2019
+   ],
+   "models": [
+    "MacBook Pro (15-inch, 2018)",
+    "MacBook Pro (15-inch, 2019)"
+   ],
+   "identifier_ambiguous": true
+  },
+  "A2115": {
+   "identifiers": [
+    "iMac19,1",
+    "iMac20,1",
+    "iMac20,2"
+   ],
+   "years": [
+    2019,
+    2020
+   ],
+   "models": [
+    "iMac (Retina 5K, 27-inch, 2019)",
+    "iMac (Retina 5K, 27-inch, 2020)"
+   ],
+   "identifier_ambiguous": true
+  }
+ },
+ "efi32_shared_a_numbers": {
+  "A1181": "also MacBook1,1 & MacBook2,1 (2006-2007, 32-bit EFI) and MacBook3,1 (Late 2007, 64-bit EFI)",
+  "A1186": "also MacPro1,1 & MacPro2,1 (2006-2007, 32-bit EFI)",
+  "A1224": "also iMac7,1 (Mid 2007, 20-inch aluminum, 64-bit EFI)",
+  "A1225": "also iMac7,1 (Mid 2007, 24-inch aluminum, 64-bit EFI)"
+ },
+ "apple_silicon_a_numbers": [
+  {
+   "a_number": "A2337",
+   "model": "MacBook Air (M1, 2020)",
+   "identifier": "MacBookAir10,1",
+   "confusable_with": [
+    "A2179 (Intel MacBook Air 2020, same chassis)",
+    "A1932"
+   ],
+   "confidence": "everymac"
+  },
+  {
+   "a_number": "A2338",
+   "model": "MacBook Pro (13-inch, M1, 2020); also reportedly MacBook Pro (13-inch, M2, 2022)",
+   "identifier": "MacBookPro17,1 (M2: Mac14,7)",
+   "confusable_with": [
+    "A2251",
+    "A2289",
+    "A2159",
+    "A1989",
+    "A1708",
+    "A1706 (Intel 13-inch, same chassis)"
+   ],
+   "confidence": "everymac (M1); M2 sharing A2338 = unverified"
+  },
+  {
+   "a_number": "A2348",
+   "model": "Mac mini (M1, 2020)",
+   "identifier": "Macmini9,1",
+   "confusable_with": [
+    "A1993 (Intel Mac mini 2018, same chassis)"
+   ],
+   "confidence": "everymac"
+  },
+  {
+   "a_number": "A2438",
+   "model": "iMac (24-inch, M1, 2021), four ports",
+   "identifier": "iMac21,1",
+   "confusable_with": [],
+   "confidence": "everymac (A-number); port->identifier mapping unverified"
+  },
+  {
+   "a_number": "A2439",
+   "model": "iMac (24-inch, M1, 2021), two ports",
+   "identifier": "iMac21,2",
+   "confusable_with": [],
+   "confidence": "everymac (A-number); port->identifier mapping unverified"
+  },
+  {
+   "a_number": "A2442",
+   "model": "MacBook Pro (14-inch, 2021)",
+   "identifier": "MacBookPro18,3/18,4",
+   "confusable_with": [],
+   "confidence": "unverified"
+  },
+  {
+   "a_number": "A2485",
+   "model": "MacBook Pro (16-inch, 2021)",
+   "identifier": "MacBookPro18,1/18,2",
+   "confusable_with": [
+    "A2141 (Intel 16-inch 2019)"
+   ],
+   "confidence": "unverified"
+  },
+  {
+   "a_number": "A2681",
+   "model": "MacBook Air (M2, 2022)",
+   "identifier": "Mac14,2",
+   "confusable_with": [],
+   "confidence": "unverified"
+  },
+  {
+   "a_number": "A2941",
+   "model": "MacBook Air (15-inch, M2, 2023)",
+   "identifier": "Mac14,15",
+   "confusable_with": [],
+   "confidence": "unverified"
+  },
+  {
+   "a_number": "A2686",
+   "model": "Mac mini (2023, M2)",
+   "identifier": "Mac14,3",
+   "confusable_with": [
+    "A1993",
+    "A2348"
+   ],
+   "confidence": "unverified"
+  },
+  {
+   "a_number": "A2816",
+   "model": "Mac mini (2023, M2 Pro)",
+   "identifier": "Mac14,12",
+   "confusable_with": [
+    "A1993",
+    "A2348"
+   ],
+   "confidence": "unverified"
+  },
+  {
+   "a_number": "A2779",
+   "model": "MacBook Pro (14-inch, 2023)",
+   "identifier": "Mac14,5/Mac14,9",
+   "confusable_with": [],
+   "confidence": "unverified"
+  },
+  {
+   "a_number": "A2780",
+   "model": "MacBook Pro (16-inch, 2023)",
+   "identifier": "Mac14,6/Mac14,10",
+   "confusable_with": [],
+   "confidence": "unverified"
+  },
+  {
+   "a_number": "A2786",
+   "model": "Mac Pro (2023)",
+   "identifier": "Mac14,8",
+   "confusable_with": [
+    "A1991 (Intel Mac Pro 2019, same case)"
+   ],
+   "confidence": "unverified"
+  },
+  {
+   "a_number": "A2787",
+   "model": "Mac Pro (Rack, 2023)",
+   "identifier": "Mac14,8",
+   "confusable_with": [
+    "A2304"
+   ],
+   "confidence": "unverified"
+  }
+ ]
+}

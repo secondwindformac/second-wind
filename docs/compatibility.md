@@ -1,3 +1,5 @@
+> **Per-model table with Apple model numbers (A1466…) and support level:** [compatibility-models.md](compatibility-models.md) · [compatibilidad-modelos.md](compatibilidad-modelos.md) (generated from `data/macs.json`).
+
 # Mac compatibility matrix
 
 Which Intel Macs can run Second Wind today, which are next, and exactly what

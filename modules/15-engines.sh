@@ -68,6 +68,8 @@ if [ "$NEED_WL_DKMS" = 1 ]; then
      && dkms status broadcom-sta 2>/dev/null | grep -q "$(uname -r).*installed"; then
     sudo rm -f "/lib/modules/$(uname -r)/extra/second-wind/wl.ko"
     sudo depmod -a
+    # The install held kernel updates only until this handover: lift it.
+    sudo apt-mark unhold linux-generic-hwe-24.04 linux-image-generic-hwe-24.04 linux-headers-generic-hwe-24.04 >/dev/null 2>&1 || true
   else
     warn "${MSG[m15_wifi_err]}"
   fi

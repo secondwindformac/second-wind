@@ -1,6 +1,8 @@
-# PCI vendor:device IDs of Broadcom chips the proprietary `wl` driver supports
-# (from broadcom-sta 23ubuntu1.3, broadcom-sta.ids). Used by the USB seed to
-# preinstall wl offline, and by modules/15-engines to hand it over to DKMS.
+# PCI vendor:device IDs of Broadcom chips driven by the proprietary `wl` driver.
+# From broadcom-sta 23ubuntu1.3 (broadcom-sta.ids) plus 14e4:4331 (BCM4331,
+# 2011-2012 Macs): Ubuntu leaves 4331 to b43, whose firmware must be
+# DOWNLOADED; wl drives it offline. Used by the USB seed to preinstall wl
+# offline, and by modules/15-engines to hand it over to DKMS.
 14e4:4313
 14e4:4727
 14e4:432a
@@ -11,3 +13,4 @@
 14e4:4365
 14e4:43a0
 14e4:43b1
+14e4:4331
