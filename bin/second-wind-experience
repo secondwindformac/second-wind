@@ -20,6 +20,19 @@ EXP="$SW_STATE/experience"
 TRIAL_DAYS=30
 LS_API="https://api.lemonsqueezy.com/v1/licenses"
 
+# Our Lemon Squeezy store number (links.conf LS_STORE_ID). Lemon's license API
+# answers "activated" for a valid key of ANY store, so without this check a key
+# bought from someone else's shop unlocked ours. Empty = check skipped.
+ls_store_id() {
+  local f v=""
+  for f in "$SW_STATE/links.conf" "$SW_ROOT/links.conf"; do
+    [ -f "$f" ] || continue
+    v="$(sed -n 's/^LS_STORE_ID=\([0-9]*\).*/\1/p' "$f" | head -1)"
+    [ -n "$v" ] && break
+  done
+  printf '%s' "$v"
+}
+
 ensure_state() {
   mkdir -p "$EXP"
   if [ ! -f "$EXP/trial_since" ]; then
@@ -105,11 +118,14 @@ accept_license() {  # accept_license KEY [BODY] [provisional]
   printf '%s' "$1" | sha256sum | cut -d' ' -f1 > "$EXP/license.hash"
   if [ "${3:-}" = provisional ]; then
     touch "$EXP/license.provisional"
+    # Kept (user-only) so the daily check can confirm it once online; a
+    # provisional used to stand forever, so any text unlocked it offline.
+    ( umask 077; printf '%s' "$1" > "$EXP/license.pending" )
   else
     local instance
     instance="$(printf '%s' "${2:-}" | grep -o '"id" *: *"[^"]*"' | head -1 | cut -d'"' -f4)"
     [ -n "$instance" ] && printf '%s' "$instance" > "$EXP/license.instance"
-    rm -f "$EXP/license.provisional"
+    rm -f "$EXP/license.provisional" "$EXP/license.pending"
   fi
   echo active > "$EXP/state"
   experience_on
@@ -136,6 +152,18 @@ activate_license() {
     return 0
   fi
   if printf '%s' "$body" | grep -q '"activated" *: *true'; then
+    local want got inst
+    want="$(ls_store_id)"
+    got="$(printf '%s' "$body" | grep -o '"store_id" *: *[0-9]*' | head -1 | grep -o '[0-9]*$')"
+    if [ -n "$want" ] && [ "$got" != "$want" ]; then
+      # A real key, but for another shop: give its activation slot back.
+      inst="$(printf '%s' "$body" | grep -o '"id" *: *"[^"]*"' | head -1 | cut -d'"' -f4)"
+      [ -n "$inst" ] && curl -sS -m 12 -X POST "$LS_API/deactivate" \
+        -H 'Accept: application/json' --data-urlencode "license_key=$key" \
+        --data-urlencode "instance_id=$inst" >/dev/null 2>&1 || true
+      warn "${MSG[exp_act_bad]}"
+      return 1
+    fi
     accept_license "$key" "$body"
     ok "${MSG[exp_act_ok]}"
     return 0
@@ -153,8 +181,20 @@ activate_license() {
 
 # --- the daily check (systemd timer) -----------------------------------------
 
+# A provisional license (activated while offline) is confirmed on the first
+# day with internet. Only an authoritative "no" revokes it; still offline or a
+# sick server = keep waiting, never punish a paying user.
+recheck_provisional() {
+  [ -f "$EXP/license.provisional" ] && [ -f "$EXP/license.pending" ] || return 0
+  local key; key="$(cat "$EXP/license.pending")"
+  if activate_license "$key" >/dev/null 2>&1; then return 0; fi
+  rm -f "$EXP/license.hash" "$EXP/license.provisional" "$EXP/license.pending"
+  echo trial > "$EXP/state"   # day30_check below turns it off if the trial is over
+}
+
 day30_check() {
   ensure_state
+  recheck_provisional
   [ "$(state)" = trial ] || return 0
   [ "$(age_days)" -ge "$TRIAL_DAYS" ] || return 0
 
