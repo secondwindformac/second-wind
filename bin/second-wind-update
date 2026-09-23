@@ -9,6 +9,8 @@
 #   --check       weekly (systemd user timer): quietly compares the installed
 #                 VERSION with the latest GitHub release; when newer, shows ONE
 #                 notification with an "Update now" button. Clicking it applies.
+#   --manual      the store's "Check for updates" button: same check, but it
+#                 always answers (up to date / offline) and applies at once.
 #   --apply       download + verify SHA-256, ONE system password dialog
 #                 (pkexec) to swap the payload, then a user-level refresh
 #                 (install.sh --yes --no-hardware, idempotent by design).
@@ -34,6 +36,9 @@ case "${LANG:-en}" in
     T_WORKING="Actualizando Second Wind… puedes seguir usando el Mac."
     T_DONE="Second Wind se actualizó a la versión %s. Todo en orden ✓"
     T_ROLLED="La mejora no quedó bien a la primera, así que volvimos a la versión anterior. Tu Mac sigue como estaba; lo intentaremos de nuevo más adelante."
+    T_UPTODATE="Ya tienes la versión más reciente de Second Wind (%s) ✓"
+    T_FAILED="La mejora no se pudo instalar esta vez (¿se cortó internet o se canceló la contraseña?). Tu Mac sigue igual; puedes intentarlo de nuevo."
+    T_OFFLINE="No pude revisar si hay mejoras. ¿Estás conectado a internet? Vuelve a intentarlo en un rato."
     ;;
   *)
     T_READY="A Second Wind improvement is ready (version %s). It takes a few minutes, touches none of your files, and your Mac stays the same — just better."
@@ -41,6 +46,9 @@ case "${LANG:-en}" in
     T_WORKING="Updating Second Wind… you can keep using the Mac."
     T_DONE="Second Wind updated to version %s. All good ✓"
     T_ROLLED="The improvement didn't land right on the first try, so we went back to the previous version. Your Mac is unchanged; we'll try again later."
+    T_UPTODATE="You already have the latest Second Wind (%s) ✓"
+    T_FAILED="The improvement couldn't be installed this time (internet dropped, or the password was cancelled?). Your Mac is unchanged; you can try again."
+    T_OFFLINE="Couldn't check for improvements. Are you connected to the internet? Try again in a while."
     ;;
 esac
 
@@ -126,6 +134,7 @@ apply_update() {
     pkexec bash "$MANAGED_ROOT/bin/second-wind-update" --core-rollback || true
     refresh_user_level
     notify-send -a "Second Wind" -i view-refresh-symbolic "Second Wind" "$T_ROLLED" 2>/dev/null || true
+    ROLLED=1
     return 1
   fi
 
@@ -135,21 +144,42 @@ apply_update() {
   log "updated to $version"
 }
 
+say() { notify-send -a "Second Wind" -i "$1" "Second Wind" "$2" 2>/dev/null || true; }
+
+# check [manual] — the weekly timer calls it silently; the store's "Check for
+# updates" button passes "manual": the person asked, so every outcome gets an
+# answer (up to date / offline) and a newer version is applied right away
+# instead of asking a second time.
 check() {
-  local release json latest current tarball_url sums_url
-  json="$(latest_release)" || { log "release check unreachable"; exit 0; }
+  local manual="${1:-}" release json latest current tarball_url sums_url
+  json="$(latest_release)" || {
+    log "release check unreachable"
+    [ -n "$manual" ] && say network-offline-symbolic "$T_OFFLINE"
+    exit 0; }
   latest="$(echo "$json" | grep -m1 '"tag_name"' | sed 's/.*"v\{0,1\}\([0-9][^"]*\)".*/\1/')"
   [ -n "$latest" ] || { log "no tag in response"; exit 0; }
   current="$(current_version)"
   newest="$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -1)"
   if [ "$latest" = "$current" ] || [ "$newest" = "$current" ]; then
     log "up to date ($current)"
+    # shellcheck disable=SC2059
+    [ -n "$manual" ] && say emblem-ok-symbolic "$(printf "$T_UPTODATE" "$current")"
     exit 0
   fi
 
   tarball_url="$(echo "$json" | grep -o "https://[^\"]*second-wind-$latest\.tar\.gz" | head -1)"
   sums_url="$(echo "$json" | grep -o 'https://[^"]*SHA256SUMS' | head -1)"
-  [ -n "$tarball_url" ] && [ -n "$sums_url" ] || { log "release assets incomplete"; exit 0; }
+  [ -n "$tarball_url" ] && [ -n "$sums_url" ] || {
+    log "release assets incomplete"
+    [ -n "$manual" ] && say network-offline-symbolic "$T_OFFLINE"
+    exit 0; }
+
+  if [ -n "$manual" ]; then
+    ROLLED=""
+    apply_update "$latest" "$tarball_url" "$sums_url" \
+      || { [ -n "$ROLLED" ] || say dialog-warning-symbolic "$T_FAILED"; }
+    return 0
+  fi
 
   # shellcheck disable=SC2059
   R="$(notify-send -a "Second Wind" -i software-update-available \
@@ -164,6 +194,7 @@ check() {
 
 case "${1:---check}" in
   --check) check ;;
+  --manual) check manual ;;
   --apply)
     json="$(latest_release)" || exit 1
     latest="$(echo "$json" | grep -m1 '"tag_name"' | sed 's/.*"v\{0,1\}\([0-9][^"]*\)".*/\1/')"
@@ -171,5 +202,5 @@ case "${1:---check}" in
     sums_url="$(echo "$json" | grep -o 'https://[^"]*SHA256SUMS' | head -1)"
     apply_update "$latest" "$tarball_url" "$sums_url"
     ;;
-  *) log "usage: second-wind-update --check | --apply"; exit 1 ;;
+  *) log "usage: second-wind-update --check | --manual | --apply"; exit 1 ;;
 esac

@@ -154,6 +154,9 @@ T = {
     "news": d("Avisos de novedades y apoyo", "News and support notices"),
     "news_sub": d("Una notificación ocasional; apágalo cuando quieras",
                   "An occasional notification; turn off anytime"),
+    "upd": d("Buscar actualizaciones", "Check for updates"),
+    "upd_sub": d("Versión instalada: {v}. Te avisamos con una notificación.",
+                 "Installed version: {v}. We'll tell you with a notification."),
     "news_test": d("Probar el aviso ahora", "Try the notice now"),
     "news_test_sub": d("Muestra la notificación de ejemplo", "Shows the sample notification"),
     "help": d("Obtener ayuda", "Get help"),
@@ -369,6 +372,17 @@ class Store(Adw.Application):
         donate.connect("activated", lambda *_:
                        subprocess.Popen(["xdg-open", links()["DONATE_URL"]]))
         sup.add(donate)
+        try:
+            with open(os.path.join(SW_ROOT, "VERSION")) as f:
+                ver = f.read().strip()
+        except OSError:
+            ver = "?"
+        upd = Adw.ActionRow(title=T["upd"], subtitle=T["upd_sub"].format(v=ver),
+                            activatable=True)
+        upd.add_suffix(Gtk.Image.new_from_icon_name("software-update-available-symbolic"))
+        upd.connect("activated", lambda *_: subprocess.Popen(
+            ["bash", os.path.join(SW_ROOT, "bin", "second-wind-update"), "--manual"]))
+        sup.add(upd)
         news = Adw.SwitchRow(title=T["news"], subtitle=T["news_sub"],
                              active=not os.path.exists(
                                  os.path.join(SW_STATE, "news-optout")))
