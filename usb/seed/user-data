@@ -68,8 +68,9 @@ autoinstall:
   # install. On a Broadcom Mac there is NO internet at install time (its WiFi
   # needs the very driver these would fetch — chicken-and-egg), so the installer
   # aborted deterministically. We defer BOTH to firstboot, which waits for
-  # connectivity (phone USB-tether) and then runs Second Wind's install.sh —
-  # module 15 installs broadcom-sta, so WiFi works after that first online run.
+  # connectivity and then runs Second Wind's install.sh. The Broadcom WiFi
+  # driver no longer waits for that: a late-command below installs it OFFLINE
+  # (prebuilt, usb/drivers/), so WiFi works on the very first boot.
   drivers:
     install: false
   codecs:
@@ -88,6 +89,62 @@ autoinstall:
     # yet) never aborts here. When there is no network these stay uninstalled,
     # and firstboot's 00-preflight installs them once online (phone tether).
     - curtin in-target -- apt-get install -y curl git || true
+    # WiFi WITHOUT internet on Broadcom Macs (23-09, real Air 2013). Their WiFi
+    # chip needs Broadcom's `wl` driver, which normally has to be DOWNLOADED —
+    # impossible offline (and the copy on the 24.04.4 ISO does not even build
+    # on the ISO's own 6.17 kernel, LP #2120508). So the payload carries `wl`
+    # prebuilt for the exact kernel this ISO installs (usb/drivers/, pinned by
+    # sha256 in versions.lock). Here we drop it in, blacklist the conflicting
+    # free drivers and rebuild the initramfs: WiFi works on the very first
+    # boot. Never fatal: if anything is off, the install still completes and
+    # firstboot falls back to the wired/tethered path with a clear message.
+    # The marker file tells sw-ga-kernel (below) to keep this kernel and tells
+    # module 15 to hand wl over to DKMS once online (future kernel updates).
+    - |
+      set -x
+      LOG=/target/var/log/second-wind-wifi.log
+      mkdir -p /target/var/log /target/var/lib/second-wind
+      exec >>"$LOG" 2>&1
+      echo "== Second Wind offline WiFi $(date -u +%FT%TZ)"
+      W=/tmp/sw-wl; rm -rf "$W"; mkdir -p "$W/seed"
+      mount -o ro /dev/disk/by-label/CIDATA "$W/seed" \
+        || mount -o ro /dev/disk/by-label/cidata "$W/seed" || { echo "no CIDATA"; exit 0; }
+      tar -xzf "$W/seed/second-wind.tar.gz" -C "$W" second-wind/usb/drivers second-wind/versions.lock || true
+      umount "$W/seed" || true
+      D="$W/second-wind/usb/drivers"
+      [ -f "$W/second-wind/versions.lock" ] || { echo "payload has no drivers"; exit 0; }
+      WL_KERNEL=$(sed -n 's/^WL_KERNEL=//p' "$W/second-wind/versions.lock")
+      WL_KO_SHA256=$(sed -n 's/^WL_KO_SHA256=//p' "$W/second-wind/versions.lock" | cut -d' ' -f1)
+      HIT=""
+      for dev in /sys/bus/pci/devices/*; do
+        id="$(sed 's/^0x//' "$dev/vendor"):$(sed 's/^0x//' "$dev/device")"
+        grep -qix "$id" "$D/wl-pci-ids" 2>/dev/null && HIT="$id"
+      done
+      [ -n "$HIT" ] || { echo "no wl-supported Broadcom chip: nothing to do"; exit 0; }
+      echo "Broadcom chip $HIT; target kernels: $(ls /target/lib/modules)"
+      KO="$D/wl-$WL_KERNEL.ko.xz"
+      if [ ! -d "/target/lib/modules/$WL_KERNEL" ]; then
+        echo "FAIL: target kernel is not $WL_KERNEL (prebuilt wl does not match)"; exit 0
+      fi
+      if ! echo "$WL_KO_SHA256  $KO" | sha256sum -c -; then
+        echo "FAIL: wl module checksum mismatch"; exit 0
+      fi
+      mkdir -p "/target/lib/modules/$WL_KERNEL/extra/second-wind"
+      xz -dc "$KO" > "/target/lib/modules/$WL_KERNEL/extra/second-wind/wl.ko"
+      install -D -m 0644 "$D/blacklist-wl-conflicts.conf" /target/etc/modprobe.d/second-wind-wl.conf
+      install -D -m 0644 "$D/LICENSE-broadcom-wl.txt" /target/usr/share/doc/second-wind-wl/LICENSE
+      curtin in-target -- depmod -a "$WL_KERNEL"
+      if curtin in-target -- modinfo -k "$WL_KERNEL" -n wl | grep -q /extra/second-wind/wl.ko; then
+        echo "$HIT $WL_KERNEL" > /target/var/lib/second-wind/wl-preinstalled
+        curtin in-target -- update-initramfs -u -k "$WL_KERNEL" || echo "WARN: initramfs not refreshed"
+        echo "OK: wl preinstalled for $WL_KERNEL"
+      else
+        echo "FAIL: depmod does not resolve wl"
+        rm -f "/target/lib/modules/$WL_KERNEL/extra/second-wind/wl.ko" /target/etc/modprobe.d/second-wind-wl.conf
+        curtin in-target -- depmod -a "$WL_KERNEL" || true
+      fi
+      rm -rf "$W"
+      exit 0
     # Council blocker "the installed product breaks itself": the HWE kernel
     # rolls to new majors (6.8→6.14→…) and each roll can break the Broadcom
     # wl WiFi driver. New installs pin to the GA 6.8 series instead —
@@ -104,6 +161,9 @@ autoinstall:
       #!/bin/bash
       set -x
       export DEBIAN_FRONTEND=noninteractive
+      # Broadcom Macs with the offline wl driver keep the ISO kernel it was
+      # built for (switching kernels here would leave them without WiFi).
+      [ -f /var/lib/second-wind/wl-preinstalled ] && exit 0
       apt-get install -y linux-generic || exit 0
       METAS=$(dpkg-query -W -f '${Package} ' 'linux-*hwe*' 2>/dev/null || true)
       [ -n "$METAS" ] && apt-get purge -y $METAS || true

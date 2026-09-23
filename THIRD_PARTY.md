@@ -18,6 +18,7 @@ under their own licenses.
 | mbpfan (linux-on-mac) | Fan control | GPL-3.0 | Ubuntu's `mbpfan` package |
 | Toshy (RedBearAK) | Per-app Mac-style keyboard | GPL-3.0 | https://github.com/RedBearAK/toshy — Second Wind configures it when present; its installation lands in Stage 1 |
 | Ulauncher | Search (Spotlight) | GPL-3.0 | https://ulauncher.io — same as above |
+| Broadcom 802.11 Linux STA driver (`wl`) | WiFi on Broadcom Macs, installed offline | Broadcom proprietary license (redistribution of the complete, unmodified software for use with Broadcom products; full text ships next to the binary) | Built from Ubuntu's `broadcom-sta-dkms` 6.30.223.271-23ubuntu1.3 by `usb/drivers/build-wl.sh`; installed only on Macs with a supported Broadcom chip. License: `usb/drivers/LICENSE-broadcom-wl.txt` |
 
 Notes:
 

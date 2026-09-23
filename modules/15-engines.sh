@@ -20,9 +20,17 @@ if lspci -n 2>/dev/null | grep -qE '14e4:(43a0|4331|432b|4353|43a9|43ba)' \
    && ! grep -qE '^(wl|brcmfmac) ' /proc/modules; then
   NEED_WIFI=1
 fi
+# Offline-installed Broadcom Macs boot with Second Wind's prebuilt wl (built
+# for the ISO kernel only; see usb/drivers/). Once online, hand it over to the
+# official DKMS package so future kernel updates keep WiFi working.
+NEED_WL_DKMS=0
+if [ -f /var/lib/second-wind/wl-preinstalled ] \
+   && ! dpkg-query -W -f '${Status}' broadcom-sta-dkms 2>/dev/null | grep -q 'ok installed'; then
+  NEED_WL_DKMS=1
+fi
 command -v ulauncher >/dev/null 2>&1 || NEED_UL=1
 
-if [ "$NEED_WIFI$NEED_UL$NEED_GIR" = "000" ]; then
+if [ "$NEED_WIFI$NEED_WL_DKMS$NEED_UL$NEED_GIR" = "0000" ]; then
   ok "${MSG[m15_all_ok]}"
   return 0
 fi
@@ -49,6 +57,20 @@ if [ "$NEED_WIFI" = 1 ]; then
   info "${MSG[m15_wifi]}"
   apt_track_install "linux-headers-$(uname -r)" build-essential dkms broadcom-sta-dkms \
     && sudo modprobe wl 2>/dev/null || warn "${MSG[m15_wifi_err]}"
+fi
+
+# --- WiFi handover: prebuilt wl -> DKMS (keeps working across kernel updates).
+# The prebuilt copy is only removed once DKMS has built wl for this kernel, so
+# WiFi is never left without a driver.
+if [ "$NEED_WL_DKMS" = 1 ]; then
+  info "${MSG[m15_wifi_dkms]}"
+  if apt_track_install "linux-headers-$(uname -r)" build-essential dkms broadcom-sta-dkms \
+     && dkms status broadcom-sta 2>/dev/null | grep -q "$(uname -r).*installed"; then
+    sudo rm -f "/lib/modules/$(uname -r)/extra/second-wind/wl.ko"
+    sudo depmod -a
+  else
+    warn "${MSG[m15_wifi_err]}"
+  fi
 fi
 
 # --- Store toolkit (GTK4/libadwaita python bindings) ---

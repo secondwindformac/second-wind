@@ -54,4 +54,4 @@ WL_HEADERS_DEB_URL=http://archive.ubuntu.com/ubuntu/pool/main/l/linux-hwe-6.17/l
 WL_HEADERS_DEB_SHA256=ed9807e1570721310f9e9276d43e298f516c9fa831933fa746e1c9c6aeaa7fcd
 WL_HEADERS_COMMON_DEB_URL=http://archive.ubuntu.com/ubuntu/pool/main/l/linux-hwe-6.17/linux-hwe-6.17-headers-6.17.0-14_6.17.0-14.14~24.04.1_all.deb
 WL_HEADERS_COMMON_DEB_SHA256=47b18d6f6be43157afe91aab90a65aa3e527a7b53bfc6b18b86b1a27354ecfe1
-WL_KO_SHA256=@KO@
+WL_KO_SHA256=aaf190f42ef32d71eaa275c5df2f3b0c985badf7284ae4302b5dc0ad4e796f51

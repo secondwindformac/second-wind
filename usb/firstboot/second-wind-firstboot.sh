@@ -51,20 +51,32 @@ echo "$ATTEMPT" > "$ATTEMPT_FILE"
 
 case "${LANG:-en}" in
   es*)
-    T_NET="Conéctate a internet para terminar de convertir tu Mac (WiFi arriba a la derecha, o comparte internet del teléfono por cable USB)."
+    T_NET="Conéctate a tu WiFi para terminar de convertir tu Mac (ícono arriba a la derecha)."
+    T_NET_NOWIFI="Tu WiFi todavía no tiene su driver. Conéctate a internet por cable, o comparte internet del teléfono por cable USB, para terminar de convertir tu Mac."
     T_GO="Segundos… abriendo el instalador de Second Wind. No apagues el Mac durante estos minutos."
     T_RETRY="Retomando la preparación de tu Mac donde quedó — no se perdió nada."
     T_AGAIN="La preparación quedó a medias. Al próximo inicio de sesión se retoma sola; no se perdió nada."
     T_DONE="¡Casi listo! Reiniciamos tu Mac para aplicar los últimos toques. Vuelve a iniciar sesión y ya estará."
     ;;
   *)
-    T_NET="Connect to the internet to finish turning this into a Mac (WiFi at the top right, or USB-tether your phone)."
+    T_NET="Connect to your WiFi to finish turning this into a Mac (icon at the top right)."
+    T_NET_NOWIFI="Your WiFi doesn't have its driver yet. Connect to the internet by cable, or share your phone's internet over USB, to finish turning this into a Mac."
     T_GO="Seconds… opening the Second Wind installer. Don't turn the Mac off during these minutes."
     T_RETRY="Picking up your Mac's preparation where it stopped — nothing was lost."
     T_AGAIN="The preparation stopped halfway. It resumes by itself at your next login; nothing was lost."
     T_DONE="Almost there! Restarting your Mac to apply the final touches. Log back in and it's ready."
     ;;
 esac
+
+# Normally the WiFi already works here (Broadcom Macs get their driver offline
+# during the install). Only if a wl-type Broadcom chip has NO driver loaded do
+# we point to the wired / phone-sharing fallback.
+if [ -f "$SWDIR/usb/drivers/wl-pci-ids" ] && ! grep -qE '^(wl|brcmfmac|b43|brcmsmac) ' /proc/modules; then
+  for dev in /sys/bus/pci/devices/*; do
+    id="$(sed 's/^0x//' "$dev/vendor" 2>/dev/null):$(sed 's/^0x//' "$dev/device" 2>/dev/null)"
+    if grep -qix "$id" "$SWDIR/usb/drivers/wl-pci-ids"; then T_NET="$T_NET_NOWIFI"; break; fi
+  done
+fi
 
 # Give the desktop a moment to settle
 sleep 15

@@ -1,0 +1,13 @@
+# PCI vendor:device IDs of Broadcom chips the proprietary `wl` driver supports
+# (from broadcom-sta 23ubuntu1.3, broadcom-sta.ids). Used by the USB seed to
+# preinstall wl offline, and by modules/15-engines to hand it over to DKMS.
+14e4:4313
+14e4:4727
+14e4:432a
+14e4:432b
+14e4:432d
+14e4:4358
+14e4:4359
+14e4:4365
+14e4:43a0
+14e4:43b1

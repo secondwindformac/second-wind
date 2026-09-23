@@ -38,6 +38,7 @@ Disable automatic login to fix it? (You will type your password at startup, like
   [m15_no_sudo]="No administrator permission; missing engines stay pending (retry with ./install.sh --only engines)."
   [m15_wifi]="Broadcom WiFi: installing the official driver (needs a wired or phone-tethered connection)…"
   [m15_wifi_err]="Could not install the WiFi driver; see the log"
+  [m15_wifi_dkms]="WiFi: making the driver update-proof for future system updates…"
   [m15_ul]="Installing Ulauncher (the Spotlight engine)…"
   [m15_ul_err]="Could not install Ulauncher; Spotlight stays pending"
   [m15_toshy]="Installing Toshy (the Mac keyboard engine; 2-4 minutes)…"
