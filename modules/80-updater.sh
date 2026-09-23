@@ -25,7 +25,7 @@ cat > "$UNIT_DIR/second-wind-update.timer" <<'EOF'
 [Unit]
 Description=Second Wind weekly update check
 [Timer]
-OnBootSec=25min
+OnBootSec=5min
 OnUnitActiveSec=1w
 Persistent=true
 [Install]

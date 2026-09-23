@@ -15,6 +15,21 @@ ext_install_pinned "$EXT_XREMAP_UUID" "$EXT_XREMAP_TAG" "$EXT_XREMAP_SHA256" \
 ext_install_pinned "$EXT_LOGO_UUID" "$EXT_LOGO_TAG" "$EXT_LOGO_SHA256" \
   || warn "${MSG[m30_logo_err]}"
 
+# Our own top-bar extension (assets/shell-extension): clock on the right, the
+# active app's name, a search button and notifications top-right, like the
+# Mac menu bar (CEO comparison M2 vs Air, 23-Sep). Shipped in the repo, so no
+# download and nothing to pin.
+SW_PANEL_UUID="secondwind-panel@secondwindformac.com"
+if [ "$DRY_RUN" != 1 ]; then
+  install -d "$SW_CACHE"
+  ( cd "$SW_ROOT/assets/shell-extension/$SW_PANEL_UUID" && \
+    python3 -c 'import sys,zipfile,os; z=zipfile.ZipFile(sys.argv[1],"w"); [z.write(f) for f in sorted(os.listdir(".")) if os.path.isfile(f)]' \
+      "$SW_CACHE/$SW_PANEL_UUID.zip" ) \
+    && gnome-extensions install --force "$SW_CACHE/$SW_PANEL_UUID.zip" \
+    && mf ext-installed "$SW_PANEL_UUID" && enable_extension "$SW_PANEL_UUID" \
+    || warn "Second Wind panel extension could not be installed"
+fi
+
 # Panel theme, pre-configured (the extension reads it when it loads).
 # SecondWind derived theme = MacTahoe solid + our polish (see 20-look).
 dconf_track /org/gnome/shell/extensions/user-theme/name "'SecondWind-$SW_SHELL_VARIANT'"

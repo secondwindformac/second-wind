@@ -14,10 +14,10 @@ export SW_MANIFEST="$SW_STATE/manifest.json"
 DRY_RUN="${DRY_RUN:-0}"
 ASSUME_YES="${ASSUME_YES:-0}"
 
-# Shell chrome variant (top bar + system menus): Dark = dark translucent bar
-# with white text, like the macOS menu bar over a dark dock (user-tested
-# preference); apps stay light. Light is built too and can be switched to.
-SW_SHELL_VARIANT="${SW_SHELL_VARIANT:-Dark}"
+# Shell chrome variant (top bar + system menus). Light since 0.9.4: the CEO's
+# side-by-side with a current Mac (23-Sep) showed light glass menus and
+# control center there vs our dark ones. Dark is still built and selectable.
+SW_SHELL_VARIANT="${SW_SHELL_VARIANT:-Light}"
 
 # One-time migration from the project's former name (MacConLinux).
 if [ -d "$HOME/.local/state/macconlinux" ] && [ ! -d "$SW_STATE" ]; then
