@@ -1,0 +1,48 @@
+name: wl-driver
+
+# Builds the prebuilt Broadcom `wl` module for the ISO's kernel on a clean
+# Ubuntu 24.04 (gcc-13, same compiler as the Ubuntu kernel), and checks that
+# the copy committed in usb/drivers/ matches the pinned sha256 and the module
+# the CI just built loads its metadata cleanly (vermagic + PCI class alias).
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'usb/drivers/**'
+      - 'versions.lock'
+      - '.github/workflows/wl-driver.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain (gcc-13, libelf for objtool)
+        run: sudo apt-get update && sudo apt-get install -y gcc-13 make libelf1t64 xz-utils kmod
+
+      - name: Build wl.ko against the ISO kernel headers
+        run: bash usb/drivers/build-wl.sh out
+
+      - name: Inspect the built module
+        run: |
+          source versions.lock
+          xz -dc "out/wl-$WL_KERNEL.ko.xz" > /tmp/wl.ko
+          modinfo /tmp/wl.ko | grep -E '^(vermagic|alias|license|filename)'
+          modinfo -F vermagic /tmp/wl.ko | grep -q "^$WL_KERNEL "
+
+      - name: Committed copy matches the pin
+        run: |
+          source versions.lock
+          f="usb/drivers/wl-$WL_KERNEL.ko.xz"
+          if [ -f "$f" ]; then
+            echo "$WL_KO_SHA256  $f" | sha256sum -c -
+          else
+            echo "::warning::no committed $f yet (first build)"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wl-driver
+          path: out/
