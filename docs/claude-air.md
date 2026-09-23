@@ -22,6 +22,11 @@ Tu trabajo es EXPLORAR y PROBAR este equipo. Todo arreglo se hace en el CÓDIGO 
   para el producto.
 - Excepción: las herramientas de TU trabajo, que no son parte del producto (git, gh,
   gnome-screenshot) y los comandos de solo lectura para diagnosticar.
+- Contraseña de administrador sin terminal: el instalador usa `sudo -A`. Crea una vez el ayudante
+  `printf '#!/bin/sh\nexec zenity --password --title="Second Wind"\n' > ~/.sw-askpass && chmod 700 ~/.sw-askpass`
+  y corre el código así: `SUDO_ASKPASS=~/.sw-askpass ./install.sh --yes --only 15-engines`. Al CEO
+  le aparece una ventana para escribir su contraseña (nunca la guardes ni la pidas por el chat).
+  Para comandos sueltos de administrador, `pkexec`.
 - Flujo: diagnosticar → cambiar el código → commit + push → aplicar ese código en el equipo →
   verificar con evidencia. Si falla, vuelta al código.
 
@@ -45,7 +50,7 @@ Taller: una actualización de seguridad instaló un kernel nuevo (probablemente 
    `ls /var/log/unattended-upgrades/ && tail -30 /var/log/unattended-upgrades/unattended-upgrades.log`,
    `cat /var/log/second-wind-wifi.log`.
 3. Arregla CON EL CÓDIGO: haz primero el paso 1 de la Tarea 2 (clonar la rama) y aplica el
-   módulo que ya trae el arreglo: `cd ~/sw-dev && ./install.sh --yes --only 15-engines`. Ese módulo
+   módulo que ya trae el arreglo: `cd ~/sw-dev && SUDO_ASKPASS=~/.sw-askpass ./install.sh --yes --only 15-engines`. Ese módulo
    instala los headers del kernel y el guardián del WiFi. Si con eso no vuelve el WiFi, corrige el
    código (módulo 15 o `bin/second-wind-wl-guard`), haz push y vuelve a aplicarlo. Nada de arreglos
    a mano.
@@ -53,10 +58,10 @@ Taller: una actualización de seguridad instaló un kernel nuevo (probablemente 
 5. Anota la causa real confirmada (o descartada).
 
 ## Tarea 2: probar la rama `feat/v094` en este equipo
-1. `sudo apt-get install -y gh git`, luego `gh auth login --web` (el CEO aprueba en el navegador
+1. `pkexec apt-get install -y gh git zenity`, luego `gh auth login --web` (el CEO aprueba en el navegador
    con su cuenta de GitHub). Clona en `~/sw-dev`: `gh repo clone secondwindformac/second-wind ~/sw-dev`,
    `cd ~/sw-dev && git checkout feat/v094`, y configura la identidad de arriba.
-2. Aplica la rama completa: `cd ~/sw-dev && ./install.sh --yes` (pedirá la contraseña del CEO).
+2. Aplica la rama completa: `cd ~/sw-dev && SUDO_ASKPASS=~/.sw-askpass ./install.sh --yes`.
    Luego pídele que cierre sesión y vuelva a entrar (así se cargan las extensiones del escritorio).
    Retoma con `claude --continue`.
 3. Guardián del WiFi (`bin/second-wind-wl-guard` + servicio `second-wind-wl-guard`): confirma que
