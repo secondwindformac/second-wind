@@ -70,8 +70,12 @@ sudo apt-get update -qq 2>/dev/null || warn "${MSG[m60_apt_warn]}"
 # --- WiFi (needs a wired/tethered connection to download the driver) ---
 if [ "$NEED_WIFI" = 1 ]; then
   info "${MSG[m15_wifi]}"
-  apt_track_install "linux-headers-$(uname -r)" "$HDR_META" build-essential dkms broadcom-sta-dkms \
-    && sudo modprobe wl 2>/dev/null || warn "${MSG[m15_wifi_err]}"
+  # The guard makes sure wl really exists for this kernel (it forces DKMS when
+  # DKMS claims "installed" but the module is not on disk) and loads it.
+  if apt_track_install "linux-headers-$(uname -r)" "$HDR_META" build-essential dkms broadcom-sta-dkms; then
+    sudo sh "$SW_ROOT/bin/second-wind-wl-guard"
+  fi
+  grep -q '^wl ' /proc/modules || warn "${MSG[m15_wifi_err]}"
   NEED_WL_GUARD=1
 fi
 
@@ -80,9 +84,18 @@ fi
 # WiFi is never left without a driver.
 if [ "$NEED_WL_DKMS" = 1 ]; then
   info "${MSG[m15_wifi_dkms]}"
-  if apt_track_install "linux-headers-$(uname -r)" "$HDR_META" build-essential dkms broadcom-sta-dkms \
-     && dkms status broadcom-sta 2>/dev/null | grep -q "$(uname -r).*installed"; then
-    sudo rm -f "/lib/modules/$(uname -r)/extra/second-wind/wl.ko"
+  # `dkms status` saying "installed" is not proof: with the prebuilt wl (same
+  # version) in the tree, DKMS skips copying its own module. Force DKMS's copy
+  # in, and only drop the prebuilt once modinfo resolves wl to DKMS's file.
+  # (Real case, Air A1466, 23-Sep-2026: the old check deleted the only wl.)
+  WL_K="$(uname -r)"
+  if apt_track_install "linux-headers-$WL_K" "$HDR_META" build-essential dkms broadcom-sta-dkms \
+     && WL_V="$(ls /var/lib/dkms/broadcom-sta 2>/dev/null | grep -E '^[0-9]' | sort -V | tail -1)" \
+     && [ -n "$WL_V" ] \
+     && sudo dkms install --force -m broadcom-sta -v "$WL_V" -k "$WL_K" >/dev/null 2>&1 \
+     && sudo depmod -a "$WL_K" \
+     && modinfo -k "$WL_K" -n wl 2>/dev/null | grep -q '/updates/dkms/'; then
+    sudo rm -f "/lib/modules/$WL_K/extra/second-wind/wl.ko"
     sudo depmod -a
     # The install held kernel updates only until this handover: lift it.
     sudo apt-mark unhold linux-generic-hwe-24.04 linux-image-generic-hwe-24.04 linux-headers-generic-hwe-24.04 >/dev/null 2>&1 || true

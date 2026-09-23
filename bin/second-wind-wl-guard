@@ -24,7 +24,21 @@ fi
 {
   echo "== wl guard $(date -u +%FT%TZ): kernel $k has no wl (chip $chip)"
   if [ -d "/usr/src/linux-headers-$k" ] || [ -d "/lib/modules/$k/build" ]; then
-    dkms autoinstall -k "$k" && modprobe wl && echo "OK: wl rebuilt for $k"
+    # `dkms autoinstall` is not enough: when a prebuilt wl of the same version
+    # was in the tree, DKMS "installed" without copying its module ("exactly
+    # matches what is already found in kernel"), so once that copy is gone it
+    # still believes wl is there and skips it. Force the reinstall.
+    v="$(ls /var/lib/dkms/broadcom-sta 2>/dev/null | grep -E '^[0-9]' | sort -V | tail -1)"
+    if [ -n "$v" ]; then
+      dkms install --force -m broadcom-sta -v "$v" -k "$k"
+    else
+      dkms autoinstall -k "$k"
+    fi
+    if modinfo -k "$k" wl >/dev/null 2>&1 && modprobe wl; then
+      echo "OK: wl rebuilt for $k"
+    else
+      echo "FAIL: wl still missing for $k"
+    fi
   else
     echo "FAIL: no headers for $k on disk; WiFi needs a cable/phone connection once"
   fi
