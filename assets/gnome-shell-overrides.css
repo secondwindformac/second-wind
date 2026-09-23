@@ -42,14 +42,98 @@
   color: @PANEL_FG@ !important;
 }
 
-/* --- Quick settings: solid Control-Center-style panel --------------------
-   The theme leaves this container at 1% opacity, so its cards "float" over
-   transparent gaps (unreadable). Solid panel, variant-appropriate. -------- */
+/* --- Quick settings → macOS Control Center ------------------------------
+   CEO review on the real Air (23-09): the theme's panel was huge (480 px,
+   72 px pills, 80 px slider boxes), labels cut off ("Blueto…"), and in the
+   Light variant the volume/brightness bars were white on white. macOS: a
+   compact glass panel of rounded modules, the toggle's ICON turns into a
+   blue circle when on, thick sliders under a "Display"/"Sound" title (the
+   titles come from the secondwind-panel extension, .sw-cc-title). -------- */
 .quick-settings {
   background-color: @QS_BG@ !important;
   border: 1px solid @QS_BORDER@ !important;
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.30) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 20px !important;
+  padding: 10px !important;
+  margin-top: 4px !important;
+  margin-left: 8px !important;
+  color: @QS_FG@;
+  font-size: 13px;
 }
-.quick-toggle, .quick-menu-toggle, .quick-slider {
-  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.14) !important;
+.quick-settings-grid {
+  spacing-rows: 8px;
+  spacing-columns: 8px;
+}
+.quick-toggle, .quick-menu-toggle {
+  min-width: 150px !important;
+  max-width: 150px !important;
+  min-height: 46px !important;
+  border-radius: 14px !important;
+  background-color: @QS_MODULE@ !important;
+  box-shadow: none !important;
+  color: @QS_FG@ !important;
+}
+.quick-toggle { padding: 6px !important; }
+.quick-toggle:hover, .quick-menu-toggle:hover,
+.quick-toggle:checked:hover { background-color: @QS_MODULE_HOVER@ !important; }
+.quick-toggle:checked, .quick-toggle:active, .quick-toggle:checked:active {
+  background-color: @QS_MODULE@ !important;
+  color: @QS_FG@ !important;
+}
+.quick-toggle:ltr > StBoxLayout { padding-left: 4px !important; padding-right: 4px !important; spacing: 8px; }
+.quick-toggle .quick-toggle-title { font-weight: bold; font-size: 13px; }
+.quick-toggle .quick-toggle-subtitle { font-size: 11px; color: @QS_SUB@; }
+.quick-toggle .quick-toggle-icon,
+.quick-menu-toggle .quick-toggle .quick-toggle-icon {
+  icon-size: 14px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 7px;
+  border-radius: 9999px;
+  background-color: @QS_ICON_OFF@ !important;
+  color: @QS_FG@ !important;
+}
+.quick-toggle:checked .quick-toggle-icon,
+.quick-menu-toggle .quick-toggle:checked .quick-toggle-icon {
+  background-color: @ACCENT@ !important;
+  color: #ffffff !important;
+}
+.quick-menu-toggle { padding: 0 !important; }
+.quick-menu-toggle .quick-toggle,
+.quick-menu-toggle .quick-toggle:hover,
+.quick-menu-toggle .quick-toggle:checked {
+  padding: 6px 0 !important;
+  background: none !important;
+}
+.quick-menu-toggle .quick-toggle:ltr > StBoxLayout { padding-left: 6px !important; padding-right: 0 !important; }
+.quick-menu-toggle .quick-toggle-arrow {
+  margin: 0 6px 0 0 !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  color: @QS_SUB@ !important;
+}
+.quick-slider {
+  background-color: @QS_MODULE@ !important;
+  border-radius: 14px !important;
+  padding: 8px 10px 10px 10px !important;
+  box-shadow: none !important;
+  color: @QS_FG@ !important;
+}
+.quick-slider .slider-bin { padding: 0 !important; min-height: 22px; }
+.quick-slider .slider {
+  height: 22px;
+  color: #ffffff;
+  -barlevel-height: 22px;
+  -barlevel-border-width: 0;
+  -barlevel-background-color: @SLIDER_TRACK@;
+  -barlevel-active-background-color: @SLIDER_FILL@;
+  -slider-handle-radius: 11px;
+  -slider-handle-border-width: 1px;
+  -slider-handle-border-color: rgba(0, 0, 0, 0.18);
+}
+.sw-cc-title {
+  font-weight: bold;
+  font-size: 13px;
+  padding: 0 0 6px 2px;
+  color: @QS_FG@;
 }

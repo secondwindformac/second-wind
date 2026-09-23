@@ -4,6 +4,8 @@
 //   2. the active app's name, in bold, right after the ⌘ menu
 //   3. a search (magnifier) button that opens Ulauncher, like Spotlight
 //   4. notification banners in the top-right corner instead of top-center
+//   5. Control Center: "Display" / "Sound" titles over the two sliders
+//   6. the ⌘ (Logo Menu) drop-down flush under the icon, not 34 px to the right
 // Everything is undone in disable(), so turning it off restores stock GNOME.
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
@@ -57,6 +59,19 @@ export default class SecondWindPanel extends Extension {
         this._bannerBin = Main.messageTray._bannerBin;
         this._bannerAlign = this._bannerBin.x_align;
         this._bannerBin.x_align = Clutter.ActorAlign.END;
+
+        // 5 + 6 act on actors other code creates later (quick settings builds
+        // its sliders asynchronously; Logo Menu is another extension), so
+        // retry for a few seconds and re-check when extensions change.
+        this._titled = [];
+        this._tries = 0;
+        this._retryId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
+            this._syncLate();
+            return ++this._tries < 20 ? GLib.SOURCE_CONTINUE : GLib.SOURCE_REMOVE;
+        });
+        this._extId = Main.extensionManager.connect('extension-state-changed',
+            () => this._syncLate());
+        this._syncLate();
     }
 
     disable() {
@@ -78,9 +93,51 @@ export default class SecondWindPanel extends Extension {
         this._search = null;
 
         if (this._bannerBin) this._bannerBin.x_align = this._bannerAlign;
+
+        if (this._retryId) GLib.source_remove(this._retryId);
+        this._retryId = 0;
+        if (this._extId) Main.extensionManager.disconnect(this._extId);
+        this._extId = 0;
+        for (const {item, box, vbox} of this._titled ?? []) {
+            vbox.remove_child(box);
+            item.set_child(box);
+            vbox.destroy();
+        }
+        this._titled = [];
+        this._logoMenu?.menu?._boxPointer?.set_style(null);
+        this._logoMenu?.menu?.box?.set_style(null);
+        this._logoMenu = null;
         this._bannerBin = null;
         this._dateMenu = null;
         this._dateParent = null;
+    }
+
+    _syncLate() {
+        // 5. Slider titles, like the Mac's Control Center modules.
+        const qs = Main.panel.statusArea.quickSettings;
+        const es = GLib.get_language_names()[0].startsWith('es');
+        this._addTitle(qs?._brightness?.quickSettingsItems?.[0], es ? 'Pantalla' : 'Display');
+        this._addTitle(qs?._volumeOutput?.quickSettingsItems?.[0], es ? 'Sonido' : 'Sound');
+
+        // 6. The theme gives every menu a 32 px (invisible) arrow; GNOME then
+        // shifts a menu whose source hugs the screen edge so that arrow can
+        // point at it: 22 px + the 12 px shadow margin = the gap under ⌘.
+        const logo = Main.panel.statusArea.LogoMenu;
+        if (logo?.menu?._boxPointer && logo !== this._logoMenu) {
+            this._logoMenu = logo;
+            logo.menu._boxPointer.set_style('-arrow-base: 0px; -arrow-border-radius: 0px;');
+            logo.menu.box.set_style('margin-left: 4px;');
+        }
+    }
+
+    _addTitle(item, text) {
+        const box = item?.get_child();
+        if (!box || this._titled.some(t => t.item === item)) return;
+        const vbox = new St.BoxLayout({vertical: true, x_expand: true});
+        item.set_child(vbox);
+        vbox.add_child(new St.Label({text, style_class: 'sw-cc-title'}));
+        vbox.add_child(box);
+        this._titled.push({item, box, vbox});
     }
 
     _syncClock() {

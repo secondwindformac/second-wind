@@ -36,11 +36,17 @@ else
       if [ "$variant" = "Dark" ]; then
         P_BG='rgba(20, 20, 22, 0.75)';  P_FG='#ffffff'
         P_HOVER='rgba(255, 255, 255, 0.14)'; P_ACTIVE='rgba(255, 255, 255, 0.22)'
-        Q_BG='rgba(40, 40, 44, 0.98)';  Q_BORDER='rgba(255, 255, 255, 0.09)'
+        Q_BG='rgba(40, 40, 44, 0.94)';  Q_BORDER='rgba(255, 255, 255, 0.09)'
+        Q_FG='#ffffff'; Q_SUB='rgba(255, 255, 255, 0.55)'
+        Q_MOD='rgba(255, 255, 255, 0.08)'; Q_MOD_H='rgba(255, 255, 255, 0.14)'
+        Q_ICON='rgba(255, 255, 255, 0.14)'; S_TRACK='rgba(255, 255, 255, 0.16)'
       else
         P_BG='rgba(247, 247, 249, 0.78)'; P_FG='#1d1d1f'
         P_HOVER='rgba(0, 0, 0, 0.08)';  P_ACTIVE='rgba(0, 0, 0, 0.14)'
-        Q_BG='rgba(243, 243, 245, 0.98)'; Q_BORDER='rgba(0, 0, 0, 0.09)'
+        Q_BG='rgba(228, 228, 232, 0.94)'; Q_BORDER='rgba(0, 0, 0, 0.09)'
+        Q_FG='#1d1d1f'; Q_SUB='rgba(0, 0, 0, 0.5)'
+        Q_MOD='rgba(255, 255, 255, 0.55)'; Q_MOD_H='rgba(255, 255, 255, 0.75)'
+        Q_ICON='rgba(0, 0, 0, 0.08)'; S_TRACK='rgba(0, 0, 0, 0.13)'
       fi
       rm -rf "$HOME/.themes/SecondWind-$variant"
       mkdir -p "$HOME/.themes/SecondWind-$variant/gnome-shell"
@@ -48,6 +54,10 @@ else
       sed -e "s|@PANEL_BG@|$P_BG|g" -e "s|@PANEL_FG@|$P_FG|g" \
           -e "s|@PANEL_HOVER@|$P_HOVER|g" -e "s|@PANEL_ACTIVE@|$P_ACTIVE|g" \
           -e "s|@QS_BG@|$Q_BG|g" -e "s|@QS_BORDER@|$Q_BORDER|g" \
+          -e "s|@QS_FG@|$Q_FG|g" -e "s|@QS_SUB@|$Q_SUB|g" \
+          -e "s|@QS_MODULE_HOVER@|$Q_MOD_H|g" -e "s|@QS_MODULE@|$Q_MOD|g" \
+          -e "s|@QS_ICON_OFF@|$Q_ICON|g" -e "s|@SLIDER_TRACK@|$S_TRACK|g" \
+          -e "s|@SLIDER_FILL@|#ffffff|g" -e "s|@ACCENT@|#0a84ff|g" \
           "$SW_ROOT/assets/gnome-shell-overrides.css" \
         >> "$HOME/.themes/SecondWind-$variant/gnome-shell/gnome-shell.css"
       track_new_file "$HOME/.themes/SecondWind-$variant"
