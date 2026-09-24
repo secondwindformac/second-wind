@@ -65,7 +65,7 @@ Disable automatic login to fix it? (You will type your password at startup, like
   [m75_ok]="News heartbeat armed: update notices and ONE support nudge after 30 days — switch it off anytime in Second Wind Apps"
   [mod_80]="Automatic updates (with safety rollback)"
   [m80_dry]="WOULD DO: arm the weekly self-update check (one notice, one password, automatic rollback if anything regresses)"
-  [m80_ok]="Self-update armed: a quiet weekly check; you decide when to apply"
+  [m80_ok]="Self-update armed: a quiet check 5 minutes after startup and then weekly; you decide when to apply"
   [mod_85]="Quiet first run (hide Ubuntu's pop-ups)"
   [m85_dry]="WOULD DO: hide Ubuntu's first-run pop-ups (the setup wizard and the software updater window)"
   [m85_ok]="Ubuntu's first-run pop-ups hushed (setup wizard, software updater) — updates still work"
