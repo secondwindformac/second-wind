@@ -3,6 +3,6 @@
   "name": "Second Wind Panel",
   "description": "Mac-style top bar for Second Wind: clock on the right, the active app's name next to the menu, a search button and notifications in the top-right corner.",
   "shell-version": ["46"],
-  "url": "https://github.com/secondwindformac/second-wind",
+  "url": "https://secondwindformac.com/",
   "version": 1
 }

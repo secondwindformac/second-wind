@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Second Wind Apps — the graphical app picker ("app store", v1).
+# Second Wind (app picker) — zenity fallback of the Second Wind app ("app store", v1).
 # Runs from its dock icon: GTK dialogs (zenity), system password window
 # (pkexec) — the end user never sees a terminal. Official sources only.
 set -uo pipefail

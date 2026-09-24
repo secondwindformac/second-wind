@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 70-apps — installs "Second Wind Apps": the graphical app picker that lives
+# 70-apps — installs the "Second Wind" app (formerly "Second Wind Apps"): the
+# graphical app picker + updates/help/Mac Experience that lives
 # in the dock. End users NEVER touch a terminal: they click the store icon,
 # tick checkboxes, type their password in the system window — done.
 # (The picker itself is apps/second-wind-apps.sh; catalog policy: official

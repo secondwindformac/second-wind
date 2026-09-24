@@ -104,7 +104,7 @@ fi
 # --- Mac window buttons for apps installed LATER (Chrome, WhatsApp web app,
 # Chromium/Brave/Edge, Firefox, OnlyOffice, VS Code): the steps above only
 # see what exists right now. second-wind-titlebars re-applies them at every
-# login and after Second Wind Apps installs something (Air, 24-Sep: Chrome
+# login and after the Second Wind app installs something (Air, 24-Sep: Chrome
 # installed afterwards kept its grey buttons). Undone by uninstall.sh. ---
 TB="$SW_SHARE/bin/second-wind-titlebars"
 TB_AUTOSTART="$HOME/.config/autostart/secondwind-titlebars.desktop"

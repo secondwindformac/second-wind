@@ -9,7 +9,7 @@ NEED_WIFI=0
 NEED_UL=0
 NEED_GIR=0
 
-# Native toolkit bindings for the Second Wind Apps store (GTK4/libadwaita);
+# Native toolkit bindings for the Second Wind app (GTK4/libadwaita);
 # present wherever gnome-tweaks lives, absent on some stock desktops.
 python3 -c "import gi; gi.require_version('Adw','1')" 2>/dev/null || NEED_GIR=1
 

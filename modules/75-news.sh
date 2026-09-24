@@ -2,7 +2,7 @@
 # 75-news — the project's polite heartbeat. A weekly user-level systemd timer
 # that (a) tells the user when a new Second Wind release exists and (b) ONCE,
 # after 30 days of happy use, asks if they'd like to support the project.
-# Ethics baked in: one-shot nudge, visible opt-out (Second Wind Apps → switch,
+# Ethics baked in: one-shot nudge, visible opt-out (Second Wind app → ⋯ menu,
 # or the notification's own button), zero third-party ads, zero telemetry —
 # nothing is sent anywhere; checks are a public releases lookup.
 
@@ -16,6 +16,9 @@ UNIT_DIR="$HOME/.config/systemd/user"
 mkdir -p "$NEWS_DIR" "$UNIT_DIR"
 
 [ -f "$NEWS_DIR/install-date" ] || date +%s > "$NEWS_DIR/install-date"
+# Where the updater lives, for the update notice's button (the heartbeat
+# script below is self-contained and does not know SW_ROOT).
+echo "$SW_ROOT/bin/second-wind-update" > "$NEWS_DIR/updater"
 cp "$SW_ROOT/links.conf" "$SW_STATE/links.conf" 2>/dev/null || true
 
 cat > "$NEWS_DIR/second-wind-news.sh" <<'EOF'
@@ -25,13 +28,13 @@ SW_STATE="$HOME/.local/state/second-wind"
 NEWS="$SW_STATE/news"
 
 # --test: show the sample support notice (no state changes) — used by the
-# "Try the notice now" row in Second Wind Apps.
+# "Try the notice now" item in the Second Wind app (⋯ menu).
 if [ "${1:-}" = "--test" ]; then
   case "${LANG:-en}" in
     es*) B="Tu Mac lleva un mes de segunda vida 💨 ¿Nos ayudas a revivir un millón más? (esto es una PRUEBA)"; S="Apoyar"; N="Cerrar" ;;
     *)   B="Your Mac has enjoyed a month of second life 💨 Help us revive a million more? (this is a TEST)"; S="Support"; N="Close" ;;
   esac
-  DONATE_URL="https://github.com/secondwindformac/second-wind"
+  DONATE_URL="https://secondwindformac.com/"
   [ -f "$SW_STATE/links.conf" ] && . "$SW_STATE/links.conf"
   R=$(notify-send -a "Second Wind" -i emblem-favorite -A support="$S" -A close="$N" "Second Wind" "$B" 2>/dev/null)
   [ "$R" = "support" ] && xdg-open "$DONATE_URL" &
@@ -40,17 +43,17 @@ fi
 
 [ -f "$SW_STATE/news-optout" ] && exit 0
 
-DONATE_URL="https://github.com/secondwindformac/second-wind"
+DONATE_URL="https://secondwindformac.com/"
 [ -f "$SW_STATE/links.conf" ] && . "$SW_STATE/links.conf"
 REPO_API="https://api.github.com/repos/secondwindformac/second-wind/releases/latest"
 
 case "${LANG:-en}" in
   es*)
-    T_UPD="Hay una versión nueva de Second Wind"; T_UPD_B="Ver novedades"
+    T_UPD="Hay una versión nueva de Second Wind"; T_UPD_B="Actualizar"
     T_THANKS="Tu Mac lleva un mes de segunda vida 💨 ¿Nos ayudas a revivir un millón más?"
     T_SUP="Apoyar"; T_NO="No volver a mostrar" ;;
   *)
-    T_UPD="A new Second Wind release is available"; T_UPD_B="See what's new"
+    T_UPD="A new Second Wind release is available"; T_UPD_B="Update"
     T_THANKS="Your Mac has enjoyed a month of second life 💨 Help us revive a million more?"
     T_SUP="Support"; T_NO="Don't show again" ;;
 esac
@@ -61,7 +64,12 @@ if [ -n "$LATEST" ] && [ "$LATEST" != "$(cat "$NEWS/last-seen-release" 2>/dev/nu
   echo "$LATEST" > "$NEWS/last-seen-release"
   R=$(notify-send -a "Second Wind" -i software-update-available \
         -A open="$T_UPD_B" "Second Wind" "$T_UPD ($LATEST)" 2>/dev/null)
-  [ "$R" = "open" ] && xdg-open "https://github.com/secondwindformac/second-wind/releases" &
+  # The button opens Second Wind's own updater (what the person wants right
+  # then), not a GitHub releases page; the site if the updater is missing.
+  if [ "$R" = "open" ]; then
+    UPD="$(cat "$NEWS/updater" 2>/dev/null)"
+    if [ -f "$UPD" ]; then bash "$UPD" --manual & else xdg-open "https://secondwindformac.com/" & fi
+  fi
 fi
 
 # (b) One-time 30-day support nudge — only burned once the notification was

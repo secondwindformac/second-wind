@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Second Wind Apps — store v3: a compact visual grid of popular apps.
+"""Second Wind — the product's own app (shown as "Second Wind"; internally
+still app.secondwind.Apps so existing installs keep their dock icon): app
+store v3: a compact visual grid of popular apps.
 
 ~21 curated apps as icon cards with checkboxes, grouped by what people do.
 Icons are fetched at runtime (official app icons via Flathub, site icons for
@@ -139,7 +141,8 @@ ICON_SRC = {
 }
 
 T = {
-    "title": "Second Wind Apps",
+    # Shown as "Second Wind": apps are one part of it (CEO, 24-Sep).
+    "title": "Second Wind",
     "install": d("Instalar", "Install"),
     "installing": d("Instalando… (contraseña en ventana del sistema)",
                     "Installing… (password in a system window)"),
@@ -150,8 +153,9 @@ T = {
     "nothing": d("Marca al menos una app.", "Tick at least one app."),
     "g_support": d("El proyecto", "The project"),
     "more": d("Más opciones", "More options"),
-    "about": d("Acerca de Second Wind Apps", "About Second Wind Apps"),
-    "about_sub": d("Apps para tu Mac, con un clic.", "Apps for your Mac, one click away."),
+    "about": d("Acerca de Second Wind", "About Second Wind"),
+    "about_sub": d("Una segunda vida para tu Mac.", "A second life for your Mac."),
+    "contact": d("Escribirnos", "Contact us"),
     "exp_pill_trial": d("Mac Experience · {days} días", "Mac Experience · {days} days"),
     "exp_pill_active": d("Mac Experience ✓", "Mac Experience ✓"),
     "donate": d("Apoyar Second Wind", "Support Second Wind"),
@@ -219,8 +223,16 @@ def links():
         except FileNotFoundError:
             continue
     # Defaults AFTER parsing (a pre-seeded default would shadow the real file)
-    cfg.setdefault("DONATE_URL", "https://github.com/secondwindformac/second-wind")
     cfg.setdefault("WEBSITE_URL", "https://secondwindformac.com/")
+    cfg.setdefault("WEBSITE_URL_ES", "https://secondwindformac.com/es/")
+    cfg.setdefault("HELP_URL", cfg["WEBSITE_URL"] + "#faq")
+    cfg.setdefault("HELP_URL_ES", cfg["WEBSITE_URL_ES"] + "#faq")
+    cfg.setdefault("CONTACT_EMAIL", "hello@secondwindformac.com")
+    cfg.setdefault("DONATE_URL", cfg["WEBSITE_URL"])
+    # Everything a person clicks goes to our site or a human, never GitHub
+    # (CEO, 24-Sep). Language-aware where the site has both.
+    cfg["HELP"] = cfg["HELP_URL_ES"] if ES else cfg["HELP_URL"]
+    cfg["SITE"] = cfg["WEBSITE_URL_ES"] if ES else cfg["WEBSITE_URL"]
     cfg.setdefault("EXPERIENCE_URL", cfg.get("WEBSITE_URL",
                    "https://secondwindformac.com/"))
     return cfg
@@ -433,8 +445,9 @@ class Store(Adw.Application):
         actions = {
             "check-updates": lambda *_: subprocess.Popen(
                 ["bash", os.path.join(SW_ROOT, "bin", "second-wind-update"), "--manual"]),
-            "help": lambda *_: subprocess.Popen(
-                ["xdg-open", links().get("SUPPORT_URL", links()["DONATE_URL"])]),
+            "help": lambda *_: subprocess.Popen(["xdg-open", links()["HELP"]]),
+            "contact": lambda *_: subprocess.Popen(
+                ["xdg-open", "mailto:" + links()["CONTACT_EMAIL"]]),
             "donate": lambda *_: subprocess.Popen(["xdg-open", links()["DONATE_URL"]]),
             "news-test": lambda *_: subprocess.Popen(
                 ["bash", os.path.join(SW_STATE, "news", "second-wind-news.sh"), "--test"]),
@@ -452,7 +465,8 @@ class Store(Adw.Application):
 
         menu = Gio.Menu()
         for items in ([(T["upd"], "app.check-updates")],
-                      [(T["help"], "app.help"), (T["donate"], "app.donate")],
+                      [(T["help"], "app.help"), (T["contact"], "app.contact"),
+                       (T["donate"], "app.donate")],
                       [(T["news"], "app.news"), (T["news_test"], "app.news-test")],
                       [(T["about"], "app.about")]):
             sec = Gio.Menu()
@@ -470,15 +484,15 @@ class Store(Adw.Application):
         # icon theme: let the About dialog find it by name.
         Gtk.IconTheme.get_for_display(Gdk.Display.get_default()).add_search_path(
             os.path.expanduser("~/.local/share/second-wind"))
-        about = Adw.AboutDialog(application_name="Second Wind Apps",
+        about = Adw.AboutDialog(application_name=T["title"],
                                 application_icon="second-wind-apps",
                                 developer_name="Second Wind",
                                 version=self.version(),
                                 comments=T["about_sub"],
-                                # The product site, not GitHub (CEO, 24-Sep);
-                                # the issue tracker gets its own labelled row.
-                                website=links()["WEBSITE_URL"],
-                                issue_url=links().get("SUPPORT_URL", ""))
+                                # Our site and a human contact — no GitHub
+                                # anywhere a person clicks (CEO, 24-Sep).
+                                website=links()["SITE"],
+                                support_url="mailto:" + links()["CONTACT_EMAIL"])
         about.present(self.win)
 
     # --- Mac Experience state -----------------------------------------------
