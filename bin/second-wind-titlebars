@@ -7,7 +7,10 @@ Apps installs something, so apps installed LATER get it too. (Real case, Air,
 24-Sep-2026: Chrome was installed after 55-browsers ran — "Chrome is not
 installed" in the log — and kept its own grey buttons.)
 
-Rules: an app is only touched while it is CLOSED (they rewrite their settings
+Rules: each settings file is adjusted ONCE. If the person later changes it
+back (picks a Chrome color theme, turns the custom title bar on again), that
+is their choice and later logins leave it alone; the record below is what
+marks a file as already adjusted. An app is only touched while it is CLOSED (they rewrite their settings
 on exit); the original value is recorded once in
 ~/.local/state/second-wind/titlebars-before.json so `--undo` (uninstall.sh)
 puts it back exactly. Apps with no such option (Electron apps like Spotify or
@@ -112,6 +115,15 @@ def set_key(d, dotted, value):
         d[keys[-1]] = value
 
 
+def applied_before(old):
+    # dict = values recorded by this version; ABSENT:file = we created the file.
+    # A plain string is the record of the first version (frame pref only), so
+    # that profile still gets the GTK-mode part once.
+    if old == ABSENT + ":file":
+        return True
+    return isinstance(old, dict) and all(k in old for k in CHROME_PREFS)
+
+
 def do_chromium(rec, log):
     for rel, procs, bins in CHROMIUMS:
         if not installed(bins):
@@ -134,6 +146,8 @@ def do_chromium(rec, log):
             log(f"{p}: seeded")
             continue
         for p in prefs:
+            if applied_before(rec.get(p)):
+                continue   # adjusted once already: never fight a later choice
             try:
                 with open(p) as f:
                     d = json.load(f)
@@ -145,11 +159,10 @@ def do_chromium(rec, log):
             old = rec.get(p)
             if isinstance(old, str) and old != ABSENT + ":file":   # pre-GTK-mode record
                 old = {"browser.custom_chrome_frame": old}
-            if old != ABSENT + ":file":
-                old = dict(old or {})
-                for k, before in changed.items():
-                    old.setdefault(k, before)
-                rec[p] = old
+            old = dict(old or {})
+            for k in CHROME_PREFS:   # record every key, so applied_before() holds
+                old.setdefault(k, changed.get(k, get_key(d, k)))
+            rec[p] = old
             for k, v in CHROME_PREFS.items():
                 set_key(d, k, v)
             write_json(p, d)
@@ -164,6 +177,8 @@ def do_onlyoffice(rec, log):
             log("onlyoffice: open, will retry at next login")
             continue
         p = os.path.join(HOME, rel)
+        if p in rec:
+            continue   # adjusted once already: respect a later change
         lines = []
         if os.path.exists(p):
             with open(p) as f:
@@ -188,6 +203,8 @@ def do_vscode(rec, log):
         if not installed(bins) or running(procs):
             continue
         p = os.path.join(HOME, rel)
+        if p in rec:
+            continue   # adjusted once already: respect a later change
         try:
             with open(p) as f:
                 d = json.load(f)   # a settings.json with comments is left alone

@@ -1,0 +1,3 @@
+# Reports and their screenshots stay in the repo, not in the release payload
+# that goes onto the USB stick (0.9.4 payload grew 1.7 -> 5.5 MB because of them).
+docs/reports export-ignore
