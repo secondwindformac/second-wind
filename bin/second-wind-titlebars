@@ -24,9 +24,19 @@ STATE = os.path.join(HOME, ".local/state/second-wind")
 RECORD = os.path.join(STATE, "titlebars-before.json")
 ABSENT = "__absent__"
 
-# Chromium family: Preferences → browser.custom_chrome_frame = false makes
-# them use the system (GTK) title bar, i.e. the theme's Mac buttons. Chrome
-# web apps (WhatsApp, --app=...) follow their browser's setting.
+# Chromium family. Two prefs make it use the theme's Mac buttons:
+#  - browser.custom_chrome_frame = false: the system title bar (enough on X11);
+#  - GTK mode (extensions.theme.system_theme = 1, no theme id): recent Chrome
+#    on Wayland always draws its own frame, and only in GTK mode does it paint
+#    the window buttons from the GTK theme (Air, Chrome 154: with the first pref
+#    alone it kept its grey ✕ – □). Replaces a color theme the person picked;
+#    the original values are recorded and --undo brings it back.
+# Chrome web apps (WhatsApp, --app=...) follow their browser's settings.
+CHROME_PREFS = {
+    "browser.custom_chrome_frame": False,
+    "extensions.theme.system_theme": 1,
+    "extensions.theme.id": "",
+}
 CHROMIUMS = [
     # (config dir, process names, installed-if any of these exists)
     (".config/google-chrome", ["chrome"], ["/usr/bin/google-chrome", "/opt/google/chrome/chrome"]),
@@ -86,6 +96,22 @@ def chromium_profiles(base):
     return found
 
 
+def get_key(d, dotted):
+    for k in dotted.split(".")[:-1]:
+        d = d.get(k, {}) if isinstance(d, dict) else {}
+    return d.get(dotted.split(".")[-1], ABSENT) if isinstance(d, dict) else ABSENT
+
+
+def set_key(d, dotted, value):
+    keys = dotted.split(".")
+    for k in keys[:-1]:
+        d = d.setdefault(k, {})
+    if value == ABSENT:
+        d.pop(keys[-1], None)
+    else:
+        d[keys[-1]] = value
+
+
 def do_chromium(rec, log):
     for rel, procs, bins in CHROMIUMS:
         if not installed(bins):
@@ -101,7 +127,10 @@ def do_chromium(rec, log):
             p = os.path.join(base, "Default", "Preferences")
             os.makedirs(os.path.dirname(p), exist_ok=True)
             rec.setdefault(p, ABSENT + ":file")
-            write_json(p, {"browser": {"custom_chrome_frame": False}})
+            d = {}
+            for k, v in CHROME_PREFS.items():
+                set_key(d, k, v)
+            write_json(p, d)
             log(f"{p}: seeded")
             continue
         for p in prefs:
@@ -110,13 +139,21 @@ def do_chromium(rec, log):
                     d = json.load(f)
             except (OSError, ValueError):
                 continue
-            cur = d.get("browser", {}).get("custom_chrome_frame", ABSENT)
-            if cur is False:
+            changed = {k: get_key(d, k) for k, v in CHROME_PREFS.items() if get_key(d, k) != v}
+            if not changed:
                 continue
-            rec.setdefault(p, cur)
-            d.setdefault("browser", {})["custom_chrome_frame"] = False
+            old = rec.get(p)
+            if isinstance(old, str) and old != ABSENT + ":file":   # pre-GTK-mode record
+                old = {"browser.custom_chrome_frame": old}
+            if old != ABSENT + ":file":
+                old = dict(old or {})
+                for k, before in changed.items():
+                    old.setdefault(k, before)
+                rec[p] = old
+            for k, v in CHROME_PREFS.items():
+                set_key(d, k, v)
             write_json(p, d)
-            log(f"{p}: custom_chrome_frame {cur} -> false")
+            log(f"{p}: " + ", ".join(f"{k} {b} -> {CHROME_PREFS[k]}" for k, b in changed.items()))
 
 
 def do_onlyoffice(rec, log):
@@ -202,11 +239,10 @@ def undo(log):
                 with open(p) as f:
                     d = json.load(f)
                 if p.endswith("Preferences"):
-                    b = d.setdefault("browser", {})
-                    if before == ABSENT:
-                        b.pop("custom_chrome_frame", None)
-                    else:
-                        b["custom_chrome_frame"] = before
+                    if not isinstance(before, dict):
+                        before = {"browser.custom_chrome_frame": before}
+                    for k, v in before.items():
+                        set_key(d, k, v)
                 else:
                     if before == ABSENT:
                         d.pop("window.titleBarStyle", None)

@@ -337,18 +337,9 @@ class Store(Adw.Application):
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6,
                        margin_top=6, margin_bottom=10, margin_start=18, margin_end=18)
 
-        for _gid, gtitle, apps in CATALOG:
-            head = Gtk.Label(label=gtitle, xalign=0,
-                             css_classes=["heading"], margin_top=14)
-            body.append(head)
-            flow = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE,
-                               max_children_per_line=6, min_children_per_line=3,
-                               column_spacing=6, row_spacing=6, homogeneous=True)
-            for app in apps:
-                flow.append(self.card(app))
-            body.append(flow)
-
-        sup = Adw.PreferencesGroup(title=T["g_support"], margin_top=18)
+        # "The project" (updates, help, Mac Experience…) goes FIRST: at the bottom,
+        # under the whole catalog, the CEO never found it (Air, 24-Sep).
+        sup = Adw.PreferencesGroup(title=T["g_support"], margin_top=6, margin_bottom=4)
         self.exp_row = Adw.ActionRow(title=T["exp_title"])
         expkey = Gtk.Button(label=T["exp_key"], valign=Gtk.Align.CENTER)
         expkey.connect("clicked", self.on_exp_key)
@@ -395,6 +386,17 @@ class Store(Adw.Application):
             ["bash", os.path.join(SW_STATE, "news", "second-wind-news.sh"), "--test"]))
         sup.add(test)
         body.append(sup)
+        for _gid, gtitle, apps in CATALOG:
+            head = Gtk.Label(label=gtitle, xalign=0,
+                             css_classes=["heading"], margin_top=14)
+            body.append(head)
+            flow = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE,
+                               max_children_per_line=6, min_children_per_line=3,
+                               column_spacing=6, row_spacing=6, homogeneous=True)
+            for app in apps:
+                flow.append(self.card(app))
+            body.append(flow)
+
 
         scroller = Gtk.ScrolledWindow(child=body, vexpand=True)
 
