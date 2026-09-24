@@ -175,6 +175,9 @@ T = {
     "exp_title": "Mac Experience",
     "exp_trial": d("Prueba gratis: quedan {days} días · después US$10 una vez",
                    "Free trial: {days} days left · then US$10 once"),
+    "exp_trial_1": d("Prueba gratis: queda 1 día · después US$10 una vez",
+                     "Free trial: 1 day left · then US$10 once"),
+    "exp_pill_trial_1": d("Mac Experience · 1 día", "Mac Experience · 1 day"),
     "exp_active": d("Activo en este Mac — tuyo para siempre ✓",
                     "Active on this Mac — yours forever ✓"),
     "exp_off": d("Apagado — tu Mac sigue igual; recupera ⌘ y Spotlight por US$10",
@@ -524,8 +527,10 @@ class Store(Adw.Application):
             self.exp_lbl.set_label(T["exp_off"])
             self.exp_btns.set_visible(True)
         else:
-            self.exp_pill.set_label(T["exp_pill_trial"].format(days=extra or "30"))
-            self.exp_lbl.set_label(T["exp_trial"].format(days=extra or "30"))
+            days = extra or "30"
+            one = days == "1"   # "1 day", not "1 days" (Air, 24-Sep)
+            self.exp_pill.set_label(T["exp_pill_trial_1" if one else "exp_pill_trial"].format(days=days))
+            self.exp_lbl.set_label(T["exp_trial_1" if one else "exp_trial"].format(days=days))
             self.exp_btns.set_visible(True)
 
     def on_exp_key(self, *_):

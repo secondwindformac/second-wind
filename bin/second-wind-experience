@@ -202,9 +202,14 @@ day30_check() {
   # was actually shown (or after 3 failed attempts, as a backstop).
   local fails=0 R rc=0
   [ -f "$EXP/notify-fails" ] && fails="$(cat "$EXP/notify-fails")"
-  R="$(notify-send -a "Second Wind" -i emblem-favorite \
+  # With buttons (-A), notify-send waits until the person clicks or closes
+  # the notice. Ignored, it waited forever: the timer job never finished and
+  # the trial never ended (found reading the code on the Air, 24-Sep). Cap
+  # the wait: after an hour on screen, the notice counts as shown.
+  R="$(timeout 3600 notify-send -a "Second Wind" -i emblem-favorite \
         -A buy="${MSG[exp_notify_buy]}" -A ok="${MSG[exp_notify_later]}" \
         "Second Wind" "${MSG[exp_notify_body]}" 2>/dev/null)" || rc=$?
+  [ "$rc" -eq 124 ] && rc=0   # timed out = it was displayed, just not answered
   if [ "$rc" -ne 0 ] && [ "$fails" -lt 3 ]; then
     echo $((fails + 1)) > "$EXP/notify-fails"
     return 0
