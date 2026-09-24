@@ -220,6 +220,7 @@ def links():
             continue
     # Defaults AFTER parsing (a pre-seeded default would shadow the real file)
     cfg.setdefault("DONATE_URL", "https://github.com/secondwindformac/second-wind")
+    cfg.setdefault("WEBSITE_URL", "https://secondwindformac.com/")
     cfg.setdefault("EXPERIENCE_URL", cfg.get("WEBSITE_URL",
                    "https://secondwindformac.com/"))
     return cfg
@@ -471,7 +472,10 @@ class Store(Adw.Application):
                                 developer_name="Second Wind",
                                 version=self.version(),
                                 comments=T["about_sub"],
-                                website=links().get("SUPPORT_URL", links()["DONATE_URL"]))
+                                # The product site, not GitHub (CEO, 24-Sep);
+                                # the issue tracker gets its own labelled row.
+                                website=links()["WEBSITE_URL"],
+                                issue_url=links().get("SUPPORT_URL", ""))
         about.present(self.win)
 
     # --- Mac Experience state -----------------------------------------------
