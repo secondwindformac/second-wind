@@ -7,14 +7,33 @@
 # cannot be themed (it does not use GTK): documented limitation in the README.
 
 # --- Firefox (official MacTahoe theme) ---
-if [ -d "$HOME/.mozilla/firefox" ]; then
+# Ubuntu 24.04 ships Firefox as a SNAP: its profiles live in
+# ~/snap/firefox/common/.mozilla/firefox, not ~/.mozilla/firefox. Looking only
+# at the classic path skipped the theme on the Air (24-Sep: "Firefox is not
+# installed" with Firefox open), so it kept its own grey buttons.
+FF_HOME=""
+for d in "$HOME/.mozilla/firefox" "$HOME/snap/firefox/common/.mozilla/firefox" \
+         "$HOME/.var/app/org.mozilla.firefox/.mozilla/firefox"; do
+  if [ -f "$d/profiles.ini" ]; then FF_HOME="$d"; break; fi
+done
+if [ -n "$FF_HOME" ]; then
   if [ "$DRY_RUN" = 1 ]; then
     info "${MSG[m55_ff_dry]}"
-  elif ( cd "$SW_CACHE/MacTahoe-gtk-theme" && ./tweaks.sh -f >/dev/null 2>&1 ); then
-    mf note "firefox-themed"
-    ok "${MSG[m55_ff_ok]}"
   else
-    warn "${MSG[m55_ff_err]}"
+    # MacTahoe's installer closes Firefox itself (killall) — ask first, like
+    # Chrome below; with --yes an open Firefox is left alone.
+    FF_GO=1
+    if pgrep -x firefox >/dev/null 2>&1 || pgrep -x firefox-bin >/dev/null 2>&1; then
+      ui_yesno "${MSG[ask_firefox]}" --default-no || FF_GO=0
+    fi
+    if [ "$FF_GO" = 0 ]; then
+      warn "${MSG[m55_ff_open]}"
+    elif ( cd "$SW_CACHE/MacTahoe-gtk-theme" && ./tweaks.sh -f >/dev/null 2>&1 ); then
+      mf note "firefox-themed"
+      ok "${MSG[m55_ff_ok]}"
+    else
+      warn "${MSG[m55_ff_err]}"
+    fi
   fi
 else
   info "${MSG[m55_no_ff]}"

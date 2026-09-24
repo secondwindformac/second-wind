@@ -136,6 +136,10 @@ Log out now? (Save your open work first)"
   [m55_ff_dry]="WOULD DO: install the MacTahoe theme for Firefox"
   [m55_ff_ok]="Firefox dressed like a Mac (reopen it to see it)"
   [m55_ff_err]="Could not apply the Firefox theme"
+  [ask_firefox]="To dress Firefox like a Mac (red/yellow/green buttons) it must be closed for a moment. Your tabs come back when you reopen it.
+
+Close Firefox now?"
+  [m55_ff_open]="Firefox is open and cannot be themed while running. Close it and run:  ./install.sh --only browsers"
   [m55_no_ff]="Firefox is not installed; nothing to do with it."
   [m55_no_chrome]="Chrome is not installed; nothing to do with it."
   [m55_chrome_dry]="WOULD DO: enable Chrome's system title bar (Mac buttons on the left)"

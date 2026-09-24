@@ -136,6 +136,10 @@ Todo se puede revertir después con ./uninstall.sh"
   [m55_ff_dry]="HARÍA: instalar el tema MacTahoe para Firefox"
   [m55_ff_ok]="Firefox vestido como Mac (reábrelo para verlo)"
   [m55_ff_err]="No se pudo aplicar el tema de Firefox"
+  [ask_firefox]="Para vestir Firefox como Mac (botones rojo/amarillo/verde) hay que cerrarlo un momento. Tus pestañas vuelven al reabrirlo.
+
+¿Cierro Firefox ahora?"
+  [m55_ff_open]="Firefox está abierto y no se puede vestir en caliente. Ciérralo y ejecuta:  ./install.sh --only browsers"
   [m55_no_ff]="Firefox no está instalado; nada que hacer con él."
   [m55_no_chrome]="Chrome no está instalado; nada que hacer con él."
   [m55_chrome_dry]="HARÍA: activar en Chrome la barra de título del sistema (botones Mac a la izquierda)"
