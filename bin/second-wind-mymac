@@ -106,14 +106,13 @@ PYEOF
 case "${1:-}" in
   --json) cat "$SW_STATE/mymac.json" ;;
   --gui)
-    # "Copy report for support" (health plan, phase 1): opens the report window,
-    # which shows the whole text before copying it. Nothing is sent.
-    COPY="$(t 'Copiar informe para soporte' 'Copy report for support')"
-    if command -v zenity >/dev/null 2>&1; then
-      R="$(zenity --info --no-wrap --title="$TITLE" --icon=computer \
-             --ok-label="$(t 'Cerrar' 'Close')" --extra-button="$COPY" \
-             --text="<b>$HEAD</b>"$'\n\n'"$BODY" 2>/dev/null)"
-      [ "$R" = "$COPY" ] && exec "$(dirname "$0")/second-wind-support-report"
+    # One window (health plan, phase 1): the checks and, right below, the
+    # support report with "Copy report for support". zenity only as fallback.
+    if python3 -c "import gi; gi.require_version('Gtk','4.0'); gi.require_version('Adw','1')" 2>/dev/null; then
+      exec python3 "$(dirname "$0")/second-wind-support-report"
+    elif command -v zenity >/dev/null 2>&1; then
+      zenity --info --no-wrap --title="$TITLE" --icon=computer \
+        --text="<b>$HEAD</b>"$'\n\n'"$BODY" 2>/dev/null
     else
       printf '%s\n\n%s\n' "$HEAD" "$BODY"
     fi ;;

@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""second-wind-support-report — "Copy report for support" (health plan, phase 1).
+"""second-wind-support-report — the "Your Mac" window (health plan, phase 1).
 
-  second-wind-support-report          window: shows the WHOLE report, then copies
-  second-wind-support-report --text   print it (exit 3 if the privacy guard fails)
+One view (CEO, 24-Sep: "why two steps?"): which Mac this is and whether each
+component works (from second-wind-mymac), and right below it the support
+report, already visible, with "Copy report for support".
+
+  second-wind-support-report          the window (opened by second-wind-mymac --gui)
+  second-wind-support-report --text   print the report (exit 3 if the guard fails)
 
 Nothing is sent anywhere: the person reads the text and chooses where to paste
 it. What goes in and what can never go in: lib/support_report.py.
@@ -22,16 +26,17 @@ def d(es, en):
 
 
 T = {
-    "title": d("Informe para soporte", "Support report"),
-    "intro": d("Esto es TODO lo que contiene el informe. No se envía a ningún lado: "
-               "al copiarlo, tú decides dónde pegarlo (un correo o el chat de soporte).",
-               "This is EVERYTHING in the report. It is not sent anywhere: once copied, "
+    "title": d("Tu Mac", "Your Mac"),
+    "report": d("Informe para soporte", "Support report"),
+    "intro": d("Esto es TODO lo que contiene. No se envía a ningún lado: al copiarlo, "
+               "tú decides dónde pegarlo (un correo o el chat de soporte).",
+               "This is EVERYTHING in it. It is not sent anywhere: once copied, "
                "you choose where to paste it (an e-mail or the support chat)."),
     "privacy": d("Second Wind no envía datos tuyos: solo consulta si hay mejoras, baja los "
                  "íconos de la tienda y activa tu licencia cuando tú lo pides.",
                  "Second Wind does not send your data: it only checks for improvements, "
                  "downloads the store's icons and activates your license when you ask it to."),
-    "copy": d("Copiar informe", "Copy report"),
+    "copy": d("Copiar informe para soporte", "Copy report for support"),
     "copied": d("Copiado ✓", "Copied ✓"),
     "paste": d("Listo. Pégalo con ⌘V en tu correo o en el chat de soporte.",
                "Done. Paste it with ⌘V into your e-mail or the support chat."),
@@ -52,6 +57,22 @@ def main_text():
     return 0
 
 
+def mymac_view():
+    """(title lines, component lines, note) from second-wind-mymac's plain text."""
+    import subprocess
+    try:
+        out = subprocess.run(["bash", os.path.join(SW_ROOT, "bin", "second-wind-mymac")],
+                             capture_output=True, text=True, timeout=15,
+                             env={**os.environ, "SW_ROOT": SW_ROOT}).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        out = ""
+    blocks = [b.splitlines() for b in out.strip().split("\n\n")]
+    head = blocks[0][1:] if blocks and blocks[0] else []     # drop the "Your Mac" title
+    body = blocks[1] if len(blocks) > 1 else []
+    note = "\n".join(sum(blocks[2:], [])) if len(blocks) > 2 else ""
+    return head, body, note
+
+
 def main_gui():
     import gi
     gi.require_version("Gtk", "4.0")
@@ -67,32 +88,48 @@ def main_gui():
             # Built on every opening: a second click reaches this same process
             # while it is still holding the clipboard, and must not show stale data.
             text, problems = support_report.build(sw_root=SW_ROOT)
+            head, body, note = mymac_view()
             win = Adw.ApplicationWindow(application=self, title=T["title"],
-                                        default_width=720, default_height=560)
+                                        default_width=720, default_height=780)
             view = Adw.ToolbarView()
             view.add_top_bar(Adw.HeaderBar())
-            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12,
-                          margin_top=6, margin_bottom=18, margin_start=18, margin_end=18)
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10,
+                          margin_top=4, margin_bottom=18, margin_start=22, margin_end=22)
+            # 1) Which Mac, and whether each component works right now.
+            if head:
+                box.append(Gtk.Label(label=head[0], xalign=0, wrap=True,
+                                     css_classes=["title-3"]))
+                for line in head[1:]:
+                    box.append(Gtk.Label(label=line, xalign=0, css_classes=["dim-label"]))
+            if body:
+                box.append(Gtk.Label(label="\n".join(body), xalign=0, margin_top=4))
+            if note:
+                box.append(Gtk.Label(label=note, xalign=0, wrap=True,
+                                     css_classes=["dim-label", "caption"]))
+            box.append(Gtk.Separator(margin_top=6, margin_bottom=4))
+            # 2) The support report, already visible — one click to copy it.
+            box.append(Gtk.Label(label=T["report"], xalign=0, css_classes=["heading"]))
+            close = Gtk.Button(label=T["close"])
+            close.connect("clicked", lambda *_: win.close())
             if problems:
                 box.append(Gtk.Label(label=T["unsafe"], wrap=True, xalign=0))
-                close = Gtk.Button(label=T["close"], halign=Gtk.Align.END)
-                close.connect("clicked", lambda *_: win.close())
-                box.append(close)
+                row = Gtk.Box(halign=Gtk.Align.END)
+                row.append(close)
+                box.append(row)
             else:
-                box.append(Gtk.Label(label=T["intro"], wrap=True, xalign=0))
+                box.append(Gtk.Label(label=T["intro"], wrap=True, xalign=0,
+                                     css_classes=["dim-label"]))
                 tv = Gtk.TextView(editable=False, cursor_visible=False, monospace=True,
                                   wrap_mode=Gtk.WrapMode.WORD_CHAR, top_margin=10,
                                   bottom_margin=10, left_margin=12, right_margin=12)
                 tv.get_buffer().set_text(text)
-                frame = Gtk.Frame(child=Gtk.ScrolledWindow(child=tv, vexpand=True))
-                box.append(frame)
+                box.append(Gtk.Frame(child=Gtk.ScrolledWindow(child=tv, vexpand=True,
+                                                              min_content_height=200)))
                 box.append(Gtk.Label(label=T["privacy"], wrap=True, xalign=0,
                                      css_classes=["dim-label", "caption"]))
                 self.done = Gtk.Label(label="", wrap=True, xalign=0)
                 box.append(self.done)
                 row = Gtk.Box(spacing=8, halign=Gtk.Align.END)
-                close = Gtk.Button(label=T["close"])
-                close.connect("clicked", lambda *_: win.close())
                 copy = Gtk.Button(label=T["copy"], css_classes=["suggested-action"])
                 copy.connect("clicked", self.on_copy, text)
                 row.append(close)
