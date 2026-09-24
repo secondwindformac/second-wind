@@ -153,6 +153,7 @@ T = {
     "nothing": d("Marca al menos una app.", "Tick at least one app."),
     "g_support": d("El proyecto", "The project"),
     "more": d("Más opciones", "More options"),
+    "mymac": d("Tu Mac…", "Your Mac…"),
     "about": d("Acerca de Second Wind", "About Second Wind"),
     "about_sub": d("Una segunda vida para tu Mac.", "A second life for your Mac."),
     "contact": d("Escribirnos", "Contact us"),
@@ -443,6 +444,11 @@ class Store(Adw.Application):
 
         # Everything else, one click away and out of the catalog's way.
         actions = {
+            # "Your Mac" (component check + "Copy report for support") used to
+            # open only once, after the first boot; now always one click away.
+            "mymac": lambda *_: subprocess.Popen(
+                ["bash", os.path.join(SW_ROOT, "bin", "second-wind-mymac"), "--gui"],
+                env={**os.environ, "SW_ROOT": SW_ROOT}),
             "check-updates": lambda *_: subprocess.Popen(
                 ["bash", os.path.join(SW_ROOT, "bin", "second-wind-update"), "--manual"]),
             "help": lambda *_: subprocess.Popen(["xdg-open", links()["HELP"]]),
@@ -464,7 +470,7 @@ class Store(Adw.Application):
         self.add_action(news)
 
         menu = Gio.Menu()
-        for items in ([(T["upd"], "app.check-updates")],
+        for items in ([(T["mymac"], "app.mymac"), (T["upd"], "app.check-updates")],
                       [(T["help"], "app.help"), (T["contact"], "app.contact"),
                        (T["donate"], "app.donate")],
                       [(T["news"], "app.news"), (T["news_test"], "app.news-test")],

@@ -45,8 +45,18 @@ elif nmcli -t -f TYPE device 2>/dev/null | grep -q '^wifi$'; then
 else
   WIFI="$NO $(t 'WiFi: sin driver (revisa /var/log/second-wind-wifi.log)' 'WiFi: no driver (see /var/log/second-wind-wifi.log)')"; WIFI_S=missing
 fi
-# Sound: a real output device (not the dummy sink)
-if pactl list short sinks 2>/dev/null | grep -vq 'auto_null'; then
+# Sound: a real output device (not the dummy sink). Ubuntu 24.04 ships
+# PipeWire WITHOUT pactl (pulseaudio-utils), so pactl alone reported "no audio
+# output" on every Mac (Air, 24-Sep); wpctl (WirePlumber) is always there.
+sound_ok() {
+  if command -v pactl >/dev/null 2>&1; then
+    pactl list short sinks 2>/dev/null | grep -vq 'auto_null'
+  else
+    local sink; sink="$(wpctl inspect @DEFAULT_AUDIO_SINK@ 2>/dev/null)"
+    printf '%s' "$sink" | grep -q 'node.name' && ! printf '%s' "$sink" | grep -q 'auto_null'
+  fi
+}
+if sound_ok; then
   SND="$OK $(t 'Sonido' 'Sound')"; SND_S=ok
 else
   SND="$NO $(t 'Sonido: sin salida de audio' 'Sound: no audio output')"; SND_S=missing
@@ -95,7 +105,17 @@ PYEOF
 
 case "${1:-}" in
   --json) cat "$SW_STATE/mymac.json" ;;
-  --gui)  zenity --info --no-wrap --title="$TITLE" --icon=computer \
-            --text="<b>$HEAD</b>"$'\n\n'"$BODY" 2>/dev/null || printf '%s\n\n%s\n' "$HEAD" "$BODY" ;;
+  --gui)
+    # "Copy report for support" (health plan, phase 1): opens the report window,
+    # which shows the whole text before copying it. Nothing is sent.
+    COPY="$(t 'Copiar informe para soporte' 'Copy report for support')"
+    if command -v zenity >/dev/null 2>&1; then
+      R="$(zenity --info --no-wrap --title="$TITLE" --icon=computer \
+             --ok-label="$(t 'Cerrar' 'Close')" --extra-button="$COPY" \
+             --text="<b>$HEAD</b>"$'\n\n'"$BODY" 2>/dev/null)"
+      [ "$R" = "$COPY" ] && exec "$(dirname "$0")/second-wind-support-report"
+    else
+      printf '%s\n\n%s\n' "$HEAD" "$BODY"
+    fi ;;
   *)      printf '%s\n%s\n\n%s\n' "$TITLE" "$HEAD" "$BODY" ;;
 esac
