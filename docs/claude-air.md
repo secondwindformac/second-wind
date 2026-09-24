@@ -35,12 +35,16 @@ Puedes (y debes) probar todo lo que quieras en este equipo y mostrar el resultad
 - Cada cambio visual se aprueba mirando: después de aplicarlo, toma la captura, mírala tú primero
   y, si se ve bien, muéstrasela al CEO (ábrela con `xdg-open <archivo>.png` para que la vea en
   pantalla) y pregúntale si la aprueba. Si hay un "antes", muestra antes y después.
-- Guarda cada captura en `docs/reports/img/` con un nombre claro (por ejemplo
+- Guarda cada captura en `~/sw-reports/img/` (NUNCA en el repo) con un nombre claro (por ejemplo
   `barra-superior-despues.png`) y haz commit + push, para que el Taller también las vea.
 - Un cambio visual queda "aprobado" solo cuando el CEO dice que sí; anótalo en el informe con su
   captura. Si dice que no, vuelve al código y repite.
 
 ## Reglas duras
+- PRIVACIDAD DEL CEO (el repo es PÚBLICO y la marca es anónima): NUNCA subas pantallazos ni informes al
+  repo. Los pantallazos muestran su nombre, su foto, su calendario y su red WiFi. Guárdalos en
+  `~/sw-reports/` en este equipo y avisa al Taller; el Taller los pasa a un lugar privado. En los
+  commits solo va código.
 - Git: trabajas SOLO en la rama `feat/v094` del repo `secondwindformac/second-wind`. Nunca `main`,
   nunca tags, nunca releases, nunca force-push.
 - Identidad de los commits: `git config user.name "Second Wind"` y
@@ -101,7 +105,7 @@ una app, botón "Buscar actualizaciones"), "Tu Mac" (`bin/second-wind-mymac`), h
 `./verify.sh` completo.
 
 ## Entrega
-Escribe `docs/reports/air-2026-09-23.md` en la rama: qué probaste, qué funcionó, qué no, la causa
+Escribe el informe en `~/sw-reports/` (NUNCA en el repo): qué probaste, qué funcionó, qué no, la causa
 del WiFi, qué cambiaste (con los commits) y capturas guardadas en `docs/reports/img/`. Commit +
 push a `feat/v094`. Al terminar, dile al CEO en dos o tres frases qué quedó listo y qué falta, y
 que le avise al Taller.
