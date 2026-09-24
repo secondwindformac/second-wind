@@ -42,8 +42,8 @@ dconf_track /org/gnome/shell/extensions/user-theme/name "'SecondWind-$SW_SHELL_V
 # Apple. (That fallback only ever appeared when the custom icon failed to apply
 # in a stale shell; the firstboot reboot makes it apply reliably.) The icon
 # matches the bar: white strokes on the dark bar, dark on the light one.
-LOGO_ICON="command-symbolic.svg"
-[ "$SW_SHELL_VARIANT" = "Dark" ] && LOGO_ICON="command-symbolic-white.svg"
+# White ⌘ in both variants: the bar is dark either way (see 20-look).
+LOGO_ICON="command-symbolic-white.svg"
 if [ "$DRY_RUN" != 1 ]; then
   install -d "$SW_SHARE"
   cp "$SW_ROOT/assets/command-symbolic.svg" "$SW_ROOT/assets/command-symbolic-white.svg" "$SW_SHARE/"

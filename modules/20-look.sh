@@ -41,8 +41,12 @@ else
         Q_MOD='rgba(255, 255, 255, 0.08)'; Q_MOD_H='rgba(255, 255, 255, 0.14)'
         Q_ICON='rgba(255, 255, 255, 0.14)'; S_TRACK='rgba(255, 255, 255, 0.16)'
       else
-        P_BG='rgba(247, 247, 249, 0.78)'; P_FG='#1d1d1f'
-        P_HOVER='rgba(0, 0, 0, 0.08)';  P_ACTIVE='rgba(0, 0, 0, 0.14)'
+        # The top bar is DARK in practice: Blur my Shell paints it with the
+        # wallpaper blurred and dimmed to 60 %, so black text had no contrast
+        # (CEO, Air 24-Sep). White text + a dark translucent fallback, which
+        # also reads well if the blur is ever off. (Menus stay light.)
+        P_BG='rgba(20, 20, 25, 0.30)'; P_FG='#ffffff'
+        P_HOVER='rgba(255, 255, 255, 0.16)'; P_ACTIVE='rgba(255, 255, 255, 0.24)'
         Q_BG='rgba(228, 228, 232, 0.94)'; Q_BORDER='rgba(0, 0, 0, 0.09)'
         Q_FG='#1d1d1f'; Q_SUB='rgba(0, 0, 0, 0.5)'
         Q_MOD='rgba(255, 255, 255, 0.55)'; Q_MOD_H='rgba(255, 255, 255, 0.75)'

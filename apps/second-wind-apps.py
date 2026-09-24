@@ -555,7 +555,7 @@ class Store(Adw.Application):
         app_id, name, kind, ref, _dom, desc, default = app
         # Something already on this machine shouldn't come pre-checked
         # (only probed for default entries, to keep startup snappy).
-        if default and kind != "web" and self.installed(kind, ref, app_id):
+        if default and self.installed(kind, ref, app_id):
             default = False
         # Until (or unless) the real icon arrives: a colored initial, never a
         # generic gear — a grid of gears reads as "broken" (Air, 23-Sep).
@@ -641,6 +641,9 @@ class Store(Adw.Application):
         if kind == "deb" and app_id in self.DEB_PKGS:
             return not subprocess.run(["dpkg", "-s", self.DEB_PKGS[app_id]],
                                       capture_output=True).returncode
+        if kind == "web":   # a web app is its launcher (Air: WhatsApp came pre-checked again)
+            return os.path.exists(os.path.expanduser(
+                f"~/.local/share/applications/secondwind-{app_id}.desktop"))
         return False
 
     def worker(self, sel):
