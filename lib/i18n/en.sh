@@ -22,7 +22,7 @@ Everything can be reverted later with ./uninstall.sh"
 
   • MacBook hardware fixes (FaceTime HD camera, fan, F-keys)
   • macOS-style login screen"
-  [ask_chrome]="To dress Chrome like a Mac (red/yellow/green buttons on the left) it must be closed for a moment. Your tabs come back when you reopen it normally.
+  [ask_chrome]="To dress Chrome like a Mac (red/yellow/green buttons on the left) it must be closed for a moment. To get your tabs back after reopening it: menu ⋮ → History → recently closed.
 
 Close Chrome now?"
   [ask_autologin]="Your computer signs in without a password (automatic login), which is why Ubuntu sometimes asks to unlock the 'keyring'.
@@ -136,7 +136,7 @@ Log out now? (Save your open work first)"
   [m55_ff_dry]="WOULD DO: install the MacTahoe theme for Firefox"
   [m55_ff_ok]="Firefox dressed like a Mac (reopen it to see it)"
   [m55_ff_err]="Could not apply the Firefox theme"
-  [ask_firefox]="To dress Firefox like a Mac (red/yellow/green buttons) it must be closed for a moment. Your tabs come back when you reopen it.
+  [ask_firefox]="To dress Firefox like a Mac (red/yellow/green buttons) it must be closed for a moment. To get your tabs back after reopening it: menu ☰ → History → Restore previous session.
 
 Close Firefox now?"
   [m55_ff_open]="Firefox is open and cannot be themed while running. Close it and run:  ./install.sh --only browsers"

@@ -22,7 +22,7 @@ Todo se puede revertir después con ./uninstall.sh"
 
   • Arreglos de hardware del MacBook (cámara FaceTime HD, ventilador, teclas F)
   • Pantalla de inicio de sesión estilo macOS"
-  [ask_chrome]="Para vestir Chrome como Mac (botones rojo/amarillo/verde a la izquierda) hay que cerrarlo un momento. Tus pestañas vuelven al reabrirlo con normalidad.
+  [ask_chrome]="Para vestir Chrome como Mac (botones rojo/amarillo/verde a la izquierda) hay que cerrarlo un momento. Para recuperar tus pestañas, al reabrirlo: menú ⋮ → Historial → pestañas cerradas recientemente.
 
 ¿Cierro Chrome ahora?"
   [ask_autologin]="Tu equipo entra sin pedir contraseña (inicio de sesión automático), y por eso Ubuntu pide a veces desbloquear el 'llavero'.
@@ -136,7 +136,7 @@ Todo se puede revertir después con ./uninstall.sh"
   [m55_ff_dry]="HARÍA: instalar el tema MacTahoe para Firefox"
   [m55_ff_ok]="Firefox vestido como Mac (reábrelo para verlo)"
   [m55_ff_err]="No se pudo aplicar el tema de Firefox"
-  [ask_firefox]="Para vestir Firefox como Mac (botones rojo/amarillo/verde) hay que cerrarlo un momento. Tus pestañas vuelven al reabrirlo.
+  [ask_firefox]="Para vestir Firefox como Mac (botones rojo/amarillo/verde) hay que cerrarlo un momento. Para recuperar tus pestañas, al reabrirlo: menú ☰ → Historial → Restaurar sesión anterior.
 
 ¿Cierro Firefox ahora?"
   [m55_ff_open]="Firefox está abierto y no se puede vestir en caliente. Ciérralo y ejecuta:  ./install.sh --only browsers"
