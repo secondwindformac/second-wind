@@ -388,7 +388,7 @@ class Store(Adw.Application):
         self.count()
         threading.Thread(target=self.icons_worker, daemon=True).start()
 
-    # --- Header: Mac Experience pill (left) + "⋯" menu (right) --------------
+    # --- Header: title (left) · Mac Experience pill + "⋯" menu (right) ------
     # CEO review on the Air (24-Sep): the project options (updates, help,
     # Mac Experience, notices) sat under the whole catalog and were never
     # found; a block of them on top was too heavy. Mac apps put them in the
@@ -401,7 +401,10 @@ class Store(Adw.Application):
             return "?"
 
     def header(self):
-        hb = Adw.HeaderBar()
+        hb = Adw.HeaderBar(show_title=False)
+        # Title on the left, next to the window buttons (CEO, 24-Sep).
+        hb.pack_start(Gtk.Label(label=T["title"], css_classes=["heading"],
+                                margin_start=6))
 
         # Mac Experience: status at a glance, a popover to buy or activate.
         pop = Gtk.Popover()
@@ -424,7 +427,6 @@ class Store(Adw.Application):
         pop.set_child(box)
         self.exp_pill = Gtk.MenuButton(popover=pop, css_classes=["exp-pill"],
                                        tooltip_text=T["exp_title"])
-        hb.pack_start(self.exp_pill)
         self.exp_refresh()
 
         # Everything else, one click away and out of the catalog's way.
@@ -460,6 +462,7 @@ class Store(Adw.Application):
         more = Gtk.MenuButton(icon_name="view-more-symbolic", menu_model=menu,
                               tooltip_text=T["more"])
         hb.pack_end(more)
+        hb.pack_end(self.exp_pill)   # just left of ⋯ (pack_end goes right-to-left)
         return hb
 
     def on_about(self, *_):
