@@ -155,6 +155,13 @@ if python3 lib/manifest.py has-note "swap-resized" 2>/dev/null \
   fi
 fi
 
+# Toshy: our ⌘⇧5 → screen-recording block (45-keyboard), between its markers
+TOSHY_CFG="$HOME/.config/toshy/toshy_config.py"
+if [ -f "$TOSHY_CFG" ] && grep -q '# >>> Second Wind: record' "$TOSHY_CFG"; then
+  sed -i '/# >>> Second Wind: record/,/# <<< Second Wind: record/d' "$TOSHY_CFG"
+  systemctl --user restart toshy-config.service >/dev/null 2>&1 || true
+fi
+
 # Title bars set by second-wind-titlebars (Chrome family, OnlyOffice, VS Code):
 # put back each app's original value (it recorded them).
 "$SW_ROOT/bin/second-wind-titlebars" --undo 2>/dev/null || true

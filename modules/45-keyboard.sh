@@ -55,4 +55,35 @@ if [ "$DRY_RUN" != 1 ]; then
   systemctl --user enable --now toshy-config.service toshy-session-monitor.service >/dev/null 2>&1 || true
 fi
 
+# 4) ⌘⇧5 like on a Mac: GNOME's capture panel straight in VIDEO mode
+# (Ctrl+Shift+Alt+R, no time limit in GNOME 46). Toshy maps ⌘⇧3 (whole
+# screen) and ⌘⇧4 (pick an area) Mac-style already, but sends ⌘⇧5 to the
+# same panel as ⌘⇧4, in photo mode (CEO, Air 24-Sep). Written inside Toshy's
+# own "user_apps" slice — kept across Toshy upgrades, and evaluated before
+# Toshy's screenshot keymaps, so it wins. Idempotent (marker lines).
+TOSHY_CFG="$HOME/.config/toshy/toshy_config.py"
+if [ "$DRY_RUN" != 1 ] && [ -f "$TOSHY_CFG" ] && ! grep -q '# >>> Second Wind: record' "$TOSHY_CFG"; then
+  cp "$TOSHY_CFG" "$SW_STATE/toshy_config.before-record.py"
+  python3 - "$TOSHY_CFG" <<'PY' && systemctl --user restart toshy-config.service >/dev/null 2>&1 || warn "⌘⇧5 → screen recording: not added"
+import sys
+p = sys.argv[1]
+s = open(p).read()
+mark = "###  SLICE_MARK_START: user_apps  ###"
+i = s.index(mark)
+i = s.index("\n", i) + 1
+block = """
+# >>> Second Wind: record — ⌘⇧5 opens GNOME's capture panel in video mode
+if DESKTOP_ENV == 'gnome':
+    keymap("Second Wind: screen recording", {
+        C("RC-Shift-Key_5"):        C("C-Shift-Alt-r"),
+    }, when = lambda ctx:
+        cnfg.screen_has_focus and
+        not ctx_app_is_remote
+    )
+# <<< Second Wind: record
+"""
+open(p, "w").write(s[:i] + block + s[i:])
+PY
+fi
+
 info "${MSG[m45_done]}"
