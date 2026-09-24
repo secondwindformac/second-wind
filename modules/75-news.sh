@@ -58,8 +58,15 @@ case "${LANG:-en}" in
     T_SUP="Support"; T_NO="Don't show again" ;;
 esac
 
-# (a) Update notice — silent no-op while the repository is private
-LATEST="$(curl -fsSL -m 10 "$REPO_API" 2>/dev/null | grep -m1 '"tag_name"' | cut -d'"' -f4)"
+# (a) Update notice — silent no-op while the repository is private.
+# Machines installed from the USB have the real updater, which already shows
+# its own "improvement ready" notice with an Update button (Air, 24-Sep: the
+# person got both). This one is only for installs the updater does not manage
+# (git clones).
+case "$(cat "$NEWS/updater" 2>/dev/null)" in
+  /usr/local/share/second-wind/*) LATEST="" ;;
+  *) LATEST="$(curl -fsSL -m 10 "$REPO_API" 2>/dev/null | grep -m1 '"tag_name"' | cut -d'"' -f4)" ;;
+esac
 if [ -n "$LATEST" ] && [ "$LATEST" != "$(cat "$NEWS/last-seen-release" 2>/dev/null)" ]; then
   echo "$LATEST" > "$NEWS/last-seen-release"
   R=$(notify-send -a "Second Wind" -i software-update-available \
