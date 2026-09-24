@@ -100,3 +100,30 @@ PY
     ok "${MSG[m55_chrome_ok]}"
   fi
 fi
+
+# --- Mac window buttons for apps installed LATER (Chrome, WhatsApp web app,
+# Chromium/Brave/Edge, Firefox, OnlyOffice, VS Code): the steps above only
+# see what exists right now. second-wind-titlebars re-applies them at every
+# login and after Second Wind Apps installs something (Air, 24-Sep: Chrome
+# installed afterwards kept its grey buttons). Undone by uninstall.sh. ---
+TB="$SW_SHARE/bin/second-wind-titlebars"
+TB_AUTOSTART="$HOME/.config/autostart/secondwind-titlebars.desktop"
+if [ "$DRY_RUN" = 1 ]; then
+  info "${MSG[m55_tb_dry]}"
+else
+  install -D -m 0755 "$SW_ROOT/bin/second-wind-titlebars" "$TB" && track_new_file "$TB"
+  mkdir -p "$(dirname "$TB_AUTOSTART")"
+  cat > "$TB_AUTOSTART" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=Second Wind (Mac window buttons)
+Comment=Mac-style title bars for apps installed later
+Exec=$TB --quiet
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
+Terminal=false
+DESKTOP
+  track_new_file "$TB_AUTOSTART"
+  "$TB" || true
+  ok "${MSG[m55_tb_ok]}"
+fi

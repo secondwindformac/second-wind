@@ -155,6 +155,10 @@ if python3 lib/manifest.py has-note "swap-resized" 2>/dev/null \
   fi
 fi
 
+# Title bars set by second-wind-titlebars (Chrome family, OnlyOffice, VS Code):
+# put back each app's original value (it recorded them).
+"$SW_ROOT/bin/second-wind-titlebars" --undo 2>/dev/null || true
+
 # Chrome: restore its window preference (only if we touched it and it is closed)
 if python3 lib/manifest.py has-note "chrome-patched" 2>/dev/null; then
   if pgrep -x chrome >/dev/null 2>&1; then

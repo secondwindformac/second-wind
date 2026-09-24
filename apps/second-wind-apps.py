@@ -603,6 +603,9 @@ class Store(Adw.Application):
                 for aid, _p in debs:
                     mf("note", f"app-{aid}")
 
+        # Just-installed apps (e.g. Chrome, WhatsApp) get the Mac window
+        # buttons right away, not only at the next login.
+        subprocess.run([os.path.join(SW_ROOT, "bin", "second-wind-titlebars"), "--quiet"])
         GLib.idle_add(self.finish, fails)
 
     def finish(self, fails):

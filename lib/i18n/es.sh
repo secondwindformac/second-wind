@@ -140,6 +140,8 @@ Todo se puede revertir después con ./uninstall.sh"
 
 ¿Cierro Firefox ahora?"
   [m55_ff_open]="Firefox está abierto y no se puede vestir en caliente. Ciérralo y ejecuta:  ./install.sh --only browsers"
+  [m55_tb_dry]="HARÍA: botones de Mac también para apps que se instalen después (Chrome, OnlyOffice, VS Code…), en cada inicio de sesión"
+  [m55_tb_ok]="Botones de Mac para Chrome, OnlyOffice, VS Code y las apps que instales después (se revisa en cada inicio de sesión)"
   [m55_no_ff]="Firefox no está instalado; nada que hacer con él."
   [m55_no_chrome]="Chrome no está instalado; nada que hacer con él."
   [m55_chrome_dry]="HARÍA: activar en Chrome la barra de título del sistema (botones Mac a la izquierda)"

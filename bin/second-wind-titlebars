@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+"""second-wind-titlebars — Mac window buttons (red/yellow/green) for apps that
+draw their own title bar but have a "use the system title bar" option.
+
+Runs at every login (autostart, from 55-browsers) and right after Second Wind
+Apps installs something, so apps installed LATER get it too. (Real case, Air,
+24-Sep-2026: Chrome was installed after 55-browsers ran — "Chrome is not
+installed" in the log — and kept its own grey buttons.)
+
+Rules: an app is only touched while it is CLOSED (they rewrite their settings
+on exit); the original value is recorded once in
+~/.local/state/second-wind/titlebars-before.json so `--undo` (uninstall.sh)
+puts it back exactly. Apps with no such option (Electron apps like Spotify or
+Claude) cannot be changed from outside and are left alone.
+"""
+import glob
+import json
+import os
+import subprocess
+import sys
+
+HOME = os.path.expanduser("~")
+STATE = os.path.join(HOME, ".local/state/second-wind")
+RECORD = os.path.join(STATE, "titlebars-before.json")
+ABSENT = "__absent__"
+
+# Chromium family: Preferences → browser.custom_chrome_frame = false makes
+# them use the system (GTK) title bar, i.e. the theme's Mac buttons. Chrome
+# web apps (WhatsApp, --app=...) follow their browser's setting.
+CHROMIUMS = [
+    # (config dir, process names, installed-if any of these exists)
+    (".config/google-chrome", ["chrome"], ["/usr/bin/google-chrome", "/opt/google/chrome/chrome"]),
+    (".config/chromium", ["chromium", "chromium-browse"], ["/usr/bin/chromium", "/usr/bin/chromium-browser"]),
+    ("snap/chromium/common/chromium", ["chromium", "chrome"], ["/snap/bin/chromium"]),
+    (".config/BraveSoftware/Brave-Browser", ["brave"], ["/usr/bin/brave-browser", "/opt/brave.com"]),
+    (".config/microsoft-edge", ["msedge"], ["/usr/bin/microsoft-edge", "/opt/microsoft/msedge"]),
+]
+ONLYOFFICE = [
+    # QSettings file; "Use system window title bar" in its settings writes
+    # titlebar=system (default: custom).
+    (".config/onlyoffice/DesktopEditors.conf", ["/usr/bin/onlyoffice-desktopeditors", "/opt/onlyoffice"]),
+    ("snap/onlyoffice-desktopeditors/current/.config/onlyoffice/DesktopEditors.conf",
+     ["/snap/onlyoffice-desktopeditors/current"]),
+]
+VSCODES = [
+    (".config/Code/User/settings.json", ["code"], ["/usr/bin/code", "/snap/bin/code"]),
+    (".config/VSCodium/User/settings.json", ["codium"], ["/usr/bin/codium", "/snap/bin/codium"]),
+]
+
+
+def running(names):
+    return any(subprocess.run(["pgrep", "-x", n], capture_output=True).returncode == 0
+               for n in names)
+
+
+def installed(paths):
+    return any(os.path.exists(p) for p in paths)
+
+
+def load_record():
+    try:
+        with open(RECORD) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_record(rec):
+    os.makedirs(STATE, exist_ok=True)
+    tmp = RECORD + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(rec, f, indent=1)
+    os.replace(tmp, RECORD)
+
+
+def write_json(path, data):
+    tmp = path + ".secondwind.tmp"
+    with open(tmp, "w") as f:
+        json.dump(data, f)
+    os.replace(tmp, path)
+
+
+def chromium_profiles(base):
+    found = sorted(glob.glob(os.path.join(base, "Default", "Preferences"))
+                   + glob.glob(os.path.join(base, "Profile *", "Preferences")))
+    return found
+
+
+def do_chromium(rec, log):
+    for rel, procs, bins in CHROMIUMS:
+        if not installed(bins):
+            continue
+        base = os.path.join(HOME, rel)
+        if running(procs):
+            log(f"{rel}: open, will retry at next login")
+            continue
+        prefs = chromium_profiles(base)
+        if not prefs:
+            # Installed but never opened: seed the profile so the very first
+            # window already has the Mac buttons (Chrome merges this file).
+            p = os.path.join(base, "Default", "Preferences")
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            rec.setdefault(p, ABSENT + ":file")
+            write_json(p, {"browser": {"custom_chrome_frame": False}})
+            log(f"{p}: seeded")
+            continue
+        for p in prefs:
+            try:
+                with open(p) as f:
+                    d = json.load(f)
+            except (OSError, ValueError):
+                continue
+            cur = d.get("browser", {}).get("custom_chrome_frame", ABSENT)
+            if cur is False:
+                continue
+            rec.setdefault(p, cur)
+            d.setdefault("browser", {})["custom_chrome_frame"] = False
+            write_json(p, d)
+            log(f"{p}: custom_chrome_frame {cur} -> false")
+
+
+def do_onlyoffice(rec, log):
+    for rel, bins in ONLYOFFICE:
+        if not installed(bins):
+            continue
+        if running(["DesktopEditors"]):
+            log("onlyoffice: open, will retry at next login")
+            continue
+        p = os.path.join(HOME, rel)
+        lines = []
+        if os.path.exists(p):
+            with open(p) as f:
+                lines = f.read().splitlines()
+        cur = next((l.split("=", 1)[1] for l in lines if l.startswith("titlebar=")), ABSENT)
+        if cur == "system":
+            continue
+        rec.setdefault(p, (ABSENT + ":file") if not os.path.exists(p) else cur)
+        lines = [l for l in lines if not l.startswith("titlebar=")]
+        if "[General]" not in lines:
+            lines = ["[General]"] + lines
+        lines.insert(lines.index("[General]") + 1, "titlebar=system")
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p + ".secondwind.tmp", "w") as f:
+            f.write("\n".join(lines) + "\n")
+        os.replace(p + ".secondwind.tmp", p)
+        log(f"{p}: titlebar {cur} -> system")
+
+
+def do_vscode(rec, log):
+    for rel, procs, bins in VSCODES:
+        if not installed(bins) or running(procs):
+            continue
+        p = os.path.join(HOME, rel)
+        try:
+            with open(p) as f:
+                d = json.load(f)   # a settings.json with comments is left alone
+        except FileNotFoundError:
+            d = None
+        except (OSError, ValueError):
+            continue
+        cur = ABSENT if d is None else d.get("window.titleBarStyle", ABSENT)
+        if cur == "native":
+            continue
+        rec.setdefault(p, (ABSENT + ":file") if d is None else cur)
+        d = d or {}
+        d["window.titleBarStyle"] = "native"
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        write_json(p, d)
+        log(f"{p}: window.titleBarStyle {cur} -> native")
+
+
+def do_firefox(rec, log):
+    # Firefox has no title-bar option; the Mac look is MacTahoe's Firefox
+    # theme (what 55-browsers installs). Profiles that appear later (Firefox
+    # installed or first opened after Second Wind) get it here. MacTahoe's
+    # installer runs `killall firefox`, so only while Firefox is closed.
+    theme = os.path.join(STATE, "cache", "MacTahoe-gtk-theme")
+    homes = [".mozilla/firefox", "snap/firefox/common/.mozilla/firefox",
+             ".var/app/org.mozilla.firefox/.mozilla/firefox"]
+    need = [h for h in homes
+            if os.path.exists(os.path.join(HOME, h, "profiles.ini"))
+            and any(not os.path.exists(os.path.join(d, "chrome"))
+                    for d in glob.glob(os.path.join(HOME, h, "*default*")))]
+    if not need or not os.path.isdir(theme):
+        return
+    if running(["firefox", "firefox-bin"]):
+        log("firefox: open, will retry at next login")
+        return
+    r = subprocess.run(["./tweaks.sh", "-f"], cwd=theme, capture_output=True)
+    log(f"firefox: MacTahoe theme {'installed' if r.returncode == 0 else 'FAILED'}")
+
+
+def undo(log):
+    rec = load_record()
+    left = {}
+    for p, before in rec.items():
+        try:
+            if before == ABSENT + ":file":
+                os.remove(p)
+                log(f"{p}: removed (we created it)")
+            elif p.endswith("Preferences") or p.endswith("settings.json"):
+                with open(p) as f:
+                    d = json.load(f)
+                if p.endswith("Preferences"):
+                    b = d.setdefault("browser", {})
+                    if before == ABSENT:
+                        b.pop("custom_chrome_frame", None)
+                    else:
+                        b["custom_chrome_frame"] = before
+                else:
+                    if before == ABSENT:
+                        d.pop("window.titleBarStyle", None)
+                    else:
+                        d["window.titleBarStyle"] = before
+                write_json(p, d)
+                log(f"{p}: restored")
+            else:
+                with open(p) as f:
+                    lines = [l for l in f.read().splitlines() if not l.startswith("titlebar=")]
+                if before != ABSENT and "[General]" in lines:
+                    lines.insert(lines.index("[General]") + 1, f"titlebar={before}")
+                with open(p, "w") as f:
+                    f.write("\n".join(lines) + "\n")
+                log(f"{p}: restored")
+        except FileNotFoundError:
+            pass
+        except (OSError, ValueError):
+            left[p] = before   # keep it for a later attempt (e.g. app was open)
+    save_record(left) if left else (os.path.exists(RECORD) and os.remove(RECORD))
+
+
+def main():
+    quiet = "--quiet" in sys.argv
+    log = (lambda m: None) if quiet else (lambda m: print("  " + m))
+    if "--undo" in sys.argv:
+        undo(log)
+        return 0
+    rec = load_record()
+    for step in (do_chromium, do_firefox, do_onlyoffice, do_vscode):
+        try:
+            step(rec, log)
+        except Exception as e:   # one app must never block the others
+            log(f"{step.__name__}: {e}")
+    if rec:
+        save_record(rec)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

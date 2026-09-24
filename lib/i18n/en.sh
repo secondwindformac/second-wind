@@ -140,6 +140,8 @@ Log out now? (Save your open work first)"
 
 Close Firefox now?"
   [m55_ff_open]="Firefox is open and cannot be themed while running. Close it and run:  ./install.sh --only browsers"
+  [m55_tb_dry]="WOULD: Mac window buttons also for apps installed later (Chrome, OnlyOffice, VS Code…), at every login"
+  [m55_tb_ok]="Mac window buttons for Chrome, OnlyOffice, VS Code and apps you install later (checked at every login)"
   [m55_no_ff]="Firefox is not installed; nothing to do with it."
   [m55_no_chrome]="Chrome is not installed; nothing to do with it."
   [m55_chrome_dry]="WOULD DO: enable Chrome's system title bar (Mac buttons on the left)"
