@@ -27,19 +27,25 @@ STATE = os.path.join(HOME, ".local/state/second-wind")
 RECORD = os.path.join(STATE, "titlebars-before.json")
 ABSENT = "__absent__"
 
-# Chromium family. Two prefs make it use the theme's Mac buttons:
-#  - browser.custom_chrome_frame = false: the system title bar (enough on X11);
-#  - GTK mode (extensions.theme.system_theme = 1, no theme id): recent Chrome
-#    on Wayland always draws its own frame, and only in GTK mode does it paint
-#    the window buttons from the GTK theme (Air, Chrome 154: with the first pref
-#    alone it kept its grey ✕ – □). Replaces a color theme the person picked;
-#    the original values are recorded and --undo brings it back.
-# Chrome web apps (WhatsApp, --app=...) follow their browser's settings.
+# Chromium family: browser.custom_chrome_frame = false asks for the system
+# title bar. On Wayland recent Chrome (154 on the Air) ignores it and always
+# draws its own grey ✕ – □; switching it to GTK mode does not stick either
+# (a signed-in Chrome re-applies the account's synced color theme). What
+# works: run it through XWayland (--ozone-platform=x11), where GNOME draws
+# the title bar with the theme's red/yellow/green buttons and the person's
+# own color theme stays. So the pref + that flag on every Chromium launcher
+# (dock/app grid entries, the default-browser entry used by links, and
+# Chrome web apps such as WhatsApp).
 CHROME_PREFS = {
     "browser.custom_chrome_frame": False,
-    "extensions.theme.system_theme": 1,
-    "extensions.theme.id": "",
 }
+X11_FLAG = "--ozone-platform=x11"
+CHROMIUM_DESKTOPS = ["google-chrome.desktop", "com.google.Chrome.desktop",
+                     "chromium.desktop", "chromium-browser.desktop",
+                     "chromium_chromium.desktop", "brave-browser.desktop",
+                     "microsoft-edge.desktop"]
+CHROMIUM_BINS = ("google-chrome", "chrome", "chromium", "chromium-browser",
+                 "brave-browser", "brave", "microsoft-edge", "msedge")
 CHROMIUMS = [
     # (config dir, process names, installed-if any of these exists)
     (".config/google-chrome", ["chrome"], ["/usr/bin/google-chrome", "/opt/google/chrome/chrome"]),
@@ -169,6 +175,48 @@ def do_chromium(rec, log):
             log(f"{p}: " + ", ".join(f"{k} {b} -> {CHROME_PREFS[k]}" for k, b in changed.items()))
 
 
+def flag_exec(line):
+    """Exec=/usr/bin/google-chrome-stable %U → add the X11 flag after the binary."""
+    cmd = line[len("Exec="):].split()
+    if X11_FLAG in cmd:
+        return line
+    for i, word in enumerate(cmd):
+        if os.path.basename(word).replace("-stable", "") in CHROMIUM_BINS:
+            return "Exec=" + " ".join(cmd[:i + 1] + [X11_FLAG] + cmd[i + 1:])
+    return line
+
+
+def do_chromium_launchers(rec, log):
+    apps = os.path.join(HOME, ".local/share/applications")
+    targets = []
+    for name in CHROMIUM_DESKTOPS:
+        local, system = os.path.join(apps, name), None
+        for d in ("/usr/share/applications", "/var/lib/snapd/desktop/applications"):
+            if os.path.exists(os.path.join(d, name)):
+                system = os.path.join(d, name)
+        if os.path.exists(local) or system:
+            targets.append((local, system))
+    # Chrome web apps made by Second Wind Apps (secondwind-*.desktop, --app=...)
+    for local in glob.glob(os.path.join(apps, "secondwind-*.desktop")):
+        targets.append((local, None))
+    for local, system in targets:
+        src = local if os.path.exists(local) else system
+        try:
+            with open(src) as f:
+                lines = f.read().splitlines()
+        except OSError:
+            continue
+        new = [flag_exec(l) if l.startswith("Exec=") else l for l in lines]
+        if new == lines:
+            continue
+        rec.setdefault(local, "__flag__" if os.path.exists(local) else ABSENT + ":file")
+        os.makedirs(apps, exist_ok=True)
+        with open(local + ".secondwind.tmp", "w") as f:
+            f.write("\n".join(new) + "\n")
+        os.replace(local + ".secondwind.tmp", local)
+        log(f"{local}: {X11_FLAG}")
+
+
 def do_onlyoffice(rec, log):
     for rel, bins in ONLYOFFICE:
         if not installed(bins):
@@ -252,6 +300,12 @@ def undo(log):
             if before == ABSENT + ":file":
                 os.remove(p)
                 log(f"{p}: removed (we created it)")
+            elif before == "__flag__":
+                with open(p) as f:
+                    txt = f.read()
+                with open(p, "w") as f:
+                    f.write(txt.replace(" " + X11_FLAG, ""))
+                log(f"{p}: {X11_FLAG} removed")
             elif p.endswith("Preferences") or p.endswith("settings.json"):
                 with open(p) as f:
                     d = json.load(f)
@@ -289,7 +343,7 @@ def main():
         undo(log)
         return 0
     rec = load_record()
-    for step in (do_chromium, do_firefox, do_onlyoffice, do_vscode):
+    for step in (do_chromium, do_chromium_launchers, do_firefox, do_onlyoffice, do_vscode):
         try:
             step(rec, log)
         except Exception as e:   # one app must never block the others
