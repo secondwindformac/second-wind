@@ -123,8 +123,7 @@ def set_key(d, dotted, value):
 
 def applied_before(old):
     # dict = values recorded by this version; ABSENT:file = we created the file.
-    # A plain string is the record of the first version (frame pref only), so
-    # that profile still gets the GTK-mode part once.
+    # A plain string is the record of the first version (frame pref only).
     if old == ABSENT + ":file":
         return True
     return isinstance(old, dict) and all(k in old for k in CHROME_PREFS)
@@ -187,6 +186,9 @@ def flag_exec(line):
 
 
 def do_chromium_launchers(rec, log):
+    # Unlike the settings files, launchers are checked at EVERY login: they are
+    # not a personal choice, and 55-browsers regenerates google-chrome.desktop
+    # (VA-API flags) from the system file, which drops the X11 flag.
     apps = os.path.join(HOME, ".local/share/applications")
     targets = []
     for name in CHROMIUM_DESKTOPS:
