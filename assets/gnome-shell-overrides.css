@@ -19,7 +19,11 @@
   border-radius: 8px !important;
   color: @PANEL_FG@ !important;
 }
-#panel .panel-button StLabel {
+#panel .panel-button StLabel,
+#panel .sw-app-name {
+  /* .sw-app-name: the active app's name (secondwind-panel). It is a bare
+     label in the left box, not a panel button, so it missed the rule above
+     and stayed black on the dark bar (CEO, Air 24-Sep). */
   color: @PANEL_FG@ !important;
 }
 #panel .panel-button:hover {
