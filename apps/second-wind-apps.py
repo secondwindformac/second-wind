@@ -34,7 +34,7 @@ try:
     import gi
     gi.require_version("Gtk", "4.0")
     gi.require_version("Adw", "1")
-    from gi.repository import Adw, Gdk, GLib, Gtk  # noqa: E402
+    from gi.repository import Adw, Gdk, Gio, GLib, Gtk  # noqa: E402
 except Exception:
     if not PREFETCH:
         os.execv("/bin/bash", ["bash", os.path.join(SW_ROOT, "apps", "second-wind-apps.sh")])
@@ -149,6 +149,11 @@ T = {
                    "Finished with warnings — details in apps-gui.log"),
     "nothing": d("Marca al menos una app.", "Tick at least one app."),
     "g_support": d("El proyecto", "The project"),
+    "more": d("Más opciones", "More options"),
+    "about": d("Acerca de Second Wind Apps", "About Second Wind Apps"),
+    "about_sub": d("Apps para tu Mac, con un clic.", "Apps for your Mac, one click away."),
+    "exp_pill_trial": d("Mac Experience · {days} días", "Mac Experience · {days} days"),
+    "exp_pill_active": d("Mac Experience ✓", "Mac Experience ✓"),
     "donate": d("Apoyar Second Wind", "Support Second Wind"),
     "donate_sub": d("Donaciones y novedades", "Donations and news"),
     "news": d("Avisos de novedades y apoyo", "News and support notices"),
@@ -184,6 +189,11 @@ T = {
 }
 
 CSS = b"""
+headerbar menubutton.exp-pill > button {
+  border-radius: 999px; padding: 2px 12px; box-shadow: none;
+  background: alpha(@accent_bg_color, .14); color: @accent_color; font-weight: 600; }
+headerbar menubutton.exp-pill > button:hover { background: alpha(@accent_bg_color, .24); }
+headerbar menubutton.exp-pill > button:checked { background: alpha(@accent_bg_color, .30); }
 .app-card { border-radius: 14px; padding: 10px 6px; }
 .app-card:checked { background: alpha(@accent_bg_color, .18);
                     outline: 2px solid @accent_bg_color; outline-offset: -2px; }
@@ -327,65 +337,19 @@ class Store(Adw.Application):
         prov.load_from_data(CSS)
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(), prov,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+            # Above USER: the MacTahoe theme is linked into ~/.config/gtk-4.0
+            # (user priority) and would repaint our own classes (the pill came
+            # out plain white). Our CSS only targets the store's own classes.
+            Gtk.STYLE_PROVIDER_PRIORITY_USER + 1)
 
         self.win = Adw.ApplicationWindow(application=self, title=T["title"],
                                          default_width=680, default_height=760)
         view = Adw.ToolbarView()
-        view.add_top_bar(Adw.HeaderBar())
+        view.add_top_bar(self.header())
 
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6,
                        margin_top=6, margin_bottom=10, margin_start=18, margin_end=18)
 
-        # "The project" (updates, help, Mac Experience…) goes FIRST: at the bottom,
-        # under the whole catalog, the CEO never found it (Air, 24-Sep).
-        sup = Adw.PreferencesGroup(title=T["g_support"], margin_top=6, margin_bottom=4)
-        self.exp_row = Adw.ActionRow(title=T["exp_title"])
-        expkey = Gtk.Button(label=T["exp_key"], valign=Gtk.Align.CENTER)
-        expkey.connect("clicked", self.on_exp_key)
-        expbuy = Gtk.Button(label=T["exp_buy"], valign=Gtk.Align.CENTER,
-                            css_classes=["suggested-action"])
-        expbuy.connect("clicked", lambda *_: subprocess.Popen(
-            ["xdg-open", links()["EXPERIENCE_URL"]]))
-        self.exp_row.add_suffix(expkey)
-        self.exp_row.add_suffix(expbuy)
-        sup.add(self.exp_row)
-        self.exp_refresh()
-        helpr = Adw.ActionRow(title=T["help"], subtitle=T["help_sub"],
-                              activatable=True)
-        helpr.add_suffix(Gtk.Image.new_from_icon_name("help-browser-symbolic"))
-        helpr.connect("activated", lambda *_: subprocess.Popen(
-            ["xdg-open", links().get("SUPPORT_URL", links()["DONATE_URL"])]))
-        sup.add(helpr)
-        donate = Adw.ActionRow(title=T["donate"], subtitle=T["donate_sub"],
-                               activatable=True)
-        donate.add_suffix(Gtk.Image.new_from_icon_name("adw-external-link-symbolic"))
-        donate.connect("activated", lambda *_:
-                       subprocess.Popen(["xdg-open", links()["DONATE_URL"]]))
-        sup.add(donate)
-        try:
-            with open(os.path.join(SW_ROOT, "VERSION")) as f:
-                ver = f.read().strip()
-        except OSError:
-            ver = "?"
-        upd = Adw.ActionRow(title=T["upd"], subtitle=T["upd_sub"].format(v=ver),
-                            activatable=True)
-        upd.add_suffix(Gtk.Image.new_from_icon_name("software-update-available-symbolic"))
-        upd.connect("activated", lambda *_: subprocess.Popen(
-            ["bash", os.path.join(SW_ROOT, "bin", "second-wind-update"), "--manual"]))
-        sup.add(upd)
-        news = Adw.SwitchRow(title=T["news"], subtitle=T["news_sub"],
-                             active=not os.path.exists(
-                                 os.path.join(SW_STATE, "news-optout")))
-        news.connect("notify::active", self.on_news)
-        sup.add(news)
-        test = Adw.ActionRow(title=T["news_test"], subtitle=T["news_test_sub"],
-                             activatable=True)
-        test.add_suffix(Gtk.Image.new_from_icon_name("preferences-system-notifications-symbolic"))
-        test.connect("activated", lambda *_: subprocess.Popen(
-            ["bash", os.path.join(SW_STATE, "news", "second-wind-news.sh"), "--test"]))
-        sup.add(test)
-        body.append(sup)
         for _gid, gtitle, apps in CATALOG:
             head = Gtk.Label(label=gtitle, xalign=0,
                              css_classes=["heading"], margin_top=14)
@@ -423,7 +387,94 @@ class Store(Adw.Application):
         self.count()
         threading.Thread(target=self.icons_worker, daemon=True).start()
 
-    # --- Mac Experience row -------------------------------------------------
+    # --- Header: Mac Experience pill (left) + "⋯" menu (right) --------------
+    # CEO review on the Air (24-Sep): the project options (updates, help,
+    # Mac Experience, notices) sat under the whole catalog and were never
+    # found; a block of them on top was too heavy. Mac apps put them in the
+    # title bar: one discreet pill that sells, one ⋯ menu for the rest.
+    def version(self):
+        try:
+            with open(os.path.join(SW_ROOT, "VERSION")) as f:
+                return f.read().strip()
+        except OSError:
+            return "?"
+
+    def header(self):
+        hb = Adw.HeaderBar()
+
+        # Mac Experience: status at a glance, a popover to buy or activate.
+        pop = Gtk.Popover()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8,
+                      margin_top=12, margin_bottom=12, margin_start=14, margin_end=14,
+                      width_request=280)
+        box.append(Gtk.Label(label=T["exp_title"], xalign=0, css_classes=["title-4"]))
+        self.exp_lbl = Gtk.Label(xalign=0, wrap=True, max_width_chars=34,
+                                 css_classes=["dim-label"])
+        box.append(self.exp_lbl)
+        self.exp_btns = Gtk.Box(spacing=8, margin_top=4, homogeneous=True)
+        key = Gtk.Button(label=T["exp_key"])
+        key.connect("clicked", lambda *_: (pop.popdown(), self.on_exp_key()))
+        buy = Gtk.Button(label=T["exp_buy"], css_classes=["suggested-action"])
+        buy.connect("clicked", lambda *_: (pop.popdown(), subprocess.Popen(
+            ["xdg-open", links()["EXPERIENCE_URL"]])))
+        self.exp_btns.append(key)
+        self.exp_btns.append(buy)
+        box.append(self.exp_btns)
+        pop.set_child(box)
+        self.exp_pill = Gtk.MenuButton(popover=pop, css_classes=["exp-pill"],
+                                       tooltip_text=T["exp_title"])
+        hb.pack_start(self.exp_pill)
+        self.exp_refresh()
+
+        # Everything else, one click away and out of the catalog's way.
+        actions = {
+            "check-updates": lambda *_: subprocess.Popen(
+                ["bash", os.path.join(SW_ROOT, "bin", "second-wind-update"), "--manual"]),
+            "help": lambda *_: subprocess.Popen(
+                ["xdg-open", links().get("SUPPORT_URL", links()["DONATE_URL"])]),
+            "donate": lambda *_: subprocess.Popen(["xdg-open", links()["DONATE_URL"]]),
+            "news-test": lambda *_: subprocess.Popen(
+                ["bash", os.path.join(SW_STATE, "news", "second-wind-news.sh"), "--test"]),
+            "about": self.on_about,
+        }
+        for name, cb in actions.items():
+            act = Gio.SimpleAction.new(name, None)
+            act.connect("activate", cb)
+            self.add_action(act)
+        news = Gio.SimpleAction.new_stateful(
+            "news", None, GLib.Variant.new_boolean(
+                not os.path.exists(os.path.join(SW_STATE, "news-optout"))))
+        news.connect("change-state", self.on_news)
+        self.add_action(news)
+
+        menu = Gio.Menu()
+        for items in ([(T["upd"], "app.check-updates")],
+                      [(T["help"], "app.help"), (T["donate"], "app.donate")],
+                      [(T["news"], "app.news"), (T["news_test"], "app.news-test")],
+                      [(T["about"], "app.about")]):
+            sec = Gio.Menu()
+            for label, action in items:
+                sec.append(label, action)
+            menu.append_section(None, sec)
+        more = Gtk.MenuButton(icon_name="view-more-symbolic", menu_model=menu,
+                              tooltip_text=T["more"])
+        hb.pack_end(more)
+        return hb
+
+    def on_about(self, *_):
+        # The app icon ships as a file (~/.local/share/second-wind), not in an
+        # icon theme: let the About dialog find it by name.
+        Gtk.IconTheme.get_for_display(Gdk.Display.get_default()).add_search_path(
+            os.path.expanduser("~/.local/share/second-wind"))
+        about = Adw.AboutDialog(application_name="Second Wind Apps",
+                                application_icon="second-wind-apps",
+                                developer_name="Second Wind",
+                                version=self.version(),
+                                comments=T["about_sub"],
+                                website=links().get("SUPPORT_URL", links()["DONATE_URL"]))
+        about.present(self.win)
+
+    # --- Mac Experience state -----------------------------------------------
     def exp_bin(self):
         return os.path.join(SW_ROOT, "bin", "second-wind-experience")
 
@@ -438,11 +489,17 @@ class Store(Adw.Application):
     def exp_refresh(self):
         st, extra = self.exp_status()
         if st == "active":
-            self.exp_row.set_subtitle(T["exp_active"])
+            self.exp_pill.set_label(T["exp_pill_active"])
+            self.exp_lbl.set_label(T["exp_active"])
+            self.exp_btns.set_visible(False)
         elif st == "off":
-            self.exp_row.set_subtitle(T["exp_off"])
+            self.exp_pill.set_label(T["exp_title"])
+            self.exp_lbl.set_label(T["exp_off"])
+            self.exp_btns.set_visible(True)
         else:
-            self.exp_row.set_subtitle(T["exp_trial"].format(days=extra or "30"))
+            self.exp_pill.set_label(T["exp_pill_trial"].format(days=extra or "30"))
+            self.exp_lbl.set_label(T["exp_trial"].format(days=extra or "30"))
+            self.exp_btns.set_visible(True)
 
     def on_exp_key(self, *_):
         dlg = Adw.AlertDialog(heading=T["exp_key_head"], body=T["exp_key_body"])
@@ -529,9 +586,10 @@ class Store(Adw.Application):
         n = sum(1 for b, _i, _a in self.cards.values() if b.get_active())
         self.blabel.set_label(f"{T['install']} ({n})")
 
-    def on_news(self, row, _p):
+    def on_news(self, action, value):
+        action.set_state(value)
         flag = os.path.join(SW_STATE, "news-optout")
-        if row.get_active():
+        if value.get_boolean():
             try:
                 os.remove(flag)
             except FileNotFoundError:
