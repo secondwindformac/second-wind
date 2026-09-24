@@ -11,17 +11,25 @@
 #                 notification with an "Update now" button. Clicking it applies.
 #   --manual      the store's "Check for updates" button: same check, but it
 #                 always answers (up to date / offline) and applies at once.
-#   --apply       download + verify SHA-256, ONE system password dialog
+#   --apply       download + verify the release SIGNATURE, ONE system password dialog
 #                 (pkexec) to swap the payload, then a user-level refresh
 #                 (install.sh --yes --no-hardware, idempotent by design).
 #                 If the post-update health check (verify.sh) reports MORE
 #                 problems than before, it rolls back automatically and
 #                 refreshes again — the Mac ends the day working either way.
 #   --core-swap / --core-rollback   root halves (via pkexec), minimal on
-#                 purpose: verify, stage, atomic-ish directory swap. The
+#                 purpose: copy to a root-only dir, verify the signature
+#                 AGAIN (authoritative check), stage, atomic-ish swap. The
 #                 previous payload is kept at second-wind.prev until the next
 #                 successful update.
 set -u
+
+# Release signing key (minisign, Ed25519). The PRIVATE half lives only on the
+# owner's own computer, never on GitHub nor on the build server, so taking over
+# the GitHub organisation is NOT enough to push code to customer machines.
+# Same value as keys/second-wind-release.pub. Until the owner generates the
+# key this is a placeholder, and every update is refused (fail closed).
+RELEASE_PUBKEY="PLACEHOLDER-NO-RELEASE-KEY-YET--UPDATES-ARE-REFUSED"
 
 MANAGED_ROOT="/usr/local/share/second-wind"
 SW_STATE="$HOME/.local/state/second-wind"
@@ -39,6 +47,7 @@ case "${LANG:-en}" in
     T_UPTODATE="Ya tienes la versión más reciente de Second Wind (%s) ✓"
     T_FAILED="La mejora no se pudo instalar esta vez (¿se cortó internet o se canceló la contraseña?). Tu Mac sigue igual; puedes intentarlo de nuevo."
     T_OFFLINE="No pude revisar si hay mejoras. ¿Estás conectado a internet? Vuelve a intentarlo en un rato."
+    T_UNSIGNED="Llegó una mejora que no pudimos comprobar que venga de Second Wind, así que NO la instalamos. Tu Mac sigue igual y seguro."
     ;;
   *)
     T_READY="A Second Wind improvement is ready (version %s). It takes a few minutes, touches none of your files, and your Mac stays the same — just better."
@@ -49,20 +58,37 @@ case "${LANG:-en}" in
     T_UPTODATE="You already have the latest Second Wind (%s) ✓"
     T_FAILED="The improvement couldn't be installed this time (internet dropped, or the password was cancelled?). Your Mac is unchanged; you can try again."
     T_OFFLINE="Couldn't check for improvements. Are you connected to the internet? Try again in a while."
+    T_UNSIGNED="An improvement arrived that we could not confirm comes from Second Wind, so we did NOT install it. Your Mac is unchanged and safe."
     ;;
 esac
 
 log() { echo "$(date -Is) $*"; }
 
+# Signature checker, loaded from THIS script's own payload (root-owned on a
+# managed install), never from the downloaded update.
+# shellcheck source=../lib/release-verify.sh
+. "$(cd "$(dirname "$0")/.." && pwd)/lib/release-verify.sh" || { echo "release-verify missing"; exit 1; }
+
 # ---------- root halves (pkexec) ----------
 if [ "${1:-}" = "--core-swap" ]; then
   [ "$(id -u)" -eq 0 ] || { echo "--core-swap runs as root"; exit 1; }
-  TARBALL="$2"; SHA="$3"
-  echo "$SHA  $TARBALL" | sha256sum -c --quiet - || { echo "checksum mismatch"; exit 1; }
-  STAGING="/usr/local/share/.second-wind-staging"
+  TARBALL="${2:-}"; SIG="${3:-}"; VERSION_EXPECTED="${4:-}"
+  [[ "$VERSION_EXPECTED" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { echo "bad version"; exit 1; }
+  # Copy into a root-only directory FIRST, then verify and extract that copy:
+  # the originals sit in the user's folder and could be swapped between the
+  # check and the extraction.
+  VDIR="$(mktemp -d)" || exit 1; chmod 700 "$VDIR"
+  trap 'rm -rf "$VDIR"' EXIT
+  cp -- "$TARBALL" "$VDIR/payload.tar.gz" && cp -- "$SIG" "$VDIR/payload.minisig" \
+    || { echo "cannot read update files"; exit 1; }
+  sw_verify_release "$VDIR/payload.tar.gz" "$VDIR/payload.minisig" "$RELEASE_PUBKEY" \
+    "second-wind-$VERSION_EXPECTED.tar.gz" || { echo "SIGNATURE_REJECTED"; exit 3; }
+  STAGING="${MANAGED_ROOT%/*}/.second-wind-staging"
   rm -rf "$STAGING"; mkdir -p "$STAGING"
-  tar -xzf "$TARBALL" -C "$STAGING" --strip-components=1 || exit 1
-  [ -x "$STAGING/install.sh" ] || { echo "payload incomplete"; exit 1; }
+  tar -xzf "$VDIR/payload.tar.gz" -C "$STAGING" --strip-components=1 || { rm -rf "$STAGING"; exit 1; }
+  [ -x "$STAGING/install.sh" ] || { rm -rf "$STAGING"; echo "payload incomplete"; exit 1; }
+  [ "$(tr -d '[:space:]' < "$STAGING/VERSION" 2>/dev/null)" = "$VERSION_EXPECTED" ] \
+    || { rm -rf "$STAGING"; echo "payload VERSION mismatch"; exit 1; }
   rm -rf "$MANAGED_ROOT.prev"
   mv "$MANAGED_ROOT" "$MANAGED_ROOT.prev"
   mv "$STAGING" "$MANAGED_ROOT"
@@ -106,24 +132,39 @@ refresh_user_level() {
     >>"$LOGDIR/updater-refresh.log" 2>&1
 }
 
+say() { notify-send -a "Second Wind" -i "$1" "Second Wind" "$2" 2>/dev/null || true; }
+
+# URLs of the payload and its signature for version $1 in release JSON $2.
+asset_urls() {
+  tarball_url="$(echo "$2" | grep -o "https://[^\"]*/second-wind-$1\.tar\.gz\"" | head -1 | tr -d '"')"
+  sig_url="$(echo "$2" | grep -o "https://[^\"]*/second-wind-$1\.tar\.gz\.minisig\"" | head -1 | tr -d '"')"
+}
+
 apply_update() {
-  local version="$1" tarball_url="$2" sums_url="$3"
+  local version="$1" tarball_url="$2" sig_url="$3"
   local tarball="$UPD/second-wind-$version.tar.gz"
+  local sig="$tarball.minisig"
 
   notify-send -a "Second Wind" -i software-update-available "Second Wind" "$T_WORKING" 2>/dev/null || true
 
   curl -fsSL --retry 3 -m 600 -o "$tarball" "$tarball_url" || { log "download failed"; return 1; }
-  local sha
-  sha="$(curl -fsSL -m 60 "$sums_url" 2>/dev/null | awk -v f="second-wind-$version.tar.gz" '$2==f {print $1}')"
-  [ -n "$sha" ] || { log "no checksum for the payload"; return 1; }
-  echo "$sha  $tarball" | sha256sum -c --quiet - || { log "checksum mismatch"; rm -f "$tarball"; return 1; }
+  curl -fsSL --retry 3 -m 60 -o "$sig" "$sig_url" || { log "signature download failed"; rm -f "$tarball"; return 1; }
+  # Checked BEFORE anything is extracted or any password is asked. Without a
+  # valid signature nothing is touched.
+  if ! sw_verify_release "$tarball" "$sig" "$RELEASE_PUBKEY" "second-wind-$version.tar.gz"; then
+    log "SIGNATURE REJECTED for $version: nothing installed"
+    rm -f "$tarball" "$sig"
+    say dialog-warning-symbolic "$T_UNSIGNED"
+    REJECTED=1
+    return 1
+  fi
 
   local before after
   before="$(verify_failures)"
   log "pre-update verify failures: $before"
 
-  pkexec bash "$MANAGED_ROOT/bin/second-wind-update" --core-swap "$tarball" "$sha" \
-    || { log "swap declined or failed"; return 1; }
+  pkexec bash "$MANAGED_ROOT/bin/second-wind-update" --core-swap "$tarball" "$sig" "$version" \
+    || { log "swap declined or failed"; rm -f "$tarball" "$sig"; return 1; }
 
   refresh_user_level
   after="$(verify_failures)"
@@ -138,26 +179,24 @@ apply_update() {
     return 1
   fi
 
-  rm -f "$tarball"
+  rm -f "$tarball" "$sig"
   # shellcheck disable=SC2059
   notify-send -a "Second Wind" -i emblem-ok-symbolic "Second Wind" "$(printf "$T_DONE" "$version")" 2>/dev/null || true
   log "updated to $version"
 }
-
-say() { notify-send -a "Second Wind" -i "$1" "Second Wind" "$2" 2>/dev/null || true; }
 
 # check [manual] — the weekly timer calls it silently; the store's "Check for
 # updates" button passes "manual": the person asked, so every outcome gets an
 # answer (up to date / offline) and a newer version is applied right away
 # instead of asking a second time.
 check() {
-  local manual="${1:-}" release json latest current tarball_url sums_url
+  local manual="${1:-}" release json latest current tarball_url sig_url
   json="$(latest_release)" || {
     log "release check unreachable"
     [ -n "$manual" ] && say network-offline-symbolic "$T_OFFLINE"
     exit 0; }
   latest="$(echo "$json" | grep -m1 '"tag_name"' | sed 's/.*"v\{0,1\}\([0-9][^"]*\)".*/\1/')"
-  [ -n "$latest" ] || { log "no tag in response"; exit 0; }
+  [[ "$latest" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { log "no valid tag in response"; exit 0; }
   current="$(current_version)"
   newest="$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -1)"
   if [ "$latest" = "$current" ] || [ "$newest" = "$current" ]; then
@@ -167,17 +206,21 @@ check() {
     exit 0
   fi
 
-  tarball_url="$(echo "$json" | grep -o "https://[^\"]*second-wind-$latest\.tar\.gz" | head -1)"
-  sums_url="$(echo "$json" | grep -o 'https://[^"]*SHA256SUMS' | head -1)"
-  [ -n "$tarball_url" ] && [ -n "$sums_url" ] || {
+  asset_urls "$latest" "$json"
+  [ -n "$tarball_url" ] || {
     log "release assets incomplete"
     [ -n "$manual" ] && say network-offline-symbolic "$T_OFFLINE"
     exit 0; }
+  # Unsigned release: never offered, never installed.
+  [ -n "$sig_url" ] || {
+    log "release $latest has no signature: refusing it"
+    [ -n "$manual" ] && say dialog-warning-symbolic "$T_UNSIGNED"
+    exit 0; }
 
   if [ -n "$manual" ]; then
-    ROLLED=""
-    apply_update "$latest" "$tarball_url" "$sums_url" \
-      || { [ -n "$ROLLED" ] || say dialog-warning-symbolic "$T_FAILED"; }
+    ROLLED=""; REJECTED=""
+    apply_update "$latest" "$tarball_url" "$sig_url" \
+      || { [ -n "$ROLLED$REJECTED" ] || say dialog-warning-symbolic "$T_FAILED"; }
     return 0
   fi
 
@@ -186,7 +229,7 @@ check() {
         -A update="$T_NOW" -A later="$T_LATER" \
         "Second Wind" "$(printf "$T_READY" "$latest")" 2>/dev/null)"
   if [ "$R" = "update" ]; then
-    apply_update "$latest" "$tarball_url" "$sums_url"
+    apply_update "$latest" "$tarball_url" "$sig_url"
   else
     log "person chose later (or notification timed out)"
   fi
@@ -198,9 +241,10 @@ case "${1:---check}" in
   --apply)
     json="$(latest_release)" || exit 1
     latest="$(echo "$json" | grep -m1 '"tag_name"' | sed 's/.*"v\{0,1\}\([0-9][^"]*\)".*/\1/')"
-    tarball_url="$(echo "$json" | grep -o "https://[^\"]*second-wind-$latest\.tar\.gz" | head -1)"
-    sums_url="$(echo "$json" | grep -o 'https://[^"]*SHA256SUMS' | head -1)"
-    apply_update "$latest" "$tarball_url" "$sums_url"
+    [[ "$latest" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { log "no valid tag"; exit 1; }
+    asset_urls "$latest" "$json"
+    [ -n "$tarball_url" ] && [ -n "$sig_url" ] || { log "release $latest unsigned or incomplete: refusing"; exit 1; }
+    apply_update "$latest" "$tarball_url" "$sig_url"
     ;;
   *) log "usage: second-wind-update --check | --manual | --apply"; exit 1 ;;
 esac

@@ -43,10 +43,37 @@ if [ "${1:-}" = "--release" ]; then
     exit 1
   fi
 
-  out="$(mktemp -d)"
+  # Signed releases: the payload is built ONCE into dist/, signed on the
+  # owner's own computer (the private key never touches this machine), and
+  # only then published. Installed machines refuse any payload without a
+  # valid signature (bin/second-wind-update).
+  out="dist/release-$version"
   tarball="second-wind-$version.tar.gz"
-  # Archive of the exact released commit — same mechanism the USB payload uses.
-  git archive --format=tar.gz --prefix="second-wind/" -o "$out/$tarball" HEAD
+  head_sha="$(git rev-parse HEAD)"
+  mkdir -p "$out"
+  if [ -f "$out/$tarball" ]; then
+    [ "$(cat "$out/COMMIT" 2>/dev/null)" = "$head_sha" ] || {
+      echo "$out/$tarball was built from another commit. Remove $out and start again." >&2; exit 1; }
+  else
+    # Archive of the exact released commit — same mechanism the USB payload uses.
+    git archive --format=tar.gz --prefix="second-wind/" -o "$out/$tarball" HEAD
+    echo "$head_sha" > "$out/COMMIT"
+  fi
+  if [ ! -f "$out/$tarball.minisig" ]; then
+    echo
+    echo "Payload ready, NOT published yet: $PWD/$out/$tarball"
+    echo "Sign it on the owner's computer:  ./scripts/firmar-release.sh second-wind-$version.tar.gz"
+    echo "then put second-wind-$version.tar.gz.minisig in $PWD/$out/ and run this command again."
+    exit 2
+  fi
+  # shellcheck source=../lib/release-verify.sh
+  source lib/release-verify.sh
+  sw_verify_release "$out/$tarball" "$out/$tarball.minisig" \
+    "$(sed -n 2p keys/second-wind-release.pub)" "$tarball" \
+    || { echo "Signature does not verify against keys/second-wind-release.pub. Not publishing." >&2; exit 1; }
+  # SHA256SUMS stays for humans and for machines still on an updater older
+  # than 0.9.5 (they check the checksum only; the first signed release is what
+  # teaches them to require signatures from then on).
   (cd "$out" && sha256sum "$tarball" > SHA256SUMS)
   info "${MSG[pub_sums]}"
   cat "$out/SHA256SUMS"
@@ -66,8 +93,8 @@ EOF
 
   git tag -a "$tag" -m "Second Wind $version"
   git push origin main "$tag"
-  gh release create "$tag" "$out/$tarball" "$out/SHA256SUMS" "$out/creator-manifest.json" \
-    --verify-tag --title "Second Wind $version" --generate-notes
+  gh release create "$tag" "$out/$tarball" "$out/$tarball.minisig" "$out/SHA256SUMS" \
+    "$out/creator-manifest.json" --verify-tag --title "Second Wind $version" --generate-notes
   rm -rf "$out"
   echo
   ok "${MSG[pub_rel_done]} $(gh release view "$tag" --json url -q .url)"
