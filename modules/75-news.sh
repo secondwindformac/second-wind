@@ -4,7 +4,10 @@
 # after 30 days of happy use, asks if they'd like to support the project.
 # Ethics baked in: one-shot nudge, visible opt-out (Second Wind app → ⋯ menu,
 # or the notification's own button), zero third-party ads, zero telemetry —
-# nothing is sent anywhere; checks are a public releases lookup.
+# Second Wind does not send your data: it only checks for improvements (a
+# public releases lookup), downloads the store's icons and activates your
+# license when you ask it to. (Wording agreed 24-Sep: "sends nothing" was
+# not literally true.)
 
 if [ "$DRY_RUN" = 1 ]; then
   info "${MSG[m75_dry]}"

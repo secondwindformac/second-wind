@@ -153,6 +153,7 @@ T = {
     "nothing": d("Marca al menos una app.", "Tick at least one app."),
     "g_support": d("El proyecto", "The project"),
     "more": d("Más opciones", "More options"),
+    "mymac": d("Tu Mac…", "Your Mac…"),
     "about": d("Acerca de Second Wind", "About Second Wind"),
     "about_sub": d("Una segunda vida para tu Mac.", "A second life for your Mac."),
     "contact": d("Escribirnos", "Contact us"),
@@ -174,6 +175,9 @@ T = {
     "exp_title": "Mac Experience",
     "exp_trial": d("Prueba gratis: quedan {days} días · después US$10 una vez",
                    "Free trial: {days} days left · then US$10 once"),
+    "exp_trial_1": d("Prueba gratis: queda 1 día · después US$10 una vez",
+                     "Free trial: 1 day left · then US$10 once"),
+    "exp_pill_trial_1": d("Mac Experience · 1 día", "Mac Experience · 1 day"),
     "exp_active": d("Activo en este Mac — tuyo para siempre ✓",
                     "Active on this Mac — yours forever ✓"),
     "exp_off": d("Apagado — tu Mac sigue igual; recupera ⌘ y Spotlight por US$10",
@@ -443,6 +447,11 @@ class Store(Adw.Application):
 
         # Everything else, one click away and out of the catalog's way.
         actions = {
+            # "Your Mac" (component check + "Copy report for support") used to
+            # open only once, after the first boot; now always one click away.
+            "mymac": lambda *_: subprocess.Popen(
+                ["bash", os.path.join(SW_ROOT, "bin", "second-wind-mymac"), "--gui"],
+                env={**os.environ, "SW_ROOT": SW_ROOT}),
             "check-updates": lambda *_: subprocess.Popen(
                 ["bash", os.path.join(SW_ROOT, "bin", "second-wind-update"), "--manual"]),
             "help": lambda *_: subprocess.Popen(["xdg-open", links()["HELP"]]),
@@ -464,7 +473,7 @@ class Store(Adw.Application):
         self.add_action(news)
 
         menu = Gio.Menu()
-        for items in ([(T["upd"], "app.check-updates")],
+        for items in ([(T["mymac"], "app.mymac"), (T["upd"], "app.check-updates")],
                       [(T["help"], "app.help"), (T["contact"], "app.contact"),
                        (T["donate"], "app.donate")],
                       [(T["news"], "app.news"), (T["news_test"], "app.news-test")],
@@ -518,8 +527,10 @@ class Store(Adw.Application):
             self.exp_lbl.set_label(T["exp_off"])
             self.exp_btns.set_visible(True)
         else:
-            self.exp_pill.set_label(T["exp_pill_trial"].format(days=extra or "30"))
-            self.exp_lbl.set_label(T["exp_trial"].format(days=extra or "30"))
+            days = extra or "30"
+            one = days == "1"   # "1 day", not "1 days" (Air, 24-Sep)
+            self.exp_pill.set_label(T["exp_pill_trial_1" if one else "exp_pill_trial"].format(days=days))
+            self.exp_lbl.set_label(T["exp_trial_1" if one else "exp_trial"].format(days=days))
             self.exp_btns.set_visible(True)
 
     def on_exp_key(self, *_):
