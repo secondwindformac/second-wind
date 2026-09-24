@@ -104,8 +104,7 @@ export default class SecondWindPanel extends Extension {
             vbox.destroy();
         }
         this._titled = [];
-        this._logoMenu?.menu?._boxPointer?.set_style(null);
-        this._logoMenu?.menu?.box?.set_style(null);
+        this._logoMenu?.menu?.actor?.remove_style_class_name('sw-logo-menu');
         this._logoMenu = null;
         this._bannerBin = null;
         this._dateMenu = null;
@@ -122,11 +121,12 @@ export default class SecondWindPanel extends Extension {
         // 6. The theme gives every menu a 32 px (invisible) arrow; GNOME then
         // shifts a menu whose source hugs the screen edge so that arrow can
         // point at it: 22 px + the 12 px shadow margin = the gap under ⌘.
+        // A style class + stylesheet.css, not an inline style: PanelMenu
+        // rewrites the menu's inline style (max-height) every time it opens.
         const logo = Main.panel.statusArea.LogoMenu;
-        if (logo?.menu?._boxPointer && logo !== this._logoMenu) {
+        if (logo?.menu?.actor && logo !== this._logoMenu) {
             this._logoMenu = logo;
-            logo.menu._boxPointer.set_style('-arrow-base: 0px; -arrow-border-radius: 0px;');
-            logo.menu.box.set_style('margin-left: 4px;');
+            logo.menu.actor.add_style_class_name('sw-logo-menu');
         }
     }
 

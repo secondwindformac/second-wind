@@ -1,0 +1,10 @@
+/* ⌘ (Logo Menu) drop-down flush under the icon, like the Apple menu.
+   No (invisible) arrow → GNOME stops shifting the menu 22 px to the right;
+   a small left margin instead of the theme's 12 px shadow gutter. */
+.popup-menu-boxpointer.sw-logo-menu {
+  -arrow-base: 0;
+  -arrow-border-radius: 0;
+}
+.sw-logo-menu .popup-menu-content {
+  margin-left: 4px;
+}

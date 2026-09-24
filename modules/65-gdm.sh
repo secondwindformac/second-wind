@@ -39,6 +39,11 @@ if ( cd "$SW_CACHE/MacTahoe-gtk-theme" && sudo ./tweaks.sh -g >/dev/null 2>&1 );
     [ -f "$SW_BACKUP/greeter.dconf-defaults" ] || cp "$GREETER" "$SW_BACKUP/greeter.dconf-defaults"
     sudo sed -i -E "s|^[#[:space:]]*logo=.*|logo=''|" "$GREETER" && mf system-file "$GREETER"
   fi
+  # GDM compiles that file into its dconf database only when the gdm3
+  # service starts (ExecStartPre=generate-config), i.e. at boot: on the Air
+  # the logo was still there after logging out. `reload` runs the same
+  # generate-config now, without touching any open session.
+  sudo systemctl reload gdm3 >/dev/null 2>&1 || sudo systemctl reload gdm >/dev/null 2>&1 || true
   ok "${MSG[m65_ok]}"
 else
   warn "${MSG[m65_fail]}"
