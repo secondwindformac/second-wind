@@ -58,16 +58,17 @@ def main_gui():
     gi.require_version("Adw", "1")
     from gi.repository import Adw, Gdk, Gtk
 
-    text, problems = support_report.build(sw_root=SW_ROOT)
-
     class App(Adw.Application):
         def __init__(self):
             super().__init__(application_id="app.secondwind.SupportReport")
             self.clip = None
 
         def do_activate(self):
+            # Built on every opening: a second click reaches this same process
+            # while it is still holding the clipboard, and must not show stale data.
+            text, problems = support_report.build(sw_root=SW_ROOT)
             win = Adw.ApplicationWindow(application=self, title=T["title"],
-                                        default_width=620, default_height=560)
+                                        default_width=720, default_height=560)
             view = Adw.ToolbarView()
             view.add_top_bar(Adw.HeaderBar())
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12,

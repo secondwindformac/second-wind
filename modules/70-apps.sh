@@ -33,6 +33,21 @@ EOF
 track_new_file "$DESK"
 track_new_file "$SW_SHARE/second-wind-apps.svg"
 
+# The support-report window (Your Mac → "Copy report for support") is its own
+# GTK app: without a matching .desktop the top bar showed its raw id
+# "app.secondwind.SupportReport" (Air, 24-Sep). Hidden from the app grid.
+REPORT_DESK="$HOME/.local/share/applications/app.secondwind.SupportReport.desktop"
+cat > "$REPORT_DESK" <<EOF
+[Desktop Entry]
+Type=Application
+Name=${MSG[store_name]}
+Exec=$SW_ROOT/bin/second-wind-support-report
+Icon=$SW_SHARE/second-wind-apps.svg
+Terminal=false
+NoDisplay=true
+EOF
+track_new_file "$REPORT_DESK"
+
 # Warm the store's icon cache now, while setup is online: the first time the
 # user opens the store its cards already show real icons (on the Air, 23-Sep,
 # the store opened before the network and showed a grid of gears). Never
