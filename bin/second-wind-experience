@@ -233,9 +233,13 @@ day30_check() {
   # the notice. Ignored, it waited forever: the timer job never finished and
   # the trial never ended (found reading the code on the Air, 24-Sep). Cap
   # the wait: after an hour on screen, the notice counts as shown.
+  # -A default: tapping the notice itself = "Get it back" (on the Air a tap on
+  # the notice did nothing; the buttons hide until it is expanded).
   R="$(timeout 3600 notify-send -a "Second Wind" -i emblem-favorite \
+        -A default="${MSG[exp_notify_buy]}" \
         -A buy="${MSG[exp_notify_buy]}" -A ok="${MSG[exp_notify_later]}" \
         "Second Wind" "${MSG[exp_notify_body]}" 2>/dev/null)" || rc=$?
+  [ "$R" = "default" ] && R=buy
   [ "$rc" -eq 124 ] && rc=0   # timed out = it was displayed, just not answered
   if [ "$rc" -ne 0 ] && [ "$fails" -lt 3 ]; then
     echo $((fails + 1)) > "$EXP/notify-fails"
