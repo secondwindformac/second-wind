@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""second-wind-experience-dialog — the Mac Experience window.
+
+One window, used everywhere a person meets the trial (CEO, Air 24-Sep: "few
+people will open the app, and notifications get lost"):
+
+  second-wind-experience-dialog soon N   3 days before the end (N days left)
+  second-wind-experience-dialog ended    the day it ends (the layer is now off)
+  second-wind-experience-dialog buy      from the top-bar label
+  second-wind-experience-dialog paid     straight to "paste your key" (after Buy)
+
+It says plainly what Mac Experience is and offers Buy (US$10) / I have a key /
+Not now. "Buy" opens the checkout AND turns this same window into "paste the
+key from your e-mail here" — after paying, nobody had told the CEO where the
+key goes (Lemon's e-mail does not say). Activation is the usual
+`second-wind-experience activate KEY`: nothing else is ever sent.
+"""
+import os
+import subprocess
+import sys
+import threading
+
+SW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SW_STATE = os.path.expanduser("~/.local/state/second-wind")
+ES = os.environ.get("LANG", "en").startswith("es")
+
+
+def d(es, en):
+    return es if ES else en
+
+
+T = {
+    "title": "Mac Experience",
+    "what": d("Mac Experience es lo que hace que tu Mac se sienta como un Mac: los atajos ⌘ "
+              "(⌘C, ⌘V, ⌘Q, ⌘Tab…) y el buscador ⌘Espacio.",
+              "Mac Experience is what makes your Mac feel like a Mac: the ⌘ shortcuts "
+              "(⌘C, ⌘V, ⌘Q, ⌘Tab…) and the ⌘Space search."),
+    "soon_h": d("Tu prueba de Mac Experience termina en {n}", "Your Mac Experience trial ends in {n}"),
+    "day": d("1 día", "1 day"),
+    "days": d("{n} días", "{n} days"),
+    "soon_b": d("Después, tu Mac seguirá funcionando y viéndose igual, pero los atajos ⌘ y "
+                "⌘Espacio volverán a los de Linux. Quédatelos para siempre por US$10, un solo pago.",
+                "After that your Mac keeps working and looking the same, but the ⌘ shortcuts and "
+                "⌘Space go back to Linux's. Keep them forever for US$10, one payment."),
+    "ended_h": d("Terminó tu prueba de Mac Experience", "Your Mac Experience trial has ended"),
+    "ended_b": d("Tu Mac sigue funcionando y viéndose igual. Solo los atajos ⌘ y ⌘Espacio "
+                 "volvieron a los de Linux. Recupéralos para siempre por US$10, un solo pago.",
+                 "Your Mac keeps working and looking the same. Only the ⌘ shortcuts and ⌘Space "
+                 "went back to Linux's. Get them back forever for US$10, one payment."),
+    "buy_h": d("Mac Experience para siempre", "Mac Experience, forever"),
+    "buy_b": d("US$10, un solo pago. Tuyo para siempre en este Mac.",
+               "US$10, one payment. Yours forever on this Mac."),
+    "buy": d("Comprar (US$10)", "Buy (US$10)"),
+    "have_key": d("Tengo una clave", "I have a key"),
+    "later": d("Ahora no", "Not now"),
+    "key_h": d("Pega aquí tu clave", "Paste your key here"),
+    "key_b_buy": d("Se abrió la página de pago en tu navegador. Cuando termines, te llegará un "
+                   "correo de Lemon Squeezy con tu clave de licencia: cópiala y pégala aquí.",
+                   "The payment page opened in your browser. When you finish, Lemon Squeezy "
+                   "e-mails you your license key: copy it and paste it here."),
+    "key_b": d("Pega la clave de licencia que te llegó por correo al comprar.",
+               "Paste the license key you received by e-mail when you bought it."),
+    "key_ph": d("Clave de licencia", "License key"),
+    "activate": d("Activar", "Activate"),
+    "working": d("Activando…", "Activating…"),
+    "ok_h": d("¡Listo! Mac Experience es tuyo", "Done! Mac Experience is yours"),
+    "ok_b": d("Tus atajos ⌘ y ⌘Espacio ya están de vuelta, para siempre.",
+              "Your ⌘ shortcuts and ⌘Space are back, for good."),
+    "bad": d("Esa clave no parece válida, venció o ya se usa en otro Mac. Revisa que la hayas "
+             "copiado completa.",
+             "That key doesn't look valid, has expired or is already used on another Mac. "
+             "Check that you copied all of it."),
+    "close": d("Cerrar", "Close"),
+    "active_h": d("Mac Experience está activo", "Mac Experience is active"),
+    "active_b": d("Es tuyo para siempre en este Mac ✓", "It's yours forever on this Mac ✓"),
+}
+
+
+def links():
+    cfg = {}
+    for path in (os.path.join(SW_STATE, "links.conf"), os.path.join(SW_ROOT, "links.conf")):
+        try:
+            with open(path) as f:
+                for line in f:
+                    if "=" in line and not line.strip().startswith("#"):
+                        k, v = line.strip().split("=", 1)
+                        cfg.setdefault(k, v)
+            break
+        except FileNotFoundError:
+            continue
+    return cfg
+
+
+def experience(*args):
+    return subprocess.run(["bash", os.path.join(SW_ROOT, "bin", "second-wind-experience"), *args],
+                          capture_output=True, text=True)
+
+
+def main():
+    import gi
+    gi.require_version("Gtk", "4.0")
+    gi.require_version("Adw", "1")
+    from gi.repository import Adw, GLib, Gtk
+
+    mode = sys.argv[1] if len(sys.argv) > 1 else "buy"
+    n = sys.argv[2] if len(sys.argv) > 2 else ""
+    # SW_EXPERIENCE_PREVIEW=1 shows the offer views on a licensed Mac (to review
+    # them); activating still goes through the real license check.
+    if experience("status").stdout.startswith("active") and not os.environ.get("SW_EXPERIENCE_PREVIEW"):
+        mode = "active"
+
+    class App(Adw.Application):
+        def __init__(self):
+            super().__init__(application_id="app.secondwind.Experience")
+
+        def do_activate(self):
+            if self.get_active_window():
+                self.get_active_window().present()
+                return
+            self.win = Adw.ApplicationWindow(application=self, title=T["title"],
+                                             default_width=460, resizable=False)
+            view = Adw.ToolbarView()
+            view.add_top_bar(Adw.HeaderBar(show_title=False))
+            self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12,
+                               margin_top=0, margin_bottom=22, margin_start=26, margin_end=26)
+            view.set_content(self.box)
+            self.win.set_content(view)
+            if mode == "paid":      # straight to "paste your key" (after Buy)
+                self.show_key(True)
+            else:
+                self.show_offer(mode)
+            self.win.present()
+
+        # --- views -----------------------------------------------------------
+        def clear(self):
+            while (c := self.box.get_first_child()):
+                self.box.remove(c)
+
+        def heading(self, title, body, icon="input-keyboard-symbolic"):
+            self.box.append(Gtk.Image(icon_name=icon, pixel_size=48, margin_bottom=4))
+            self.box.append(Gtk.Label(label=title, wrap=True, justify=Gtk.Justification.CENTER,
+                                      css_classes=["title-2"]))
+            self.box.append(Gtk.Label(label=body, wrap=True, justify=Gtk.Justification.CENTER,
+                                      max_width_chars=46))
+
+        def buttons(self, *specs):
+            col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin_top=8)
+            for label, cb, classes in specs:
+                b = Gtk.Button(label=label, css_classes=classes)
+                b.connect("clicked", cb)
+                col.append(b)
+            self.box.append(col)
+            return col
+
+        def show_offer(self, m):
+            self.clear()
+            if m == "active":
+                self.heading(T["active_h"], T["active_b"], "emblem-ok-symbolic")
+                self.buttons((T["close"], lambda *_: self.win.close(), ["pill"]))
+                return
+            if m == "soon":
+                days = T["day"] if n == "1" else T["days"].format(n=n or "3")
+                self.heading(T["soon_h"].format(n=days), T["soon_b"])
+            elif m == "ended":
+                self.heading(T["ended_h"], T["ended_b"])
+            else:
+                self.heading(T["buy_h"], T["buy_b"])
+            self.box.append(Gtk.Label(label=T["what"], wrap=True, max_width_chars=46,
+                                      justify=Gtk.Justification.CENTER,
+                                      css_classes=["dim-label", "caption"]))
+            self.buttons((T["buy"], self.on_buy, ["suggested-action", "pill"]),
+                         (T["have_key"], lambda *_: self.show_key(False), ["pill"]),
+                         (T["later"], lambda *_: self.win.close(), ["flat"]))
+
+        def show_key(self, after_buy):
+            self.clear()
+            self.heading(T["key_h"], T["key_b_buy"] if after_buy else T["key_b"],
+                         "dialog-password-symbolic")
+            self.entry = Gtk.Entry(placeholder_text=T["key_ph"], activates_default=True,
+                                   margin_top=6)
+            self.entry.connect("activate", self.on_activate)
+            self.box.append(self.entry)
+            self.msg = Gtk.Label(label="", wrap=True, css_classes=["error"])
+            self.box.append(self.msg)
+            col = self.buttons((T["activate"], self.on_activate, ["suggested-action", "pill"]),
+                               (T["later"], lambda *_: self.win.close(), ["flat"]))
+            self.act_btn = col.get_first_child()
+            self.entry.grab_focus()
+
+        def show_done(self):
+            self.clear()
+            self.heading(T["ok_h"], T["ok_b"], "emblem-ok-symbolic")
+            self.buttons((T["close"], lambda *_: self.win.close(), ["suggested-action", "pill"]))
+
+        # --- actions -----------------------------------------------------------
+        def on_buy(self, *_):
+            url = links().get("EXPERIENCE_URL") or links().get("WEBSITE_URL",
+                                                                "https://secondwindformac.com/")
+            subprocess.Popen(["xdg-open", url])
+            self.show_key(True)
+
+        def on_activate(self, *_):
+            key = self.entry.get_text().strip()
+            if not key:
+                return
+            self.act_btn.set_sensitive(False)
+            self.act_btn.set_label(T["working"])
+            self.msg.set_label("")
+
+            def work():
+                ok = experience("activate", key).returncode == 0
+                GLib.idle_add(self.after_activate, ok)
+            threading.Thread(target=work, daemon=True).start()
+
+        def after_activate(self, ok):
+            if ok:
+                self.show_done()
+            else:
+                self.act_btn.set_sensitive(True)
+                self.act_btn.set_label(T["activate"])
+                self.msg.set_label(T["bad"])
+            return False
+
+    return App().run([sys.argv[0]])
+
+
+if __name__ == "__main__":
+    sys.exit(main())

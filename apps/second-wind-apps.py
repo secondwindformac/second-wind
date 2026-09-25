@@ -187,6 +187,10 @@ T = {
     "exp_key_head": d("Activar Mac Experience", "Activate Mac Experience"),
     "exp_key_body": d("Pega la clave de licencia que te llegó por correo al comprar.",
                       "Paste the license key you received by email after buying."),
+    "exp_key_body_buy": d("Se abrió la página de pago en tu navegador. Cuando termines, te llegará "
+                          "un correo de Lemon Squeezy con tu clave de licencia: cópiala y pégala aquí.",
+                          "The payment page opened in your browser. When you finish, Lemon Squeezy "
+                          "e-mails you your license key: copy it and paste it here."),
     "exp_key_ph": d("Clave de licencia", "License key"),
     "exp_activate": d("Activar", "Activate"),
     "cancel": d("Cancelar", "Cancel"),
@@ -435,8 +439,10 @@ class Store(Adw.Application):
         key = Gtk.Button(label=T["exp_key"])
         key.connect("clicked", lambda *_: (pop.popdown(), self.on_exp_key()))
         buy = Gtk.Button(label=T["exp_buy"], css_classes=["suggested-action"])
+        # Buy = checkout + the key box right away, saying where the key comes
+        # from: after paying, nobody told the CEO where it goes (Air, 24-Sep).
         buy.connect("clicked", lambda *_: (pop.popdown(), subprocess.Popen(
-            ["xdg-open", links()["EXPERIENCE_URL"]])))
+            ["xdg-open", links()["EXPERIENCE_URL"]]), self.on_exp_key(after_buy=True)))
         self.exp_btns.append(key)
         self.exp_btns.append(buy)
         box.append(self.exp_btns)
@@ -533,8 +539,9 @@ class Store(Adw.Application):
             self.exp_lbl.set_label(T["exp_trial_1" if one else "exp_trial"].format(days=days))
             self.exp_btns.set_visible(True)
 
-    def on_exp_key(self, *_):
-        dlg = Adw.AlertDialog(heading=T["exp_key_head"], body=T["exp_key_body"])
+    def on_exp_key(self, *_, after_buy=False):
+        dlg = Adw.AlertDialog(heading=T["exp_key_head"],
+                              body=T["exp_key_body_buy"] if after_buy else T["exp_key_body"])
         entry = Adw.EntryRow(title=T["exp_key_ph"])
         box = Gtk.ListBox(css_classes=["boxed-list"])
         box.append(entry)

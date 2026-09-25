@@ -192,12 +192,39 @@ recheck_provisional() {
   echo trial > "$EXP/state"   # day30_check below turns it off if the trial is over
 }
 
+# The Mac Experience window (bin/second-wind-experience-dialog), detached.
+# Notifications alone got lost and few people open the app (CEO, Air 24-Sep):
+# a centred window, shown once 3 days before the end and once on the last day.
+show_dialog() {  # show_dialog soon N | ended — 0 if the window could be opened
+  [ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ] || return 1
+  python3 -c "import gi; gi.require_version('Gtk','4.0'); gi.require_version('Adw','1')" 2>/dev/null || return 1
+  ( setsid python3 "$SW_ROOT/bin/second-wind-experience-dialog" "$@" >/dev/null 2>&1 & )
+  return 0
+}
+
+soon_check() {
+  [ "$(state)" = trial ] || return 0
+  local left; left="$(days_left)"
+  [ "$left" -ge 1 ] && [ "$left" -le 3 ] || return 0
+  [ -f "$EXP/soon-shown" ] && return 0
+  show_dialog soon "$left" && touch "$EXP/soon-shown"
+  return 0
+}
+
 day30_check() {
   ensure_state
   recheck_provisional
   [ "$(state)" = trial ] || return 0
+  soon_check
   [ "$(age_days)" -ge "$TRIAL_DAYS" ] || return 0
 
+  # The window says it plainly and offers Buy / I have a key right there.
+  if show_dialog ended; then
+    echo off > "$EXP/state"
+    experience_off
+    return 0
+  fi
+  # No graphical session reachable: fall back to the notification.
   # Tell the user BEFORE flipping anything; only proceed when the notification
   # was actually shown (or after 3 failed attempts, as a backstop).
   local fails=0 R rc=0

@@ -6,8 +6,10 @@
 //   4. notification banners in the top-right corner instead of top-center
 //   5. Control Center: "Display" / "Sound" titles over the two sliders
 //   6. the ⌘ (Logo Menu) drop-down flush under the icon, not 34 px to the right
+//   7. Mac Experience at a glance: "⌘ 3 days" / "⌘ Get it back" (see enable)
 // Everything is undone in disable(), so turning it off restores stock GNOME.
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
@@ -55,6 +57,34 @@ export default class SecondWindPanel extends Extension {
         });
         panel.addToStatusArea('secondwind-search', this._search, 0, 'right');
 
+        // 7. Mac Experience at a glance (CEO, Air 24-Sep: few people open the
+        // app and notifications get lost). Only in the trial's last 5 days
+        // ("⌘ 3 days") and after it ends ("⌘ Get it back"); hidden once
+        // licensed. A click opens the Mac Experience window (Buy / key).
+        this._exp = new PanelMenu.Button(0.0, 'Second Wind Mac Experience', true);
+        this._expLabel = new St.Label({style_class: 'sw-exp-label',
+                                       y_align: Clutter.ActorAlign.CENTER});
+        this._exp.add_child(this._expLabel);
+        this._exp.connect('button-press-event', () => {
+            try {
+                GLib.spawn_async(null, ['gtk-launch', 'app.secondwind.Experience'], null,
+                                 GLib.SpawnFlags.SEARCH_PATH, null);
+            } catch (e) {
+                console.warn(`Second Wind Panel: ${e.message}`);
+            }
+            return Clutter.EVENT_STOP;
+        });
+        panel.addToStatusArea('secondwind-experience', this._exp, 0, 'right');
+        this._expDir = GLib.build_filenamev([GLib.get_user_state_dir(), 'second-wind', 'experience']);
+        this._expMon = Gio.File.new_for_path(this._expDir)
+            .monitor_directory(Gio.FileMonitorFlags.NONE, null);
+        this._expMonId = this._expMon.connect('changed', () => this._syncExperience());
+        this._expTimer = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1800, () => {
+            this._syncExperience();
+            return GLib.SOURCE_CONTINUE;
+        });
+        this._syncExperience();
+
         // 4. Notification banners top-right.
         this._bannerBin = Main.messageTray._bannerBin;
         this._bannerAlign = this._bannerBin.x_align;
@@ -92,6 +122,16 @@ export default class SecondWindPanel extends Extension {
         this._search?.destroy();
         this._search = null;
 
+        if (this._expTimer) GLib.source_remove(this._expTimer);
+        this._expTimer = 0;
+        if (this._expMon) {
+            this._expMon.disconnect(this._expMonId);
+            this._expMon.cancel();
+        }
+        this._expMon = null;
+        this._exp?.destroy();
+        this._exp = null;
+
         if (this._bannerBin) this._bannerBin.x_align = this._bannerAlign;
 
         if (this._retryId) GLib.source_remove(this._retryId);
@@ -109,6 +149,33 @@ export default class SecondWindPanel extends Extension {
         this._bannerBin = null;
         this._dateMenu = null;
         this._dateParent = null;
+    }
+
+    _syncExperience() {
+        const read = name => {
+            try {
+                const [ok, bytes] = GLib.file_get_contents(GLib.build_filenamev([this._expDir, name]));
+                return ok ? new TextDecoder().decode(bytes).trim() : '';
+            } catch (e) {
+                return '';
+            }
+        };
+        const es = GLib.get_language_names()[0].startsWith('es');
+        const state = read('state');
+        let text = '';
+        if (state === 'off') {
+            text = es ? '⌘ Recuperar' : '⌘ Get it back';
+        } else if (state === 'trial') {
+            const since = parseInt(read('trial_since'));
+            if (!isNaN(since)) {
+                const left = Math.max(0, 30 - Math.floor((GLib.get_real_time() / 1e6 - since) / 86400));
+                if (left <= 5)
+                    text = left === 1 ? (es ? '⌘ 1 día' : '⌘ 1 day')
+                        : (es ? `⌘ ${left} días` : `⌘ ${left} days`);
+            }
+        }
+        this._expLabel.text = text;
+        this._exp.visible = text !== '';
     }
 
     _syncLate() {

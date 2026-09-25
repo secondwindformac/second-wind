@@ -47,6 +47,18 @@ Terminal=false
 NoDisplay=true
 EOF
 track_new_file "$REPORT_DESK"
+# Same for the Mac Experience window (bin/second-wind-experience-dialog).
+EXP_DESK="$HOME/.local/share/applications/app.secondwind.Experience.desktop"
+cat > "$EXP_DESK" <<EOF
+[Desktop Entry]
+Type=Application
+Name=${MSG[store_name]}
+Exec=$SW_ROOT/bin/second-wind-experience-dialog buy
+Icon=$SW_SHARE/second-wind-apps.svg
+Terminal=false
+NoDisplay=true
+EOF
+track_new_file "$EXP_DESK"
 
 # Warm the store's icon cache now, while setup is online: the first time the
 # user opens the store its cards already show real icons (on the Air, 23-Sep,
