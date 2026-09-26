@@ -109,7 +109,7 @@ experience_on() {
   gsettings set org.gnome.desktop.wm.keybindings switch-windows-backward "[]" 2>/dev/null || true
   gsettings set org.gnome.shell.window-switcher current-workspace-only false 2>/dev/null || true
   gsettings set org.gnome.shell.keybindings toggle-overview "[]" 2>/dev/null || true
-  custom_keybinding_add secondwind-spotlight "Spotlight (Ulauncher)" "ulauncher-toggle" "<Shift><Control>space"
+  custom_keybinding_add secondwind-spotlight "Search ⌘Space (Ulauncher)" "ulauncher-toggle" "<Shift><Control>space"
 }
 
 # --- license ------------------------------------------------------------------

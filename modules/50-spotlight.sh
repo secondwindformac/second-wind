@@ -56,6 +56,6 @@ fi
 
 # Shortcut: free Shift+Ctrl+Space from the overview and give it to Ulauncher
 gset_track org.gnome.shell.keybindings toggle-overview "[]"
-custom_keybinding_add secondwind-spotlight "Spotlight (Ulauncher)" "ulauncher-toggle" "<Shift><Control>space"
+custom_keybinding_add secondwind-spotlight "Search ⌘Space (Ulauncher)" "ulauncher-toggle" "<Shift><Control>space"
 
 info "${MSG[m50_done]}"
