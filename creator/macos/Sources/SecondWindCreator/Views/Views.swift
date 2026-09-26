@@ -288,7 +288,7 @@ struct PickDiskView: View {
                                 Text("💾").opacity(0.4)
                                 VStack(alignment: .leading) {
                                     Text(disk.name).fontWeight(.semibold).foregroundColor(.secondary)
-                                    Text("\(disk.sizeLabel) — \(L10n.pickTooSmall(state.requiredLabel))")
+                                    Text("\(disk.sizeLabel) · \(L10n.pickTooSmall(state.requiredLabel))")
                                         .font(.callout).foregroundColor(.secondary)
                                 }
                                 Spacer()

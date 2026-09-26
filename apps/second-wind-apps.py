@@ -55,8 +55,8 @@ CATALOG = [
         ("chrome", "Google Chrome", "deb",
          "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb",
          "chrome.google.com",  # google.com serves the "G", this one the Chrome ball
-         d("El navegador que ya conoces — y la base de las apps web",
-           "The browser you already know — and what web apps run on"), True),
+         d("El navegador que ya conoces, y la base de las apps web",
+           "The browser you already know, and what web apps run on"), True),
         ("quicklook", "Quick Look", "apt", "gnome-sushi", "gnome.org",
          d("Vista previa con la barra espaciadora", "Space-bar file preview"), True),
         ("vlc", "VLC", "apt", "vlc", "videolan.org",
@@ -96,8 +96,8 @@ CATALOG = [
         ("blender", "Blender", "snap_classic", "blender", "blender.org",
          d("3D profesional", "Professional 3D"), False),
     ]),
-    ("web", d("Apps web — ventana propia + icono en el dock",
-              "Web apps — own window + dock icon"), [
+    ("web", d("Apps web: ventana propia e ícono en el dock",
+              "Web apps: own window and dock icon"), [
         ("whatsapp", "WhatsApp", "web", "https://web.whatsapp.com", "whatsapp.com",
          d("Tus chats como app", "Your chats as an app"), True),
         ("youtube", "YouTube", "web", "https://www.youtube.com", "youtube.com",
@@ -148,8 +148,8 @@ T = {
                     "Installing… (password in a system window)"),
     "done_ok": d("¡Listo! Encuentra tus apps con Cmd+Espacio.",
                  "Done! Find your apps with Cmd+Space."),
-    "done_warn": d("Terminado con avisos — detalle en apps-gui.log",
-                   "Finished with warnings — details in apps-gui.log"),
+    "done_warn": d("Terminado con avisos. Detalle en apps-gui.log",
+                   "Finished with warnings. Details in apps-gui.log"),
     "nothing": d("Marca al menos una app.", "Tick at least one app."),
     "g_support": d("El proyecto", "The project"),
     "more": d("Más opciones", "More options"),
@@ -178,10 +178,10 @@ T = {
     "exp_trial_1": d("Prueba gratis: queda 1 día · después US$10 una vez",
                      "Free trial: 1 day left · then US$10 once"),
     "exp_pill_trial_1": d("Mac Experience · 1 día", "Mac Experience · 1 day"),
-    "exp_active": d("Activo en este Mac — tuyo para siempre ✓",
-                    "Active on this Mac — yours forever ✓"),
-    "exp_off": d("Apagado — tu Mac sigue igual; recupera ⌘ y Spotlight por US$10",
-                 "Off — your Mac is unchanged; bring back ⌘ and Spotlight for US$10"),
+    "exp_active": d("Activo en este Mac, tuyo para siempre ✓",
+                    "Active on this Mac, yours forever ✓"),
+    "exp_off": d("Apagado. Tu Mac sigue igual; recupera ⌘ y Spotlight por US$10",
+                 "Off. Your Mac is unchanged; bring back ⌘ and Spotlight for US$10"),
     "exp_buy": d("Comprar", "Buy"),
     "exp_key": d("Tengo una clave", "I have a key"),
     "exp_key_head": d("Activar Mac Experience", "Activate Mac Experience"),
@@ -192,8 +192,8 @@ T = {
     "cancel": d("Cancelar", "Cancel"),
     "exp_act_okmsg": d("¡Listo! Tu teclado ⌘ y Spotlight están de vuelta.",
                        "Done! Your ⌘ keyboard and Spotlight are back."),
-    "exp_act_badmsg": d("La clave no se pudo activar — revisa que esté bien copiada.",
-                        "The key couldn't be activated — check it was copied correctly."),
+    "exp_act_badmsg": d("La clave no se pudo activar. Revisa que esté bien copiada.",
+                        "The key couldn't be activated. Check it was copied correctly."),
 }
 
 CSS = b"""

@@ -24,4 +24,4 @@ chmod +x "$DESKTOP" 2>/dev/null || true
 update-desktop-database "$APPS" 2>/dev/null || true
 
 echo "Launcher installed: $DESKTOP"
-echo "Now open 'Second Wind USB Creator' from your apps — no terminal needed."
+echo "Now open 'Second Wind USB Creator' from your apps. No terminal needed."

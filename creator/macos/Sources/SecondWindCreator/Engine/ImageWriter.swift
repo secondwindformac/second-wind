@@ -78,7 +78,7 @@ enum ImageWriter {
             let fileSample = iso.readData(ofLength: sampleLen)
             let diskSample = try device.read(at: sampleOffset, count: fileSample.count)
             guard diskSample == fileSample else {
-                throw WriteError.verifyFailed("system image at \(Int(fraction * 100))% — the stick may be worn out; try another one")
+                throw WriteError.verifyFailed("system image at \(Int(fraction * 100))%: the stick may be worn out; try another one")
             }
         }
 

@@ -153,7 +153,7 @@ class SupportReportTest(unittest.TestCase):
     def test_contents_es(self):
         text, _ = self.build()
         self.assertIn("MacBook Air (13-inch, Early 2014) o MacBook Air (13-inch, Mid 2013)", text)
-        self.assertIn("Número de modelo: A1466 · Identificador: MacBookAir6,2 · Año: 2013–2014", text)
+        self.assertIn("Número de modelo: A1466 · Identificador: MacBookAir6,2 · Año: 2013-2014", text)
         self.assertIn("Second Wind: 0.9.5", text)
         self.assertIn("Ubuntu: 24.04.4 LTS", text)
         self.assertIn("Memoria: 7,7 GB en total · 4,4 GB en uso (57 %)", text)

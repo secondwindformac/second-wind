@@ -67,4 +67,4 @@ export HAVE_DOCK HAVE_TOSHY
 
 SW_MODEL="$(cat /sys/class/dmi/id/product_name 2>/dev/null || echo PC)"
 export SW_MODEL
-ok "${MSG[pre_ok]} — $SW_MODEL (dock: $HAVE_DOCK, toshy: $HAVE_TOSHY)"
+ok "${MSG[pre_ok]}: $SW_MODEL (dock: $HAVE_DOCK, toshy: $HAVE_TOSHY)"

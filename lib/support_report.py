@@ -272,7 +272,7 @@ def render(facts, lang="es"):
     m = facts["model"]
     L.append(f"{t('mac')}: " + (t("or").join(m["names"]) or m["ident"] or na))
     ys = m["years"]
-    year = (f"{ys[0]}" if len(ys) == 1 else f"{ys[0]}–{ys[-1]}") if ys else na
+    year = (f"{ys[0]}" if len(ys) == 1 else f"{ys[0]}-{ys[-1]}") if ys else na
     L.append(f"{t('model_no')}: {', '.join(m['anums']) or na} · {t('ident')}: {m['ident'] or na} · "
              f"{t('year')}: {year}")
     v = facts["versions"]
