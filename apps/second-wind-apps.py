@@ -160,7 +160,7 @@ T = {
     "exp_pill_trial": d("Mac Experience · {days} días", "Mac Experience · {days} days"),
     "exp_pill_active": d("Mac Experience ✓", "Mac Experience ✓"),
     "donate": d("Apoyar Second Wind", "Support Second Wind"),
-    "donate_sub": d("Donaciones y novedades", "Donations and news"),
+    "donate_sub": d("Paga lo que quieras", "Pay what you want"),
     "news": d("Avisos de novedades y apoyo", "News and support notices"),
     "news_sub": d("Una notificación ocasional; apágalo cuando quieras",
                   "An occasional notification; turn off anytime"),
