@@ -35,7 +35,7 @@ fi
 dconf_track /org/gnome/shell/extensions/user-theme/name "'SecondWind-$SW_SHELL_VARIANT'"
 
 # Mac-style top-left menu (Logo Menu): our own ⌘ (Command, U+2318) mark — the
-# Second Wind brand symbol (same one on the site, Ko-fi and favicon). ⌘ is a
+# Second Wind brand symbol (same one on the site and favicon). ⌘ is a
 # generic Unicode "place of interest" glyph, NOT an Apple trademark; the APPLE
 # logo IS, and it is this extension's built-in DEFAULT. So we (a) force our own
 # custom icon and (b) keep use-custom-icon true so it can NEVER fall back to
