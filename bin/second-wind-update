@@ -41,7 +41,7 @@ case "${LANG:-en}" in
     T_OFFLINE="No pude revisar si hay mejoras. ¿Estás conectado a internet? Vuelve a intentarlo en un rato."
     ;;
   *)
-    T_READY="A Second Wind improvement is ready (version %s). It takes a few minutes, touches none of your files, and your Mac stays the same — just better."
+    T_READY="A Second Wind improvement is ready (version %s). It takes a few minutes, touches none of your files, and your Mac stays the same, just better."
     T_NOW="Update now"; T_LATER="Later"
     T_WORKING="Updating Second Wind… you can keep using the Mac."
     T_DONE="Second Wind updated to version %s. All good ✓"

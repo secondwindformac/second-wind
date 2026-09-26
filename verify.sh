@@ -112,7 +112,7 @@ if [ "$MODE" = "--all" ]; then
   # and the next boot had no WiFi). `dkms status` is not proof either.
   if grep -qixF -f <(grep -v '^#' "$SW_ROOT/usb/drivers/wl-pci-ids" 2>/dev/null) \
        <(for d in /sys/bus/pci/devices/*; do echo "$(sed 's/^0x//' "$d/vendor"):$(sed 's/^0x//' "$d/device")"; done) 2>/dev/null; then
-    chk "WiFi (Broadcom wl) — driver on disk for $(uname -r)" bash -c 'f="$(modinfo -n wl 2>/dev/null)" && [ -e "$f" ]'
+    chk "WiFi (Broadcom wl): driver on disk for $(uname -r)" bash -c 'f="$(modinfo -n wl 2>/dev/null)" && [ -e "$f" ]'
   fi
 fi
 

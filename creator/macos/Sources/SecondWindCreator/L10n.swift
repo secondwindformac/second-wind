@@ -15,7 +15,7 @@ struct L10n {
     static var welcomeBody: String { t(
         """
         This assistant prepares a USB stick that installs Second Wind: your Mac \
-        keeps its familiar feel — the ⌘ shortcuts, the search, the look — but \
+        keeps its familiar feel (the ⌘ shortcuts, the search, the look) but \
         runs Ubuntu, a modern system with security updates until 2029.
 
         To be very clear: it is not macOS. It is Ubuntu, dressed to feel like \
@@ -24,7 +24,7 @@ struct L10n {
         """,
         """
         Este asistente prepara un pendrive que instala Second Wind: tu Mac \
-        conserva lo conocido — los atajos ⌘, la búsqueda, la apariencia — pero \
+        conserva lo conocido (los atajos ⌘, la búsqueda, la apariencia) pero \
         por dentro corre Ubuntu, un sistema moderno con actualizaciones de \
         seguridad hasta 2029.
 
@@ -76,8 +76,8 @@ struct L10n {
     // --- The two mandatory locks ---
     static var locksTitle: String { t("Two promises before we begin", "Dos promesas antes de empezar") }
     static var lock1: String { t(
-        "I already saved everything I care about from the Mac I'm going to renew (photos, documents) — or there is nothing on it I need.",
-        "Ya guardé todo lo que me importa del Mac que voy a renovar (fotos, documentos) — o no hay nada en él que necesite.") }
+        "I already saved everything I care about from the Mac I'm going to renew (photos, documents), or there is nothing on it I need.",
+        "Ya guardé todo lo que me importa del Mac que voy a renovar (fotos, documentos), o no hay nada en él que necesite.") }
     static var lock2: String { t(
         "I understand that the Mac where I use this stick will be completely erased, including macOS and everything on it.",
         "Entiendo que el Mac donde use este pendrive quedará borrado por completo, incluido macOS y todo lo que contiene.") }
@@ -85,36 +85,36 @@ struct L10n {
         "One more thing for later: when you install, keep that Mac plugged into power.",
         "Un detalle para después: cuando instales, mantén ese Mac conectado a la corriente.") }
     static var locksHint: String { t(
-        "Both boxes are required — that's on purpose.",
-        "Las dos casillas son obligatorias — es a propósito.") }
+        "Both boxes are required. That's on purpose.",
+        "Las dos casillas son obligatorias. Es a propósito.") }
     static var continueBtn: String { t("Continue", "Continuar") }
     static var backBtn: String { t("Back", "Atrás") }
 
     // --- Download ---
     static var downloadTitle: String { t("Getting the pieces", "Buscando las piezas") }
     static var downloadBody: String { t(
-        "Downloading the official Ubuntu system (about 6 GB) and Second Wind. Every piece is verified against its official fingerprint. You can close the lid — it resumes.",
-        "Descargando el sistema Ubuntu oficial (unos 6 GB) y Second Wind. Cada pieza se verifica contra su huella oficial. Puedes cerrar la tapa — se retoma solo.") }
+        "Downloading the official Ubuntu system (about 6 GB) and Second Wind. Every piece is verified against its official fingerprint. You can close the lid: it resumes.",
+        "Descargando el sistema Ubuntu oficial (unos 6 GB) y Second Wind. Cada pieza se verifica contra su huella oficial. Puedes cerrar la tapa: se retoma solo.") }
     static var downloadISO: String { t("Ubuntu system", "Sistema Ubuntu") }
     static var downloadPayload: String { t("Second Wind", "Second Wind") }
     static var verified: String { t("verified ✓", "verificado ✓") }
     static var downloadFailed: String { t(
-        "The download stumbled. Check your internet and press Retry — it continues where it stopped.",
-        "La descarga tropezó. Revisa tu internet y aprieta Reintentar — sigue donde quedó.") }
+        "The download stumbled. Check your internet and press Retry. It continues where it stopped.",
+        "La descarga tropezó. Revisa tu internet y aprieta Reintentar. Sigue donde quedó.") }
     static var retry: String { t("Retry", "Reintentar") }
 
     // --- Disk picker ---
     static var pickTitle: String { t("Choose the USB stick", "Elige el pendrive") }
     static var pickBody: String { t(
-        "Only sticks plugged in from outside appear here — never this Mac's own disk. The one you choose is completely erased.",
-        "Aquí solo aparecen pendrives conectados por fuera — nunca el disco de este Mac. El que elijas se borra por completo.") }
+        "Only sticks plugged in from outside appear here, never this Mac's own disk. The one you choose is completely erased.",
+        "Aquí solo aparecen pendrives conectados por fuera, nunca el disco de este Mac. El que elijas se borra por completo.") }
     static var pickEmpty: String { t(
         "No stick detected. Plug one in (8 GB or more) and it will appear here.",
         "No se detecta ningún pendrive. Conecta uno (de 8 GB o más) y aparecerá aquí.") }
     static var refresh: String { t("Look again", "Buscar de nuevo") }
     static func pickTooSmall(_ needed: String) -> String { t(
-        "too small — the installer needs \(needed)",
-        "muy chico — el instalador necesita \(needed)") }
+        "too small: the installer needs \(needed)",
+        "muy chico: el instalador necesita \(needed)") }
 
     // --- Confirm ---
     static var confirmTitle: String { t("Last confirmation", "Última confirmación") }
@@ -126,8 +126,8 @@ struct L10n {
         "Type \(word) to confirm:", "Escribe \(word) para confirmar:") }
     static var confirmGo: String { t("Create the stick", "Crear el pendrive") }
     static var passwordNote: String { t(
-        "Your Mac will ask for your password — that's the system giving permission to write the stick.",
-        "Tu Mac te pedirá tu contraseña — es el sistema dando permiso para escribir el pendrive.") }
+        "Your Mac will ask for your password. That's the system giving permission to write the stick.",
+        "Tu Mac te pedirá tu contraseña. Es el sistema dando permiso para escribir el pendrive.") }
 
     // --- Writing ---
     static var writingTitle: String { t("Creating your stick", "Creando tu pendrive") }
@@ -172,8 +172,8 @@ struct L10n {
         """) }
     static var rescueTitle: String { t("If anything looks wrong", "Si algo se ve raro") }
     static var rescueBody: String { t(
-        "Breathe. Your Mac is fine — these Macs always keep a built-in door back to macOS, and we never touch it. The rescue guide walks you through every path:",
-        "Respira. Tu Mac está bien — estos Macs siempre conservan una puerta integrada de vuelta a macOS, y nosotros jamás la tocamos. La guía de rescate te acompaña por cada camino:") }
+        "Breathe. Your Mac is fine. These Macs always keep a built-in door back to macOS, and we never touch it. The rescue guide walks you through every path:",
+        "Respira. Tu Mac está bien. Estos Macs siempre conservan una puerta integrada de vuelta a macOS, y nosotros jamás la tocamos. La guía de rescate te acompaña por cada camino:") }
     static var rescueLink: String { "secondwindformac.com/rescue" }
     static var makeAnother: String { t("Create another stick", "Crear otro pendrive") }
     static var quit: String { t("Close", "Cerrar") }

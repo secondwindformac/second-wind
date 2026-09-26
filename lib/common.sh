@@ -97,7 +97,7 @@ apt_track_install() {
 gset_track() {
   local schema="$1" key="$2" value="$3" cur
   if ! cur="$(gsettings get "$schema" "$key" 2>/dev/null)"; then
-    warn "Key $schema $key does not exist on this system — skipped."
+    warn "Key $schema $key does not exist on this system; skipped."
     return 0
   fi
   [ "$cur" = "$value" ] && return 0

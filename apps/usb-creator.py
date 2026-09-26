@@ -90,7 +90,7 @@ def build_T(ES):
     "seed": "Preparando la semilla Second Wind…" if ES else "Preparing the Second Wind seed…",
     "pick_t": "Elige el pendrive" if ES else "Choose the stick",
     "pick_b": "Se borrará por completo." if ES else "It will be completely erased.",
-    "too_small": "Muy pequeño — se necesitan 8 GB" if ES else "Too small — 8 GB needed",
+    "too_small": "Muy pequeño: se necesitan 8 GB" if ES else "Too small: 8 GB needed",
     "no_usb": "Conecta un pendrive y pulsa Actualizar." if ES
               else "Plug a stick in and press Refresh.",
     "refresh": "Actualizar" if ES else "Refresh",
@@ -99,8 +99,8 @@ def build_T(ES):
     "confirm_b": "no tiene vuelta atrás." if ES else "cannot be undone.",
     "cancel": "Cancelar" if ES else "Cancel",
     "erase": "Sí, borrar" if ES else "Yes, erase",
-    "locks_t": "Antes de borrar — dos confirmaciones" if ES
-               else "Before we erase — two promises",
+    "locks_t": "Antes de borrar: dos confirmaciones" if ES
+               else "Before we erase: two promises",
     "locks_b": "Marca las dos casillas para continuar. Instalar borra TODO este Mac." if ES
                else "Tick both boxes to continue. Installing erases EVERYTHING on this Mac.",
     "lock1": "Respaldé mis fotos, archivos y contraseñas (están en otro lugar)" if ES
@@ -108,8 +108,8 @@ def build_T(ES):
     "lock2": "Entiendo que este Mac se borrará por completo" if ES
              else "I understand this Mac will be completely erased",
     "continue": "Continuar" if ES else "Continue",
-    "writing": "Escribiendo el pendrive — no lo desconectes" if ES
-               else "Writing the stick — do not unplug it",
+    "writing": "Escribiendo el pendrive. No lo desconectes" if ES
+               else "Writing the stick. Do not unplug it",
     "finishing": "Sellando la semilla…" if ES else "Sealing the seed…",
     "done_t": "¡Pendrive listo! 🎉" if ES else "USB ready! 🎉",
     "done_b": ("En el Mac a revivir: enciéndelo manteniendo Option (⌥), elige "
@@ -257,13 +257,13 @@ class Creator(Adw.Application):
     def set_prog(self, frac, text):
         self.prog.set_fraction(frac)
         self.plabel.set_label(text)
-        self.win.set_title(f"{int(frac*100)}% — {T['title']}")
+        self.win.set_title(f"{int(frac*100)}% · {T['title']}")
         return False
 
     def prep_phase(self, text):
         # Indeterminate steps (verify, seed): pulse so it never looks frozen at 100%.
         self.plabel.set_label(text)
-        self.win.set_title(f"{T['title']} — {text}")
+        self.win.set_title(f"{T['title']} · {text}")
         self.prog.set_fraction(0.0)
         if not self._pulse_id:
             self.prog.set_pulse_step(0.1)
@@ -307,7 +307,7 @@ class Creator(Adw.Application):
             group.add(Adw.ActionRow(title=T["no_usb"]))
         for dev, size, model in rows:
             ok = size >= MIN_BYTES
-            row = Adw.ActionRow(title=f"{model} — {human(size)}",
+            row = Adw.ActionRow(title=f"{model} · {human(size)}",
                                 subtitle=dev if ok else f"{dev} · {T['too_small']}")
             check = Gtk.CheckButton()
             check.dev = dev
@@ -366,7 +366,7 @@ class Creator(Adw.Application):
     def confirm_erase(self, dev):
         # Lock 2 of 2 — the final, unambiguous erase confirmation.
         d = Adw.AlertDialog(heading=T["confirm_t"],
-                            body=f"{dev} — {T['confirm_b']}")
+                            body=f"{dev}: {T['confirm_b']}")
         d.add_response("cancel", T["cancel"])
         d.add_response("erase", T["erase"])
         d.set_response_appearance("erase", Adw.ResponseAppearance.DESTRUCTIVE)
