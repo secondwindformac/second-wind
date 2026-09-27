@@ -1,50 +1,93 @@
 # Second Wind
 
-**Un segundo aire para tu Mac vieja — convierte Ubuntu en una experiencia tipo macOS en un solo paso, sin saber de Linux.**
+**Un segundo aire para tu Mac antiguo.** Second Wind convierte un Mac Intel de 2013-2017 que Apple dejó de actualizar en un computador rápido y seguro que se sigue viendo y sintiendo como un Mac. Armas un pendrive con nuestra app, enciendes el Mac desde él, respondes cuatro preguntas y el resto lo hace solo. Sin terminal y sin saber de Linux.
 
-🌐 **[secondwindformac.com](https://secondwindformac.com/es/)** — el sitio, los videos demo y la lista de espera.
+🌐 **[secondwindformac.com](https://secondwindformac.com/es/)**: descarga, videos, "¿Sirve mi Mac?" y preguntas frecuentes.
 
 ![El mismo Mac después de Second Wind](https://secondwindformac.com/assets/after.png)
 
 *Read in English: [README.md](README.md)*
 
-Apple dejó sin actualizaciones a millones de Macs Intel perfectamente capaces. Con Ubuntu siguen siendo computadores excelentes, pero se sienten ajenos. Second Wind los hace sentirse como en casa:
+## En corto
 
-- 🖥️ **Apariencia macOS completa**: tema de ventanas, iconos, cursor, fuentes y fondo dinámico día/noche (basado en el look de macOS Tahoe).
-- 🚀 **Dock flotante**, barra superior estilo Mac, botones de ventana a la izquierda y menú ⌘ arriba a la izquierda.
-- 🔍 **Spotlight**: pulsa `Cmd + Espacio` y busca aplicaciones y archivos.
-- ⌨️ **Teclado de Mac de verdad**: `Cmd+C` copia, `Cmd+V` pega, `Cmd+Q` cierra, `Cmd+Tab` cambia entre apps de todos los escritorios — y en la Terminal `Cmd+C` copia sin matar el programa, como en macOS.
-- 🔧 **Arreglos de hardware para MacBooks**: cámara FaceTime HD, ventilador inteligente y teclas F persistentes.
-- ↩️ **Todo reversible**: respaldo completo antes de tocar nada; `./uninstall.sh` deja Ubuntu como estaba.
+- **Qué es:** Ubuntu 24.04 LTS (un sistema operativo gratuito y legal, con actualizaciones de seguridad hasta 2029), configurado y vestido para verse y comportarse como un Mac, con los drivers que necesitan los MacBook antiguos.
+- **Para quién:** personas con un Mac Intel de 2013-2017 que ya no recibe actualizaciones de macOS y que quieren volver a usarlo para internet, videollamadas, estudiar, trabajar, música y videos.
+- **Precio:** Second Wind es **gratis para siempre**: el look completo de Mac, los drivers, la tienda de apps y las actualizaciones. **Mac Experience** son solo los atajos de teclado ⌘ y la búsqueda ⌘Espacio: 30 días gratis y después **US$10 una sola vez** (no es una suscripción). Sin Mac Experience tu Mac se sigue viendo como un Mac; solo los atajos ⌘ vuelven a los de Linux.
+- **Qué no es:** no es macOS y no contiene software, logos ni fuentes de Apple. Usa un tema libre de la comunidad, el símbolo ⌘ y la fuente libre Inter. No tiene iMessage, FaceTime, AirDrop ni apps exclusivas de Mac (.dmg). Si necesitas macOS de verdad, mira "Cómo se compara" más abajo.
 
-El instalador habla **español e inglés** (sigue el idioma de tu sistema).
+## Qué recibes
 
-## Requisitos
+- **El look de Mac:** dock abajo, barra superior con menú ⌘, hora e íconos de estado a la derecha, centro de control claro, botones rojo, amarillo y verde en las ventanas, fondo de pantalla dinámico.
+- **El teclado de Mac (Mac Experience):** ⌘C, ⌘V, ⌘Z, ⌘Q, ⌘Tab, búsqueda ⌘Espacio, ⌘⇧3/4/5 para capturas y grabar la pantalla.
+- **Hardware que simplemente funciona:** Wi-Fi (Broadcom, funcionando desde el primer encendido, incluso sin internet durante la instalación), cámara FaceTime HD, sonido, ventilador, reposo e hibernación, teclas de función.
+- **Una tienda con 22 apps:** Chrome, WhatsApp, Zoom, Spotify, oficina y más, un clic cada una, siempre desde fuentes oficiales.
+- **"Tu Mac":** revisa tu equipo y tiene el botón "Copiar informe para soporte" (una lista cerrada de datos que ves completa antes de copiarla; no se envía nada).
+- **Actualizaciones automáticas**, que vuelven atrás solas si algo empeora.
 
-- Ubuntu **24.04 LTS** con escritorio GNOME 46 (la instalación estándar), sesión Wayland (la por defecto).
-- Internet y 2 GB libres.
-- Pensado y probado en MacBooks Intel (equipo de referencia: MacBook Air 13" 2014). También funciona en PCs normales con Ubuntu 24.04 (el módulo de hardware Mac se omite solo).
+## ¿Sirve mi Mac?
 
-### ¿Por qué exactamente Ubuntu 24.04 + GNOME 46?
+| Mac | Años | Estado |
+|---|---|---|
+| MacBook Air 11" / 13" | 2013-2017 | Listo (probado de punta a punta en un MacBook Air A1466) |
+| MacBook Pro Retina 13" / 15" | 2013-2015 | Listo (beta: cuéntanos cómo te va) |
+| iMac 21,5" / 27" | 2013-2015 | Listo (beta: cuéntanos cómo te va) |
+| MacBook Pro 13" / 15" (era Touch Bar) | 2016-2017 | En desarrollo |
+| Macs con chip Apple T2 | 2018 en adelante | Todavía no (el instalador se detiene antes de borrar nada) |
+| Apple Silicon (M1 en adelante) | 2020 en adelante | Sin planes (Apple todavía los actualiza) |
 
-Cada pieza externa (tema, cuatro extensiones GNOME, driver de cámara) está **fijada a versiones probadas juntas** en el equipo de referencia (`versions.lock`). Otra versión de GNOME necesita otros pines: soportar una versión significa re-probar la experiencia completa. El plan: seguir las versiones **LTS** de Ubuntu (24.04 ahora, 26.04 después), y que el USB de instalación de la Etapa 2 traiga la base exacta ya probada, para que el usuario final nunca piense en versiones.
+Lista exacta por número de modelo (el "A1466" que aparece bajo el Mac): [secondwindformac.com/es/compatibilidad](https://secondwindformac.com/es/compatibilidad/).
 
-## Instalar
+## Cómo se instala
 
-```bash
-git clone https://github.com/USER/second-wind.git
-cd second-wind
-./install.sh
-```
+1. **Arma el pendrive** (de 8 GB o más) con **Second Wind Creator** en cualquier Mac (o con la app para Ubuntu en un PC con Linux). Descarga la imagen oficial de Ubuntu y Second Wind, y verifica cada pieza contra su huella oficial.
+2. **Enciende el Mac antiguo desde el pendrive:** mantén la tecla **Option (⌥)** mientras enciende y elige el disco amarillo "EFI Boot".
+3. **Responde cuatro preguntas** (idioma, teclado, Wi-Fi, tu nombre). La primera vez que entras, Second Wind termina de dejar todo listo por sí solo (unos 15 minutos, con barra de progreso).
 
-Opciones útiles: `--dry-run` (muestra sin cambiar), `--yes` (sin preguntas), `--no-hardware`, `--only dock`, `./verify.sh`, `./uninstall.sh`. Los alias en español (`--si`, `--solo`, `--verificar`, `--desinstalar`) también funcionan.
+Importante: **Second Wind reemplaza macOS por completo y borra el Mac.** Respalda tus archivos antes. Siempre puedes volver a macOS con la recuperación por internet que trae el Mac: [guía de rescate](https://secondwindformac.com/es/rescue/).
 
-Preguntas frecuentes y limitaciones honestas: ver [README.md](README.md) (inglés) o [docs/es/](docs/es/).
+## Cómo se compara
+
+| Si quieres... | La mejor opción |
+|---|---|
+| Un computador rápido, seguro y con sensación de Mac para el día a día, sin terminal | **Second Wind** |
+| macOS de verdad en un Mac sin soporte, con apps de Apple e iMessage | **OpenCore Legacy Patcher** (gratis; técnico; macOS 26 es la última versión de Apple para Macs Intel, así que su futuro es incierto) |
+| Un computador solo para el navegador (cuenta de Google, apps web) | **ChromeOS Flex** (gratis; algunos Macs están en la lista certificada de Google) |
+| Un Linux de uso general con apariencia personalizable | **Zorin OS** o **Ubuntu** normal (los drivers de Mac y los atajos de Mac corren por tu cuenta) |
+
+Más detalle: [secondwindformac.com/es/comparar](https://secondwindformac.com/es/comparar/).
+
+## Privacidad
+
+Second Wind no envía datos tuyos. Solo consulta si hay mejoras, baja los íconos de la tienda y activa tu licencia cuando tú lo pides. Sin cuentas y sin publicidad.
+
+## Ayuda
+
+Escribe a **hello@secondwindformac.com**. En "Tu Mac", el botón "Copiar informe para soporte" nos da lo necesario para ayudarte rápido.
 
 ## Licencia
 
-Todo el código a la vista, auditable. Gratis para siempre para tu Mac. Cada línea de Second Wind está publicada aquí para que cualquiera la lea, la audite, la cambie y la use — en casa o en el trabajo. Lo único que la licencia prohíbe es tomar este código para ofrecer un producto que compita. Formalmente: [PolyForm Shield 1.0.0](LICENSE) (ver [NOTICE](NOTICE)).
+Todo el código está a la vista y es auditable, y es gratis para siempre para tu Mac. Puedes leerlo, auditarlo, cambiarlo y usarlo, en casa o en el trabajo. Lo único que la licencia prohíbe es tomar este código para ofrecer un producto que compita. Es **código a la vista bajo [PolyForm Shield 1.0.0](LICENSE)**, no una licencia "open source" de la OSI (ver [NOTICE](NOTICE)).
 
-Los componentes de terceros no se redistribuyen: se descargan de sus fuentes oficiales en versiones verificadas y llegan a tu equipo bajo sus propias licencias ([THIRD_PARTY.md](THIRD_PARTY.md)). Las contribuciones se aceptan según [CONTRIBUTING.md](CONTRIBUTING.md).
+Los componentes de terceros (tema, extensiones, drivers) no se redistribuyen: el instalador los descarga de sus fuentes oficiales en versiones verificadas, bajo sus propias licencias ([THIRD_PARTY.md](THIRD_PARTY.md)). Las contribuciones se aceptan según [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Second Wind no está afiliado a Apple Inc. "Mac" y "macOS" son marcas de Apple Inc.; se mencionan solo para describir compatibilidad y semejanza visual.
+Second Wind es un proyecto independiente, sin afiliación, respaldo ni patrocinio de Apple Inc. ni de Canonical Ltd. "Mac", "macOS" y "MacBook" son marcas de Apple Inc., mencionadas solo para describir compatibilidad. "Ubuntu" es una marca de Canonical Ltd.
+
+---
+
+## Para desarrolladores
+
+Las personas nunca necesitan esta sección: el pendrive hace todo. Está aquí para quien quiera leer, auditar o mejorar el código.
+
+- **Base:** Ubuntu 24.04 LTS, GNOME 46, Wayland. Cada pieza externa está fijada a versiones probadas juntas (`versions.lock`).
+- **Instalador USB:** ISO oficial de Ubuntu + semilla de instalación automática + Second Wind; ver [docs/usb-installer.md](docs/usb-installer.md). Apps creadoras: [creator/macos](creator/macos/) y `apps/usb-creator.py`.
+- **Aplicar la capa sobre un Ubuntu 24.04 ya instalado:**
+
+```bash
+git clone https://github.com/secondwindformac/second-wind.git
+cd second-wind
+./install.sh            # --dry-run, --yes, --no-hardware, --only <módulo>
+./verify.sh             # revisión de salud
+./uninstall.sh          # deja Ubuntu como estaba, con el respaldo tomado al inicio
+```
+
+- Los módulos están en `modules/`, el actualizador en `bin/second-wind-update` y la app en `apps/second-wind-apps.py`. Hoja de ruta y notas honestas de factibilidad: [docs/roadmap.md](docs/roadmap.md).
