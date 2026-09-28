@@ -132,15 +132,16 @@ accept_license() {  # accept_license KEY [BODY] [provisional]
 }
 
 activate_license() {
-  local key="$1" host raw body http rc=0
-  host="$(hostname 2>/dev/null || echo mac)"
+  local key="$1" raw body http rc=0
+  # The instance name is a fixed label: the Mac's hostname often carries the
+  # owner's name, and Lemon has no need for it (privacy, "no data sent").
   # NO -f: an HTTP error status is the server SPEAKING (e.g. 404 "license_key
   # not found"), not a transport failure — with -f, curl rc=22 made garbage
   # keys land in the fail-open branch and activate. Caught by the VM E2E.
   raw="$(curl -sS -m 12 -w $'\n%{http_code}' -X POST "$LS_API/activate" \
            -H 'Accept: application/json' \
            --data-urlencode "license_key=$key" \
-           --data-urlencode "instance_name=second-wind@$host" 2>/dev/null)" || rc=$?
+           --data-urlencode "instance_name=Second Wind Mac" 2>/dev/null)" || rc=$?
   http="${raw##*$'\n'}"
   body="${raw%$'\n'*}"
   if [ "$rc" -ne 0 ] || ! printf '%s' "$http" | grep -qE '^[0-9]{3}$'; then
