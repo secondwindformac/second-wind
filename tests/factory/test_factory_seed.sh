@@ -26,4 +26,39 @@ if grep -rq --exclude-dir=.git --exclude-dir=tests \
   echo "FAIL: something deletes /etc/skel"; exit 1
 fi
 
+# 4) Factory seed variant (docs/modo-fabrica.md 3.1): make-usb.sh --factory
+#    derives it from the SAME autoinstall, so the P0 guards and the storage
+#    layout cannot drift; it drops the buyer identity screen and adds the marker.
+MUSB="$ROOT/scripts/make-usb.sh"
+BLOCK="$(sed -n '/# >>> factory-seed/,/# <<< factory-seed/p' "$MUSB")"
+[ -n "$BLOCK" ] || { echo "FAIL: factory-seed block not found in make-usb.sh"; exit 1; }
+# shellcheck disable=SC1090
+eval "$BLOCK"
+
+TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
+seed_factory_transform < "$SEED" > "$TMPD/factory-user-data"
+
+# The P0 guards + storage are byte-identical (inherited, not copy-pasted).
+seg() { awk '/^  early-commands:/{f=1} /^  # Third-party drivers/{f=0} f' "$1"; }
+[ "$(seg "$SEED")" = "$(seg "$TMPD/factory-user-data")" ] \
+  || { echo "FAIL: factory seed changed the P0 guards or storage"; exit 1; }
+
+# No buyer identity screen; a temporary technician user instead.
+if printf '%s\n' "$(sed -n '/interactive-sections:/,/identity:/p' "$TMPD/factory-user-data")" | grep -q -- '- identity'; then
+  echo "FAIL: factory seed still asks for the buyer identity"; exit 1
+fi
+grep -q '    - network'   "$TMPD/factory-user-data" || { echo "FAIL: factory seed dropped the network screen"; exit 1; }
+grep -q '    username: technician' "$TMPD/factory-user-data" || { echo "FAIL: no technician user"; exit 1; }
+grep -q 'username: wind'  "$TMPD/factory-user-data" && { echo "FAIL: buyer username still present"; exit 1; }
+
+# The factory marker is created by a late-command.
+grep -q '/target/etc/second-wind/factory' "$TMPD/factory-user-data" \
+  || { echo "FAIL: factory seed does not create the factory marker"; exit 1; }
+
+# make-usb.sh parses --factory and picks the variant without touching the default.
+grep -q -- '--factory)' "$MUSB" || { echo "FAIL: make-usb.sh does not accept --factory"; exit 1; }
+grep -q 'seed_factory_transform' "$MUSB" || { echo "FAIL: --factory is not wired to the transform"; exit 1; }
+grep -q 'MODE="${SW_SEED_MODE:-normal}"' "$MUSB" || { echo "FAIL: the default seed mode is not normal"; exit 1; }
+bash -n "$MUSB" || { echo "FAIL: make-usb.sh syntax"; exit 1; }
+
 echo "PASS test_factory_seed"
