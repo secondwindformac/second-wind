@@ -40,6 +40,12 @@ run license "$KEY" || fail "rejected a valid OEM key"
 [ -f "$FR/etc/second-wind/license-oem" ] || fail "valid key was not installed"
 
 # 5) With everything in place it schedules the cleanup: marker, script and unit.
+#    The safety net (docs/modo-fabrica.md 2.d) also needs the buyer to be able to
+#    create an account: gnome-initial-setup present and GDM not disabling it. The
+#    missing InitialSetupEnable key must be written as true.
+mkdir -p "$FR/usr/libexec" "$FR/etc/gdm3"
+printf '#!/bin/sh\nexit 0\n' > "$FR/usr/libexec/gnome-initial-setup"; chmod +x "$FR/usr/libexec/gnome-initial-setup"
+printf '[daemon]\n' > "$FR/etc/gdm3/custom.conf"
 run --yes || fail "delivery failed with a valid license"
 [ -e "$FR/etc/second-wind/factory-deliver-pending" ] || fail "cleanup was not scheduled"
 [ -x "$FR/usr/local/sbin/second-wind-factory-reset" ] || fail "cleanup script was not installed"
@@ -48,6 +54,8 @@ grep -q 'Before=display-manager.service' "$FR/etc/systemd/system/second-wind-fac
   || fail "cleanup unit does not run before GDM"
 grep -q 'ConditionPathExists=/etc/second-wind/factory-deliver-pending' \
   "$FR/etc/systemd/system/second-wind-factory-reset.service" || fail "unit has no marker condition"
+grep -qiE '^[[:space:]]*InitialSetupEnable[[:space:]]*=[[:space:]]*true' "$FR/etc/gdm3/custom.conf" \
+  || fail "InitialSetupEnable=true was not written into custom.conf"
 
 # 6) status reflects the state.
 st="$(bash "$DELIVER" status 2>/dev/null)"

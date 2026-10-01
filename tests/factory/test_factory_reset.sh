@@ -11,7 +11,13 @@ fail() { echo "FAIL: $*"; exit 1; }
 
 mkdir -p "$FR/etc/NetworkManager/system-connections" "$FR/etc/ssh" "$FR/etc/sudoers.d" \
   "$FR/etc/second-wind" "$FR/etc/skel/.config/autostart" "$FR/usr/local/share/second-wind/firstboot" \
+  "$FR/etc/gdm3" "$FR/usr/libexec" \
   "$FR/var/lib/dbus" "$FR/var/log" "$FR/home/technician/.local/state/second-wind/logs" "$FR/home/buyer"
+
+# The safety net (docs/modo-fabrica.md 2.d) must hold, or the reset refuses to
+# delete the technician: gnome-initial-setup present and GDM not disabling it.
+printf '#!/bin/sh\nexit 0\n' > "$FR/usr/libexec/gnome-initial-setup"; chmod +x "$FR/usr/libexec/gnome-initial-setup"
+printf '[daemon]\nInitialSetupEnable=true\n' > "$FR/etc/gdm3/custom.conf"
 
 echo x > "$FR/etc/NetworkManager/system-connections/Casa-del-taller.nmconnection"
 echo x > "$FR/etc/NetworkManager/system-connections/Otra.nmconnection"
