@@ -33,6 +33,27 @@ ls_store_id() {
   printf '%s' "$v"
 }
 
+# --- factory (OEM) license (docs/modo-fabrica.md 3.6) ------------------------
+# A machine delivered through the factory flow carries an offline-signed license
+# at /etc/second-wind/license-oem (root-owned), written by the delivery command.
+# When it verifies against the product's public key, the Mac Experience is active
+# for every user, with no purchase offer and no Lemon Squeezy call. Paths are
+# overridable only so the tests can point at a temp key pair; the real file must
+# be the root-owned system one, and a planted copy in a user-writable place is
+# ignored.
+oem_license_file() { printf '%s\n' "${SW_OEM_LICENSE:-$SW_ETC/license-oem}"; }
+oem_pubkey()       { printf '%s\n' "${SW_OEM_PUB:-$SW_ROOT/assets/oem-pub.pem}"; }
+
+oem_active() {
+  local lic pub
+  lic="$(oem_license_file)"; pub="$(oem_pubkey)"
+  [ -f "$lic" ] || return 1
+  if [ "$lic" = "$SW_ETC/license-oem" ] && [ "$(stat -c %u "$lic" 2>/dev/null)" != "0" ]; then
+    return 1
+  fi
+  python3 "$SW_LIB/oem_license.py" verify-file "$pub" "$lic" >/dev/null 2>&1
+}
+
 ensure_state() {
   mkdir -p "$EXP"
   if [ ! -f "$EXP/trial_since" ]; then
@@ -45,6 +66,15 @@ ensure_state() {
   if [ ! -f "$EXP/state" ]; then
     if [ -f "$EXP/license.hash" ]; then echo active > "$EXP/state"
     else echo trial > "$EXP/state"; fi
+  fi
+  # An OEM-delivered machine is active regardless of the trial clock (module
+  # 76 and the daily timer may have written "trial" first). An explicit "off"
+  # by the person is respected. The license is re-checked on every run, so a
+  # machine whose license is gone or broken falls back instead of staying open.
+  if [ "$(state)" = oem ] && ! oem_active; then
+    if [ -f "$EXP/license.hash" ]; then echo active > "$EXP/state"; else echo trial > "$EXP/state"; fi
+  elif [ "$(state)" != off ] && oem_active; then
+    echo oem > "$EXP/state"
   fi
 }
 
@@ -133,6 +163,13 @@ accept_license() {  # accept_license KEY [BODY] [provisional]
 
 activate_license() {
   local key="$1" host raw body http rc=0
+  # A factory (OEM) key is signed by Second Wind and validated offline; it must
+  # NOT travel through the normal US$10 activation. Reject it here (before any
+  # network call, so an offline provisional accept can never swallow it). Normal
+  # Lemon keys are untouched by this guard.
+  case "$key" in
+    SWOEM1:*) warn "${MSG[exp_act_bad]}"; return 1 ;;
+  esac
   host="$(hostname 2>/dev/null || echo mac)"
   # NO -f: an HTTP error status is the server SPEAKING (e.g. 404 "license_key
   # not found"), not a transport failure — with -f, curl rc=22 made garbage
@@ -234,6 +271,7 @@ case "${1:-status}" in
   status)
     case "$(state)" in
       trial)  printf 'trial %s\n' "$(days_left)" ;;
+      oem)    echo "active (oem)" ;;
       active) [ -f "$EXP/license.provisional" ] && echo "active provisional" || echo active ;;
       off)    echo off ;;
     esac ;;
