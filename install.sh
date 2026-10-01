@@ -23,6 +23,8 @@ Second Wind — macOS experience for Ubuntu (24.04, GNOME 46)
   ./install.sh --dry-run      show what would be done, change nothing
   ./install.sh --no-hardware  skip the steps that ask for the admin password
   ./install.sh --only M       run a single module (e.g. --only hardware, --only dock)
+  ./install.sh --factory      factory phase: run only the SYSTEM modules (refurbisher)
+  ./install.sh --user-only    buyer phase: run only the USER modules (after --factory)
   ./install.sh --verify       check the state of the installation
   ./install.sh --uninstall    restore Ubuntu as it was
 EOF
@@ -43,6 +45,11 @@ map_alias() {
 ONLY_MODULES=()
 WITH_HARDWARE=1
 FIRSTBOOT=0
+# Factory modes (docs/modo-fabrica.md 3.2): the refurbisher runs the SYSTEM part
+# once with --factory, then the buyer's first login runs the USER part with
+# --user-only. Plain ./install.sh (no flags) is unchanged: the full run.
+FACTORY=0
+USER_ONLY=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
@@ -52,6 +59,10 @@ while [ $# -gt 0 ]; do
     # end-of-install logout prompt — firstboot reboots the machine itself once
     # we finish (a fresh GNOME shell is what actually loads the extensions).
     --firstboot) FIRSTBOOT=1 ;;
+    # Factory phase: only the SYSTEM modules; seals the machine on success.
+    --factory) FACTORY=1 ;;
+    # Buyer phase: only the USER modules; the first boot after delivery.
+    --user-only) USER_ONLY=1 ;;
     --only|--solo) shift; [ $# -gt 0 ] || die "--only requires a module name"; ONLY_MODULES+=("$1") ;;
     --verify|--verificar) exec ./verify.sh --all ;;
     --uninstall|--desinstalar) exec ./uninstall.sh ;;
@@ -62,12 +73,31 @@ while [ $# -gt 0 ]; do
 done
 export DRY_RUN ASSUME_YES
 
+# The phase the modules read (SW_PHASE): system = factory only, user = buyer only,
+# all = the classic single run. Default keeps today's behavior byte for byte.
+[ "$FACTORY" = 1 ] && [ "$USER_ONLY" = 1 ] \
+  && die "--factory and --user-only cannot be combined"
+if [ "$FACTORY" = 1 ]; then SW_PHASE=system
+elif [ "$USER_ONLY" = 1 ]; then SW_PHASE=user
+else SW_PHASE=all; fi
+export SW_PHASE
+
+# >>> factory-modes: module sets (tests/factory/test_install_split.sh reads this)
+# Module partition for both factory modes. Every module belongs to exactly ONE
+# set. 00-preflight and 10-backup are NOT listed: they are sourced in the main
+# shell and run in every phase (checks and the pristine backup).
+SYSTEM_MODULES=(15-engines 60-hardware 62-power 65-gdm)
+USER_MODULES=(20-look 30-extensions 32-toshy 35-dock 40-panel 45-keyboard
+  47-power-defaults 50-spotlight 55-browsers 70-apps 75-news 76-experience
+  80-updater 85-quiet 90-postlogin)
+# <<< factory-modes: module sets
+
 [ "$(id -u)" -eq 0 ] && die "${MSG[no_root]}"
 
 # ---- question phase (before redirecting output, so whiptail renders fine) ----
 # The guided USB first boot (--firstboot) shows its ONE graphical consent in the
 # firstboot wrapper, so install.sh asks nothing here and keeps the hardware steps.
-if [ ${#ONLY_MODULES[@]} -eq 0 ] && [ "$FIRSTBOOT" != 1 ]; then
+if [ ${#ONLY_MODULES[@]} -eq 0 ] && [ "$FIRSTBOOT" != 1 ] && [ "$FACTORY" != 1 ] && [ "$USER_ONLY" != 1 ]; then
   ui_msg "${MSG[welcome]}"
   ui_yesno "${MSG[confirm]}" || die "${MSG[cancelled]}"
   if [ "$WITH_HARDWARE" = 1 ] && [ "$ASSUME_YES" != 1 ] && ui_has_tty; then
@@ -86,6 +116,7 @@ info "${MSG[log_at]} $LOG"
 source modules/00-preflight.sh
 source modules/10-backup.sh
 
+# >>> factory-modes: selection (tests/factory/test_install_split.sh reads this)
 MODULES=()
 [ "$WITH_HARDWARE" = 1 ] && MODULES+=(15-engines)
 MODULES+=(20-look 30-extensions)
@@ -96,6 +127,13 @@ MODULES+=(20-look 30-extensions)
 MODULES+=(35-dock 40-panel 45-keyboard 47-power-defaults 50-spotlight 55-browsers)
 [ "$WITH_HARDWARE" = 1 ] && MODULES+=(60-hardware 62-power 65-gdm)
 MODULES+=(70-apps 75-news 76-experience 80-updater 85-quiet 90-postlogin)
+# The factory modes replace the default (all) set built above with their own.
+if [ "$FACTORY" = 1 ]; then
+  MODULES=("${SYSTEM_MODULES[@]}")
+elif [ "$USER_ONLY" = 1 ]; then
+  MODULES=("${USER_MODULES[@]}")
+fi
+# <<< factory-modes: selection
 
 if [ ${#ONLY_MODULES[@]} -gt 0 ]; then
   ALL=(15-engines 20-look 30-extensions 32-toshy 35-dock 40-panel 45-keyboard 47-power-defaults 50-spotlight 55-browsers 60-hardware 62-power 65-gdm 70-apps 75-news 76-experience 80-updater 85-quiet 90-postlogin)
@@ -141,13 +179,29 @@ if [ ${#SKIPPED[@]} -eq 0 ]; then
 else
   warn "${MSG[final_warn]}"
 fi
-[ ${#ONLY_MODULES[@]} -eq 0 ] && info "${MSG[trial_note]}"
+[ ${#ONLY_MODULES[@]} -eq 0 ] && [ "$FACTORY" != 1 ] && info "${MSG[trial_note]}"
+
+# Factory phase: seal the machine only when every system module completed, so
+# the buyer's first login skips the system modules (docs/modo-fabrica.md 3.2).
+if [ "$FACTORY" = 1 ]; then
+  if [ "$DRY_RUN" = 1 ]; then
+    info "DRY-RUN: would write /etc/second-wind/system-done"
+  elif [ ${#SKIPPED[@]} -eq 0 ]; then
+    sudo install -d -m 0755 /etc/second-wind
+    sudo touch /etc/second-wind/system-done
+    ok "${MSG[factory_sealed]}"
+  else
+    warn "${MSG[factory_incomplete]}"
+  fi
+fi
 
 # A standalone run asks (default no) whether to end the session — reboots are
 # manual by design when someone runs this on a machine they are already using.
 # The guided USB firstboot (--firstboot) is different: it is a brand-new machine
-# and firstboot restarts it for us, so we skip the prompt here.
-if [ "$DRY_RUN" != 1 ] && [ ${#ONLY_MODULES[@]} -eq 0 ] && [ "$FIRSTBOOT" != 1 ]; then
+# and firstboot restarts it for us, so we skip the prompt here. The factory
+# phases are driven by firstboot too, so they never ask either.
+if [ "$DRY_RUN" != 1 ] && [ ${#ONLY_MODULES[@]} -eq 0 ] && [ "$FIRSTBOOT" != 1 ] \
+   && [ "$FACTORY" != 1 ] && [ "$USER_ONLY" != 1 ]; then
   echo
   if ui_yesno "${MSG[ask_logout]}" --default-no; then
     gnome-session-quit --logout --no-prompt

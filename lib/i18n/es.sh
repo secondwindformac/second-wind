@@ -86,6 +86,8 @@ Todo se puede revertir después con ./uninstall.sh"
 
   [final_ok]="¡Listo! La instalación terminó correctamente."
   [final_warn]="La instalación terminó, con algunos pasos omitidos (revisa los avisos ⚠ de arriba; nada crítico)."
+  [factory_sealed]="Fase de fábrica completa: el equipo quedó sellado (/etc/second-wind/system-done)."
+  [factory_incomplete]="La fase de fábrica terminó con pasos de sistema omitidos; no se sella el equipo."
   [ask_logout]="Para completar el cambio (tema del panel, dock y teclado por aplicación) hay que CERRAR SESIÓN y volver a entrar.
 
 ¿Cerrar sesión ahora? (Guarda antes tu trabajo abierto)"

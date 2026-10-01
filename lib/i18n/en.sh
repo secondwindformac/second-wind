@@ -86,6 +86,8 @@ Disable automatic login to fix it? (You will type your password at startup, like
 
   [final_ok]="Done! The installation finished successfully."
   [final_warn]="The installation finished, with some steps skipped (see the ⚠ notices above; nothing critical)."
+  [factory_sealed]="Factory phase complete: the machine is sealed (/etc/second-wind/system-done)."
+  [factory_incomplete]="Factory phase finished with some system steps skipped; not sealing the machine."
   [ask_logout]="To complete the change (panel theme, dock and per-app keyboard) you must LOG OUT and back in.
 
 Log out now? (Save your open work first)"
