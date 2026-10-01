@@ -1,0 +1,20 @@
+[Unit]
+Description=Second Wind factory delivery cleanup (remove technician, wipe workshop traces)
+# Run BEFORE the display manager: deleting the technician's own account is only
+# safe when it is not logged in. After this, GDM starts with no users and shows
+# GNOME Initial Setup to create the buyer's account.
+Before=display-manager.service
+After=systemd-machine-id-setup.service
+# Only run when "Prepare for delivery" scheduled a cleanup.
+ConditionPathExists=/etc/second-wind/factory-deliver-pending
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=/usr/local/sbin/second-wind-factory-reset
+# Keep the transcript in the journal too, in case the file log is rotated.
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

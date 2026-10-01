@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Second Wind — "Prepare for delivery" cleanup (docs/modo-fabrica.md 2.c, 3.5).
+#
+# Runs ONCE, as root, at the next boot BEFORE the display manager (GDM), so it
+# can safely delete the technician's account and home (impossible while that
+# account is logged in). It wipes every trace of the workshop, then lets GDM
+# start with no users, which brings up GNOME Initial Setup to create the buyer's
+# account. The machine is left ready to box and sell; nothing here touches
+# /etc/skel or the SYSTEM manifest.
+#
+# Safety rules (a mistake would affect a whole batch):
+#   * set -u and fixed, verified paths only; NEVER `rm -rf` with an empty variable.
+#   * Idempotent: safe to run again.
+#   * If anything is missing it logs a warning and keeps going; the buyer can
+#     always create a user, because only the technician is removed.
+#   * FAKE_ROOT (tests only) prefixes every path and turns off the real
+#     journal/ssh/hostname effects, so the suite never touches the host.
+set -Eeuo pipefail
+
+FAKE_ROOT="${FAKE_ROOT:-}"
+TECH_USER="${SW_TECH_USER:-technician}"
+ROOT="${FAKE_ROOT%/}"
+
+p() { printf '%s%s\n' "$ROOT" "${1:-}"; }   # an absolute path under the (optional) fake root
+
+LOG="$(p /var/log/second-wind-factory-reset.log)"
+mkdir -p "$(dirname "$LOG")"
+exec >>"$LOG" 2>&1
+echo "=== second-wind-factory-reset $(date -Is) (fake_root=${FAKE_ROOT:-none}, tech=$TECH_USER) ==="
+
+# 1. The technician account and its home: history, ~/.config, ~/.local,
+#    autostart, user services and the technician's manifest all go with it.
+H="$(p "/home/$TECH_USER")"
+if [ -n "$TECH_USER" ] && id "$TECH_USER" >/dev/null 2>&1; then
+  userdel -r "$TECH_USER" 2>/dev/null || deluser --remove-home "$TECH_USER" 2>/dev/null || true
+fi
+if [ -n "$TECH_USER" ] && [ -d "$H" ]; then
+  rm -rf -- "$H"
+  echo "removed home $H"
+fi
+
+# 2. Workshop WiFi profiles (NetworkManager stores the networks and their keys here).
+NC="$(p /etc/NetworkManager/system-connections)"
+if [ -d "$NC" ]; then
+  find "$NC" -maxdepth 1 -type f -delete 2>/dev/null || true
+  echo "cleared saved WiFi profiles in $NC"
+fi
+
+# 3. Logs that may carry workshop data (SSIDs, timestamps, file paths).
+rm -f -- "$(p /var/log/second-wind-wifi.log)"
+for d in "$ROOT"/home/*/.local/state/second-wind/logs; do
+  [ -e "$d" ] && rm -rf -- "$d"
+done
+if [ -z "$FAKE_ROOT" ]; then
+  journalctl --rotate 2>/dev/null || true
+  journalctl --vacuum-time=1s 2>/dev/null || true
+fi
+
+# 4. machine-id: truncate so systemd regenerates a fresh one on the next boot.
+#    (The OEM license is NOT tied to machine-id, so this is safe.)
+for f in "$(p /etc/machine-id)" "$(p /var/lib/dbus/machine-id)"; do
+  if [ -e "$f" ]; then : > "$f"; echo "truncated $f"; fi
+done
+
+# 5. SSH host keys (usually absent on Desktop; regenerate if the server ever ran).
+rm -f -- "$ROOT"/etc/ssh/ssh_host_*
+if [ -n "$(ls -A "$(p /etc/ssh)" 2>/dev/null | grep '^ssh_host_' || true)" ] && [ -z "$FAKE_ROOT" ]; then
+  ssh-keygen -A >/dev/null 2>&1 || true
+fi
+
+# 6. Neutral hostname, the same the seed sets.
+if [ -d "$(dirname "$(p /etc/hostname)")" ]; then
+  printf '%s\n' second-wind > "$(p /etc/hostname)"
+fi
+
+# 7. Leftover temporary sudoers drop-ins from the guided install.
+rm -f -- "$(p /etc/sudoers.d/zz-second-wind-gui)" "$(p /etc/sudoers.d/zz-second-wind-toshy)"
+
+# 8. Re-arm the buyer's firstboot: it lives in /etc/skel, which we never delete.
+#    Verify it is there; restore it from the payload if a previous run removed it.
+SKEL="$(p /etc/skel/.config/autostart/second-wind-firstboot.desktop)"
+if [ ! -e "$SKEL" ]; then
+  SRC="$(p /usr/local/share/second-wind/firstboot/second-wind-firstboot.desktop)"
+  if [ -e "$SRC" ]; then
+    install -D -m 0644 "$SRC" "$SKEL" && echo "restored $SKEL"
+  else
+    echo "WARN: $SKEL missing and no payload copy to restore from"
+  fi
+fi
+
+# 9. Close the factory phase: drop the delivery marker and the factory marker so
+#    the buyer's firstboot sees system-done and runs the USER phase. Keep
+#    system-done and the manifests untouched.
+rm -f -- "$(p /etc/second-wind/factory-deliver-pending)" "$(p /etc/second-wind/factory)"
+
+echo "=== done; leaving the machine to GDM for the buyer's account setup ==="
+exit 0

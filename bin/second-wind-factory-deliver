@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# second-wind-factory-deliver — "Preparar para entrega" (docs/modo-fabrica.md 2.c, 3.5).
+#
+# The last factory step, run by the technician with the machine still in the
+# workshop. It:
+#   1. checks the SYSTEM phase is sealed (/etc/second-wind/system-done),
+#   2. checks a valid OEM license is installed (refuses to deliver without one),
+#   3. schedules the cleanup to run at the next boot, before GDM,
+#   4. powers the machine off.
+# At the next power-on the cleanup removes the technician account and every
+# workshop trace, then GDM shows GNOME Initial Setup to create the buyer's
+# account. The buyer's first login runs the USER phase (system-done) and the
+# Mac Experience is already active from the OEM license.
+#
+# Usage:
+#   second-wind-factory-deliver license <CLAVE-OEM>   install the batch key (verifies it)
+#   second-wind-factory-deliver status                show the delivery state
+#   second-wind-factory-deliver [--yes]               schedule cleanup and power off
+#
+# FAKE_ROOT (tests only) prefixes every path and turns off sudo/poweroff.
+set -Eeuo pipefail
+SW_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$SW_ROOT/lib/common.sh"
+
+FAKE_ROOT="${FAKE_ROOT:-}"
+ROOT="${FAKE_ROOT%/}"
+ETC="$ROOT/etc/second-wind"
+SBIN="$ROOT/usr/local/sbin"
+UNITS="$ROOT/etc/systemd/system"
+MARK="$ETC/factory-deliver-pending"
+LIC="$ETC/license-oem"
+RESET_SCRIPT="$SW_ROOT/factory/second-wind-factory-reset"
+RESET_UNIT="$SW_ROOT/factory/second-wind-factory-reset.service"
+UNIT_NAME="second-wind-factory-reset.service"
+PUBKEY="${SW_OEM_PUB:-$SW_ROOT/assets/oem-pub.pem}"
+
+sudo_do() {
+  if [ -n "$FAKE_ROOT" ] || [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi
+}
+verify_license() { # path to a license file
+  python3 "$SW_LIB/oem_license.py" verify-file "$PUBKEY" "$1" >/dev/null 2>&1
+}
+
+show_status() {
+  echo "Entrega de fábrica:"
+  if [ -f "$ETC/system-done" ]; then echo "  [x] fase de sistema sellada (system-done)"; else echo "  [ ] fase de sistema NO sellada"; fi
+  if [ -f "$LIC" ] && verify_license "$LIC"; then
+    echo "  [x] licencia OEM válida instalada"
+  elif [ -f "$LIC" ]; then
+    echo "  [ ] licencia OEM presente pero NO válida"
+  else
+    echo "  [ ] sin licencia OEM"
+  fi
+  [ -f "$MARK" ] && echo "  [x] limpieza programada (reinicia para aplicarla)" || echo "  [ ] sin limpieza programada"
+}
+
+install_license() {
+  local key="$1" tmp
+  [ -n "$key" ] || die "Falta la clave OEM: second-wind-factory-deliver license <CLAVE-OEM>"
+  if ! python3 "$SW_LIB/oem_license.py" verify-key "$PUBKEY" "$key" >/dev/null 2>&1; then
+    die "La clave OEM no es válida (revisa que sea del lote correcto). No se instaló nada."
+  fi
+  tmp="$(mktemp)"
+  printf '%s\n' "$key" > "$tmp"
+  sudo_do install -d -m 0755 "$ETC"
+  sudo_do install -m 0644 "$tmp" "$LIC"
+  rm -f "$tmp"
+  ok "Licencia OEM instalada en $LIC"
+}
+
+install_reset() {
+  [ -f "$RESET_SCRIPT" ] || die "No se encontró $RESET_SCRIPT (payload incompleto)."
+  [ -f "$RESET_UNIT" ]   || die "No se encontró $RESET_UNIT (payload incompleto)."
+  sudo_do install -d -m 0755 "$SBIN" "$UNITS"
+  sudo_do install -m 0755 "$RESET_SCRIPT" "$SBIN/second-wind-factory-reset"
+  sudo_do install -m 0644 "$RESET_UNIT" "$UNITS/$UNIT_NAME"
+  if [ -z "$FAKE_ROOT" ]; then sudo_do systemctl daemon-reload; fi
+}
+
+prepare() {
+  [ -f "$ETC/system-done" ] || die "La fase de sistema no está sellada. Corre install.sh --factory primero."
+  [ -f "$LIC" ] || die "No hay licencia OEM. Instálala con: second-wind-factory-deliver license <CLAVE-OEM>"
+  verify_license "$LIC" || die "La licencia OEM no es válida. No se entrega un equipo sin licencia válida."
+
+  cat <<'EOF'
+Vas a preparar este equipo para entrega. Al continuar:
+  - se programará el BORRADO del usuario técnico y de todo rastro del taller,
+  - el borrado correrá en el próximo arranque, antes del login,
+  - el equipo se apagará y quedará listo para empacar y vender.
+
+Al primer encendido del comprador, GNOME le pedirá crear su cuenta y Second Wind
+terminará de preparar su Mac automáticamente.
+EOF
+  if [ "$ASSUME_YES" != 1 ]; then
+    [ -t 0 ] || die "Sin terminal interactiva. Usa --yes para confirmar la entrega."
+    local ans
+    read -r -p "Escribe ENTREGAR para confirmar: " ans
+    [ "$ans" = "ENTREGAR" ] || die "Cancelado. No se cambió nada."
+  fi
+
+  install_reset
+  sudo_do install -d -m 0755 "$ETC"
+  sudo_do touch "$MARK"
+  if [ -z "$FAKE_ROOT" ]; then
+    sudo_do systemctl enable "$UNIT_NAME" >/dev/null
+  fi
+  ok "Limpieza programada para el próximo arranque."
+
+  if [ -n "$FAKE_ROOT" ]; then
+    echo "(FAKE_ROOT: no se apaga la máquina)"
+    return 0
+  fi
+  info "Apagando el equipo…"
+  sudo_do systemctl poweroff
+}
+
+case "${1:-}" in
+  license|licencia) shift; install_license "${1:-}" ;;
+  status|estado)    show_status ;;
+  --yes|-y)         ASSUME_YES=1; prepare ;;
+  ""|deliver|entregar) prepare ;;
+  -h|--help) echo "uso: second-wind-factory-deliver license <CLAVE> | status | [--yes]"; ;;
+  *) die "Opción desconocida: $1 (ver --help)" ;;
+esac
