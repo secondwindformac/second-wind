@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Second Wind — "Prepare for delivery" cleanup (docs/modo-fabrica.md 2.c, 3.5).
+# Second Wind: "Prepare for delivery" cleanup (docs/modo-fabrica.md 2.c, 3.5).
 #
 # Runs ONCE, as root, at the next boot BEFORE the display manager (GDM), so it
 # can safely delete the technician's account and home (impossible while that
@@ -23,6 +23,44 @@ ROOT="${FAKE_ROOT%/}"
 
 p() { printf '%s%s\n' "$ROOT" "${1:-}"; }   # an absolute path under the (optional) fake root
 
+# Safety net (docs/modo-fabrica.md 2.d). After we delete the technician the Mac has
+# zero users, so GNOME Initial Setup MUST be able to show the first-account page.
+# This repeats, read-only, the check the delivery command made: if it does not
+# hold we refuse to delete the technician (leaving a usable machine) instead of
+# producing a Mac nobody can log into. It never repairs anything; it only reports.
+initial_setup_ok() {
+  local ok=1 m
+  GIS_BIN="$(p /usr/libexec/gnome-initial-setup)"
+  GDM_CONF="$(p /etc/gdm3/custom.conf)"
+  if [ ! -x "$GIS_BIN" ]; then
+    echo "WARN: missing GNOME Initial Setup binary ($GIS_BIN)"
+    ok=0
+  fi
+  if [ -f "$GDM_CONF" ]; then
+    if grep -qiE '^[[:space:]]*AutomaticLoginEnable[[:space:]]*=[[:space:]]*true' "$GDM_CONF"; then
+      echo "WARN: GDM has AutomaticLoginEnable=true in $GDM_CONF"
+      ok=0
+    fi
+    if grep -qiE '^[[:space:]]*InitialSetupEnable[[:space:]]*=[[:space:]]*false' "$GDM_CONF"; then
+      echo "WARN: GDM has InitialSetupEnable=false in $GDM_CONF"
+      ok=0
+    elif ! grep -qiE '^[[:space:]]*InitialSetupEnable[[:space:]]*=' "$GDM_CONF"; then
+      echo "WARN: GDM has no InitialSetupEnable=true in $GDM_CONF"
+      ok=0
+    fi
+  else
+    echo "WARN: no GDM config at $GDM_CONF"
+    ok=0
+  fi
+  for m in "$(p /var/lib/gnome-initial-setup-done)" "$ROOT"/var/lib/gnome-initial-setup/*done*; do
+    if [ -e "$m" ]; then
+      echo "WARN: leftover marker would hide the wizard: $m"
+      ok=0
+    fi
+  done
+  [ "$ok" -eq 1 ]
+}
+
 LOG="$(p /var/log/second-wind-factory-reset.log)"
 mkdir -p "$(dirname "$LOG")"
 exec >>"$LOG" 2>&1
@@ -30,6 +68,13 @@ echo "=== second-wind-factory-reset $(date -Is) (fake_root=${FAKE_ROOT:-none}, t
 
 # 1. The technician account and its home: history, ~/.config, ~/.local,
 #    autostart, user services and the technician's manifest all go with it.
+#    First confirm the buyer will still be able to create an account.
+if ! initial_setup_ok; then
+  echo "WARN: GNOME Initial Setup is not ready to create the buyer's account."
+  echo "WARN: refusing to delete the technician; the machine keeps a usable login."
+  echo "WARN: fix the points above and let this unit run again (marker kept)."
+  exit 0
+fi
 H="$(p "/home/$TECH_USER")"
 if [ -n "$TECH_USER" ] && id "$TECH_USER" >/dev/null 2>&1; then
   userdel -r "$TECH_USER" 2>/dev/null || deluser --remove-home "$TECH_USER" 2>/dev/null || true
@@ -62,10 +107,22 @@ for f in "$(p /etc/machine-id)" "$(p /var/lib/dbus/machine-id)"; do
   if [ -e "$f" ]; then : > "$f"; echo "truncated $f"; fi
 done
 
-# 5. SSH host keys (usually absent on Desktop; regenerate if the server ever ran).
+# 5. SSH host keys: delete any leftover keys, then regenerate a fresh set with
+#    ssh-keygen -A only if the OpenSSH server is installed (/usr/sbin/sshd);
+#    deleting its keys without regenerating would leave sshd unable to start. On
+#    Desktop sshd is normally absent, so the keys are just removed. Under
+#    FAKE_ROOT the real ssh-keygen is never run: tests pass a stub via
+#    SW_SSH_KEYGEN to exercise the regeneration path safely.
 rm -f -- "$ROOT"/etc/ssh/ssh_host_*
-if [ -n "$(ls -A "$(p /etc/ssh)" 2>/dev/null | grep '^ssh_host_' || true)" ] && [ -z "$FAKE_ROOT" ]; then
-  ssh-keygen -A >/dev/null 2>&1 || true
+if [ -x "$(p /usr/sbin/sshd)" ]; then
+  if [ -n "$FAKE_ROOT" ]; then
+    [ -n "${SW_SSH_KEYGEN:-}" ] && { "$SW_SSH_KEYGEN" -A >/dev/null 2>&1 || echo "WARN: ssh-keygen -A failed"; }
+  else
+    ssh-keygen -A >/dev/null 2>&1 || echo "WARN: ssh-keygen -A failed"
+  fi
+  echo "sshd present: host keys regenerated with ssh-keygen -A"
+else
+  echo "sshd absent: host keys removed, nothing to regenerate"
 fi
 
 # 6. Neutral hostname, the same the seed sets.
