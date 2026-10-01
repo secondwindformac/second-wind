@@ -45,6 +45,10 @@ HDR_META=linux-headers-generic
 dpkg-query -W -f '${Status}' linux-image-generic-hwe-24.04 2>/dev/null | grep -q 'ok installed' \
   && HDR_META=linux-headers-generic-hwe-24.04
 
+# --- system part (SW_PHASE=system|all): packages, drivers and system services.
+# Skipped in the buyer's user-only phase, where all of it already ran in the
+# factory. ---
+if [ "$SW_PHASE" != user ]; then
 if [ "$NEED_WIFI$NEED_WL_DKMS$NEED_UL$NEED_GIR$NEED_WL_GUARD" = "00000" ]; then
   ok "${MSG[m15_all_ok]}"
   return 0
@@ -147,9 +151,19 @@ if [ "$NEED_UL" = 1 ]; then
   fi
 fi
 
-# --- Hide the engines' technical menu entries from the app grid. The person
+# Hand the shell back clean: kill our keepalive and release the EXIT trap so
+# a later module (32-toshy) can own it.
+kill "$SW_ENGINES_KEEPALIVE" 2>/dev/null || true
+trap - EXIT
+fi   # end of the system part
+
+# --- user part (SW_PHASE=user|all): hidden entries live in the home. Skipped in
+# the factory's system phase, where the technician's home is deleted at
+# delivery, so the tweak would be lost anyway. ---
+if [ "$SW_PHASE" != system ]; then
+# Hide the engines' technical menu entries from the app grid. The person
 # never chose "Toshy" or "Ulauncher" — those names mean nothing to them, and
-# the features keep working (Spotlight via ⌘Space, keyboard via services). ---
+# the features keep working (Spotlight via ⌘Space, keyboard via services).
 hide_desktop_entry() {
   local f="$1"
   [ -f "$f" ] || return 0
@@ -169,8 +183,4 @@ if [ -f /usr/share/applications/ulauncher.desktop ] \
   track_new_file "$HOME/.local/share/applications/ulauncher.desktop"
 fi
 ok "${MSG[m15_hidden]}"
-
-# Hand the shell back clean: kill our keepalive and release the EXIT trap so
-# a later module (32-toshy) can own it.
-kill "$SW_ENGINES_KEEPALIVE" 2>/dev/null || true
-trap - EXIT
+fi   # end of the user part
