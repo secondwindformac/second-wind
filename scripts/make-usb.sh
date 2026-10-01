@@ -148,7 +148,7 @@ write_usb() {
     1. Plug the stick in, power on HOLDING the Option (⌥/Alt) key.
     2. Pick the orange "EFI Boot" disk.
     3. Choose "Try or Install Ubuntu". The installer asks only language,
-       keyboard and network — then it WIPES the disk and installs by itself,
+       keyboard and network, then it WIPES the disk and installs by itself,
        creating the temporary "technician" user (☕ ~20-30 min).
     4. At first login, Second Wind runs the SYSTEM phase by itself. Then finish
        with: second-wind-factory-deliver license <CLAVE-OEM>  and  --yes.
