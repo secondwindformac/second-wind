@@ -25,6 +25,30 @@ fi
 
 [ -x "$SWDIR/install.sh" ] || { echo "second-wind payload missing"; exit 0; }
 
+# --- which phase runs? (docs/modo-fabrica.md 3.3) --------------------------
+# The system markers are the source of truth: the technician's home (and its
+# stamp) is deleted at delivery, so the home stamp cannot remember the phase.
+# >>> factory-phase (tests/factory/test_firstboot_phase.sh reads this block)
+SW_ETC="${SW_ETC:-/etc/second-wind}"
+if [ -f "$SW_ETC/factory" ] && [ ! -f "$SW_ETC/system-done" ]; then
+  PHASE=factory            # factory phase: system modules only
+  INSTALL_ARGS="--firstboot --factory"
+elif [ -f "$SW_ETC/factory" ]; then
+  PHASE=skip               # factory already done, delivery pending
+elif [ -f "$SW_ETC/system-done" ]; then
+  PHASE=user               # buyer phase: user modules only
+  INSTALL_ARGS="--firstboot --user-only"
+else
+  PHASE=normal             # no markers: the original one-shot conversion
+  INSTALL_ARGS="--firstboot"
+fi
+# <<< factory-phase
+echo "phase: $PHASE"
+if [ "$PHASE" = skip ]; then
+  rm -f "$AUTOSTART"
+  exit 0
+fi
+
 # R9 polish: Ubuntu's first-login windows (the "Complete your setup" wizard and
 # "Software Updater") launch WITH the session — before module 85-quiet, which
 # runs near the end of the install, can write its overrides. Close them here
@@ -130,6 +154,18 @@ EOD
     || true
 }
 
+# What to do when a phase succeeds. The factory phase announces nothing to the
+# technician (delivery wipes this user and powers off); the buyer's phases get
+# the success stamp and the final reboot so a fresh shell loads the Mac look.
+after_success() {
+  if [ "$PHASE" = factory ]; then
+    rm -f "$AUTOSTART"
+    return 0
+  fi
+  touch "$STAMP"; rm -f "$AUTOSTART"
+  reboot_to_finish
+}
+
 # Preferred path: the friendly GRAPHICAL conversion — ONE consent, ONE graphical
 # password, a progress window — with install.sh running hidden. Only taken when a
 # real dialog can be shown; otherwise we fall through to the terminal path below
@@ -140,13 +176,13 @@ if command -v gui_available >/dev/null 2>&1 && gui_available; then
     # close the progress window (the normal paths below also do this).
     trap 'kill "$QUIET_LOOP" 2>/dev/null || true; gui_auth_end 2>/dev/null || true; gui_progress_close 2>/dev/null || true' EXIT
     gui_progress_open "${MSG[gui_phase_prep]}"
-    SW_UI=gui "$SWDIR/install.sh" --firstboot
+    # shellcheck disable=SC2086
+    SW_UI=gui "$SWDIR/install.sh" $INSTALL_ARGS
     rc=$?
     gui_progress_close
     gui_auth_end
     if [ "$rc" = 0 ]; then
-      touch "$STAMP"; rm -f "$AUTOSTART"
-      reboot_to_finish
+      after_success
     else
       # A visible, dismissable error. The autostart stays armed, so the next
       # login retries where it stopped (install.sh is idempotent).
@@ -162,7 +198,14 @@ fi
 # --- Terminal fallback (no usable zenity/display): the original behavior. ---
 notify-send -a "Second Wind" -i emblem-ok-symbolic "Second Wind" "$T_GO" 2>/dev/null || true
 # --firstboot tells install.sh to skip its own logout prompt: we restart below.
-RUN="cd '$SWDIR' && ./install.sh --firstboot && touch '$STAMP' && rm -f '$AUTOSTART'"
+# In the factory phase there is nothing to announce to the technician: install.sh
+# writes system-done itself and delivery powers the machine off later. The buyer
+# phases get the success stamp, which also disarms this autostart.
+if [ "$PHASE" = factory ]; then
+  RUN="cd '$SWDIR' && ./install.sh --firstboot --factory"
+else
+  RUN="cd '$SWDIR' && ./install.sh $INSTALL_ARGS && touch '$STAMP' && rm -f '$AUTOSTART'"
+fi
 
 TERMBIN="$(command -v gnome-terminal || command -v ptyxis || command -v x-terminal-emulator)"
 WAITED=1
@@ -172,12 +215,18 @@ if [ -n "$TERMBIN" ]; then
     ptyxis)         "$TERMBIN" -- bash -c "$RUN"; WAITED=0 ;;  # returns immediately
     *)              "$TERMBIN" -e bash -c "$RUN" ;;
   esac
+elif [ "$PHASE" = factory ]; then
+  bash -c "cd '$SWDIR' && ./install.sh --firstboot --factory --yes"
 else
-  bash -c "cd '$SWDIR' && ./install.sh --firstboot --yes && touch '$STAMP' && rm -f '$AUTOSTART'"
+  bash -c "cd '$SWDIR' && ./install.sh $INSTALL_ARGS --yes && touch '$STAMP' && rm -f '$AUTOSTART'"
 fi
 
 sleep 2
-if [ -f "$STAMP" ]; then
+if [ "$PHASE" = factory ]; then
+  if [ -f "$SW_ETC/system-done" ]; then
+    rm -f "$AUTOSTART"; exit 0
+  fi
+elif [ -f "$STAMP" ]; then
   reboot_to_finish
   exit 0
 fi
