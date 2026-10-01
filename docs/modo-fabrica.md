@@ -147,6 +147,45 @@ verificador lee `/etc/second-wind/license-oem`.
   4. Que `/etc/skel` (con el autostart de Second Wind) se copie a esa cuenta nueva.
 - **Respaldo si el modo sistema no coopera**: Ubuntu trae un modo OEM (`oem-config`/`oem-config-prepare`). Es la vía soportada por Ubuntu para exactamente este caso (el técnico prepara y el usuario final completa). Si el modo usuario nuevo de GNOME Initial Setup no resulta fiable en el Air, la recomendación de respaldo es usar el flujo OEM de Ubuntu para la creación de la cuenta del comprador, manteniendo intacta la partición SISTEMA/USUARIO de Second Wind.
 
+### 2.e Red de seguridad antes de borrar al técnico
+
+Borrar al técnico deja la máquina con cero usuarios. Si GNOME Initial Setup no pudiera mostrar la página de
+creación de cuenta, el Mac quedaría sin forma de entrar. Para que eso no ocurra, la entrega y la limpieza
+comparten una verificación de requisitos:
+
+- **`second-wind-factory-deliver` (paso `check_initial_setup`)**, ANTES de programar la limpieza y sin
+  cambiar nada permanente, exige:
+  1. que exista y sea ejecutable `/usr/libexec/gnome-initial-setup`;
+  2. que `/etc/gdm3/custom.conf` no tenga `AutomaticLoginEnable=true`;
+  3. que no tenga `InitialSetupEnable=false`; si la clave falta, el comando escribe
+     `InitialSetupEnable=true` en la sección `[daemon]` (la única reparación segura y automática);
+  4. que no queden marcadores que impidan el modo sistema (por ejemplo `/var/lib/gnome-initial-setup-done`
+     o `/var/lib/gnome-initial-setup/*done*`).
+  Si algo de lo anterior falla, el comando NO programa la limpieza y explica en español qué falta.
+- **`second-wind-factory-reset`** repite la misma verificación, en modo solo lectura, justo antes de borrar
+  al usuario técnico. Si no se cumple, NO borra al técnico: deja un aviso en el log, conserva el marcador de
+  entrega y sale sin romper nada. La máquina queda con un login usable y la limpieza puede reintentarse.
+
+Efecto práctico: la limpieza solo se aplica cuando la creación de la cuenta del comprador está garantizada.
+
+**Plan B (solo si gnome-initial-setup no está disponible).** No implementado; se documenta el camino para
+no improvisarlo en el Air. Si se confirmara que GNOME Initial Setup no existe o no es fiable en Ubuntu
+24.04, la vía soportada por Ubuntu es su modo OEM:
+
+1. La semilla de fábrica instalaría el paquete `oem-config-gtk` (o `ubiquity`/`oem-config` según la
+   variante) y correría `oem-config-prepare` antes de apagar. Eso deja un marcador `/var/lib/oem-config/`
+   que hace que GDM lance `oem-config` en el siguiente arranque.
+2. En lugar de "Preparar para entrega" borrando al técnico con `userdel`, la entrega haría la limpieza de
+   rastros (WiFi, logs, `machine-id`, claves SSH) y conservaría el usuario técnico hasta que el comprador
+   complete `oem-config`; `oem-config` pide idioma, teclado, red, usuario y contraseña, y al terminar
+   elimina el usuario técnico por su cuenta con `oem-config-prepare`/`oem-config-done`.
+3. Second Wind conservaría su partición SISTEMA/USUARIO igual: la Fase B (`install.sh --user-only`) seguiría
+   corriendo al primer inicio de sesión del comprador, disparada por el autostart de `/etc/skel`.
+
+El costo del Plan B es que la eliminación del técnico la haría Ubuntu, no nuestro script, y que la verificación
+de la red de seguridad de 2.e ya no aplicaría (el asistente lo garantiza Ubuntu). Se documenta aquí para que
+la decisión se tome con evidencia del Air y no como un parche de último minuto.
+
 ---
 
 ## 3. Cambios concretos por archivo
@@ -354,8 +393,9 @@ MacBook Air real.
 | Partición y fases (Parte 1) | `install.sh` (`--factory`/`--user-only`, `SW_PHASE`), `usb/firstboot/second-wind-firstboot.sh`, `lib/common.sh`, `lib/manifest.py` |
 | Semilla de fábrica (3.1) | `scripts/make-usb.sh` (`--factory` y el transform `seed_factory_transform`) |
 | Entrega (3.5) | `bin/second-wind-factory-deliver`, `factory/second-wind-factory-reset`, `factory/second-wind-factory-reset.service` |
+| Red de seguridad 2.d/2.e | `check_initial_setup` en `bin/second-wind-factory-deliver`; `initial_setup_ok` en `factory/second-wind-factory-reset`; regeneración de claves SSH con `ssh-keygen -A` |
 | Licencia OEM (3.6, 4.1) | `scripts/oem-license.py`, `lib/oem_license.py`, `assets/oem-pub.pem`, `bin/second-wind-experience` |
-| Tests | `tests/factory/test_factory_seed.sh`, `test_factory_reset.sh`, `test_factory_deliver.sh`, `test_oem_license.sh` |
+| Tests | `tests/factory/test_factory_seed.sh`, `test_factory_reset.sh`, `test_factory_deliver.sh`, `test_factory_safety.sh`, `test_oem_license.sh` |
 
 La variante de fábrica de la semilla se genera aplicando un transform sobre `usb/seed/user-data`, no
 duplicándolo. Así las guardas P0 (`early-commands`) y el `storage` se heredan intactos y no pueden

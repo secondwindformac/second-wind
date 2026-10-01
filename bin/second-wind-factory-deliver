@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# second-wind-factory-deliver — "Preparar para entrega" (docs/modo-fabrica.md 2.c, 3.5).
+# second-wind-factory-deliver: "Preparar para entrega" (docs/modo-fabrica.md 2.c, 3.5).
 #
 # The last factory step, run by the technician with the machine still in the
 # workshop. It:
@@ -33,12 +33,63 @@ RESET_SCRIPT="$SW_ROOT/factory/second-wind-factory-reset"
 RESET_UNIT="$SW_ROOT/factory/second-wind-factory-reset.service"
 UNIT_NAME="second-wind-factory-reset.service"
 PUBKEY="${SW_OEM_PUB:-$SW_ROOT/assets/oem-pub.pem}"
+GDM_CONF="$ROOT/etc/gdm3/custom.conf"
+GIS_BIN="$ROOT/usr/libexec/gnome-initial-setup"
 
 sudo_do() {
   if [ -n "$FAKE_ROOT" ] || [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi
 }
 verify_license() { # path to a license file
   python3 "$SW_LIB/oem_license.py" verify-file "$PUBKEY" "$1" >/dev/null 2>&1
+}
+
+# Write InitialSetupEnable=true under [daemon] when the key is absent. This is the
+# one safe repair: without it (or with it set to false) GDM would not offer the
+# "create the first account" page to the buyer.
+ensure_initial_setup_key() {
+  sudo_do install -d -m 0755 "$(dirname "$GDM_CONF")"
+  if [ ! -f "$GDM_CONF" ]; then
+    printf '[daemon]\nInitialSetupEnable=true\n' | sudo_do tee "$GDM_CONF" >/dev/null
+  elif grep -qiE '^[[:space:]]*\[daemon\]' "$GDM_CONF"; then
+    sudo_do sed -i '/^[[:space:]]*\[daemon\]/a InitialSetupEnable=true' "$GDM_CONF"
+  else
+    printf '\n[daemon]\nInitialSetupEnable=true\n' | sudo_do tee -a "$GDM_CONF" >/dev/null
+  fi
+  info "Se escribió InitialSetupEnable=true en $GDM_CONF"
+}
+
+# Safety net (docs/modo-fabrica.md 2.d): after the technician is deleted the Mac
+# has zero users, so GNOME Initial Setup MUST be able to show the first-account
+# page. If it cannot, deleting the technician would leave the machine with no way
+# in. Returns non-zero when a hard problem remains (the caller then refuses to
+# schedule the cleanup and explains what is missing, in Spanish).
+check_initial_setup() {
+  local bad=0 m
+  if [ ! -x "$GIS_BIN" ]; then
+    warn "Falta el binario de GNOME Initial Setup ($GIS_BIN): sin él nadie podría crear la cuenta del comprador."
+    bad=1
+  fi
+  if [ -f "$GDM_CONF" ]; then
+    if grep -qiE '^[[:space:]]*AutomaticLoginEnable[[:space:]]*=[[:space:]]*true' "$GDM_CONF"; then
+      warn "GDM tiene AutomaticLoginEnable=true en $GDM_CONF: desactívalo para que aparezca el asistente."
+      bad=1
+    fi
+    if grep -qiE '^[[:space:]]*InitialSetupEnable[[:space:]]*=[[:space:]]*false' "$GDM_CONF"; then
+      warn "GDM tiene InitialSetupEnable=false en $GDM_CONF: ponlo en true para que aparezca el asistente."
+      bad=1
+    elif ! grep -qiE '^[[:space:]]*InitialSetupEnable[[:space:]]*=' "$GDM_CONF"; then
+      ensure_initial_setup_key
+    fi
+  else
+    ensure_initial_setup_key
+  fi
+  for m in "$ROOT/var/lib/gnome-initial-setup-done" "$ROOT"/var/lib/gnome-initial-setup/*done*; do
+    if [ -e "$m" ]; then
+      warn "Queda un marcador que impediría el asistente: $m. Bórralo antes de entregar."
+      bad=1
+    fi
+  done
+  return "$bad"
 }
 
 show_status() {
@@ -50,6 +101,11 @@ show_status() {
     echo "  [ ] licencia OEM presente pero NO válida"
   else
     echo "  [ ] sin licencia OEM"
+  fi
+  if [ -x "$GIS_BIN" ] && { [ ! -f "$GDM_CONF" ] || ! grep -qiE '^[[:space:]]*InitialSetupEnable[[:space:]]*=[[:space:]]*false' "$GDM_CONF"; }; then
+    echo "  [x] pantalla de creación de cuenta lista (gnome-initial-setup)"
+  else
+    echo "  [ ] pantalla de creación de cuenta NO lista"
   fi
   [ -f "$MARK" ] && echo "  [x] limpieza programada (reinicia para aplicarla)" || echo "  [ ] sin limpieza programada"
 }
@@ -81,6 +137,10 @@ prepare() {
   [ -f "$ETC/system-done" ] || die "La fase de sistema no está sellada. Corre install.sh --factory primero."
   [ -f "$LIC" ] || die "No hay licencia OEM. Instálala con: second-wind-factory-deliver license <CLAVE-OEM>"
   verify_license "$LIC" || die "La licencia OEM no es válida. No se entrega un equipo sin licencia válida."
+
+  if ! check_initial_setup; then
+    die "No se programó la limpieza: falta dejar lista la pantalla de creación de la cuenta del comprador (ver los avisos de arriba)."
+  fi
 
   cat <<'EOF'
 Vas a preparar este equipo para entrega. Al continuar:
