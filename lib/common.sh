@@ -11,6 +11,17 @@ SW_BACKUP="$SW_STATE/backup/pristine"
 SW_LOGDIR="$SW_STATE/logs"
 export SW_MANIFEST="$SW_STATE/manifest.json"
 
+# Phase the modules run in: system (factory), user (buyer) or all (default).
+# install.sh sets it from its flags; a bare `source lib/common.sh` stays "all".
+SW_PHASE="${SW_PHASE:-all}"
+
+# System-wide state for the factory mode (docs/modo-fabrica.md 2.0 and 3.4). The
+# phase markers and the SYSTEM manifest live under /etc/second-wind so they
+# survive the deletion of the technician user. Overridable for the tests.
+SW_ETC="${SW_ETC:-/etc/second-wind}"
+SW_MANIFEST_SYSTEM="${SW_MANIFEST_SYSTEM:-$SW_ETC/manifest.json}"
+export SW_PHASE SW_ETC SW_MANIFEST_SYSTEM
+
 DRY_RUN="${DRY_RUN:-0}"
 ASSUME_YES="${ASSUME_YES:-0}"
 
@@ -52,10 +63,17 @@ run() {
   if [ "$DRY_RUN" = 1 ]; then printf 'DRY-RUN: %s\n' "$*"; else "$@"; fi
 }
 
-# Change manifest (no-op in dry-run).
+# Change manifest (no-op in dry-run). In the factory phase (SW_PHASE=system)
+# records go to the SYSTEM manifest under /etc/second-wind, which outlives the
+# technician user; everywhere else they go to the user manifest in the home
+# (today's behavior, unchanged for a bare run).
 mf() {
   [ "$DRY_RUN" = 1 ] && return 0
-  python3 "$SW_LIB/manifest.py" "$@"
+  if [ "$SW_PHASE" = system ]; then
+    sudo env SW_MANIFEST="$SW_MANIFEST_SYSTEM" python3 "$SW_LIB/manifest.py" "$@"
+  else
+    python3 "$SW_LIB/manifest.py" "$@"
+  fi
 }
 
 need_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing required tool '$1'."; }

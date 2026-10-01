@@ -29,7 +29,9 @@ done
 export ASSUME_YES
 
 [ "$(id -u)" -eq 0 ] && die "${MSG[no_root]}"
-[ -f "$SW_MANIFEST" ] || die "${MSG[un_nothing]}"
+# Either manifest is enough: the user one in the home and/or the SYSTEM one in
+# /etc/second-wind written by the factory phase (docs/modo-fabrica.md 3.4).
+[ -f "$SW_MANIFEST" ] || [ -f "$SW_MANIFEST_SYSTEM" ] || die "${MSG[un_nothing]}"
 
 ui_yesno "${MSG[un_confirm]}" || die "${MSG[cancelled]}"
 
@@ -62,11 +64,12 @@ systemctl --user daemon-reload 2>/dev/null || true
 # Ulauncher: stop it if we left it running (its autostart entry is already gone)
 pgrep -x ulauncher >/dev/null 2>&1 && pkill -x ulauncher 2>/dev/null || true
 
-# --- sudo part: only if the manifest records system changes ---
+# --- sudo part: only if the manifest(s) record system changes ---
+# merged-get unions the user manifest with the SYSTEM one from factory mode.
 NEED_SUDO=0
-[ "$(python3 lib/manifest.py get apt_packages)" != "[]" ] && NEED_SUDO=1
-[ "$(python3 lib/manifest.py get dkms)" != "[]" ] && NEED_SUDO=1
-[ "$(python3 lib/manifest.py get system)" != "[]" ] && NEED_SUDO=1
+[ "$(python3 lib/manifest.py merged-get apt_packages)" != "[]" ] && NEED_SUDO=1
+[ "$(python3 lib/manifest.py merged-get dkms)" != "[]" ] && NEED_SUDO=1
+[ "$(python3 lib/manifest.py merged-get system)" != "[]" ] && NEED_SUDO=1
 
 if [ "$NEED_SUDO" = 1 ]; then
   info "${MSG[un_sys_need]}"
@@ -79,7 +82,7 @@ if [ "$NEED_SUDO" = 1 ]; then
       sudo dkms remove -m "$m" -v "$v" --all >/dev/null 2>&1 || true
       sudo rm -rf "/usr/src/$m-$v"
       sudo modprobe -r "$m" 2>/dev/null || true
-    done < <(python3 -c "import json,sys; [print(x) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get dkms)")
+    done < <(python3 -c "import json,sys; [print(x) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py merged-get dkms)")
 
     # system files we created/modified
     while read -r path; do
@@ -124,7 +127,7 @@ if [ "$NEED_SUDO" = 1 ]; then
             ok "${MSG[un_gdm_ok]}"
           fi ;;
       esac
-    done < <(python3 -c "import json,sys; [print(x['path']) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get system)")
+    done < <(python3 -c "import json,sys; [print(x['path']) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py merged-get system)")
 
     # apt packages we installed (mbpfan yes; compilers are kept just in case)
     while read -r p; do
@@ -135,14 +138,14 @@ if [ "$NEED_SUDO" = 1 ]; then
           sudo apt-get remove -y mbpfan >/dev/null 2>&1 && ok "${MSG[un_pkg_rm]} $p" ;;
         *) info "${MSG[un_pkg_keep]} $p)" ;;
       esac
-    done < <(python3 -c "import json,sys; [print(x) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py get apt_packages)")
+    done < <(python3 -c "import json,sys; [print(x) for x in json.loads(sys.argv[1])]" "$(python3 lib/manifest.py merged-get apt_packages)")
   else
     warn "${MSG[un_no_sudo]}"
   fi
 fi
 
 # Swap file: shrink back to its original size if we enlarged it for hibernation
-if python3 lib/manifest.py has-note "swap-resized" 2>/dev/null \
+if python3 lib/manifest.py merged-has-note "swap-resized" 2>/dev/null \
    && [ -f "$SW_BACKUP/swap-original-bytes" ]; then
   ORIG="$(cat "$SW_BACKUP/swap-original-bytes")"
   if [ "$ORIG" -gt 0 ] && { sudo -n true 2>/dev/null || sudo -v; }; then

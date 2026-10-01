@@ -17,6 +17,12 @@ Usage: manifest.py <command> [args...]
   system-file <path>                    (system file created/modified with sudo)
   note <text> | has-note <text>
   get <section> | dump
+  merged-get <section>                  (union of the user and system manifests)
+  merged-has-note <text>                (true if the note is in either manifest)
+
+The factory mode keeps a second manifest at /etc/second-wind/manifest.json
+(root owned) for SYSTEM changes, so they survive the deletion of the technician
+user. uninstall.sh reads the union of both through merged-get / merged-has-note.
 """
 import datetime
 import json
@@ -25,6 +31,14 @@ import sys
 
 PATH = os.path.expanduser(os.environ.get("SW_MANIFEST",
                                          "~/.local/state/second-wind/manifest.json"))
+# The SYSTEM manifest (factory mode), root owned. It holds the system changes so
+# they survive the deletion of the technician user.
+SYSTEM_PATH = os.path.expanduser(os.environ.get("SW_MANIFEST_SYSTEM",
+                                                "/etc/second-wind/manifest.json"))
+
+# Sections that are lists (unions when merging the two manifests).
+LIST_SECTIONS = ("files_created", "files_removed", "extensions_installed",
+                 "apt_packages", "dkms", "system", "notes")
 
 EMPTY = {"version": 1, "created": None,
          "gsettings": {}, "dconf": {},
@@ -107,6 +121,40 @@ def save(d):
     os.replace(tmp, PATH)
 
 
+def load_system():
+    """The SYSTEM manifest, or None when there is nothing to read."""
+    if not SYSTEM_PATH or os.path.abspath(SYSTEM_PATH) == os.path.abspath(PATH):
+        return None
+    if not os.path.exists(SYSTEM_PATH):
+        return None
+    with open(SYSTEM_PATH) as f:
+        return json.load(f)
+
+
+def load_merged():
+    """User manifest with the SYSTEM manifest folded in (union of the lists).
+
+    List sections are unioned; gsettings/dconf keep the user value when both
+    define the same key. Used by uninstall.sh to see every change, whichever
+    manifest recorded it.
+    """
+    d = load()
+    s = load_system()
+    if not s:
+        return d
+    for sec in LIST_SECTIONS:
+        merged = d.setdefault(sec, [])
+        for entry in s.get(sec, []):
+            if entry not in merged:
+                merged.append(entry)
+    for sec in ("gsettings", "dconf"):
+        for key, value in s.get(sec, {}).items():
+            d.setdefault(sec, {}).setdefault(key, value)
+    if d.get("created") is None:
+        d["created"] = s.get("created")
+    return d
+
+
 def main():
     args = sys.argv[1:]
     if not args:
@@ -162,8 +210,14 @@ def main():
             save(d)
     elif cmd == "has-note":
         return 0 if rest[0] in d["notes"] else 1
+    elif cmd == "merged-has-note":
+        return 0 if rest[0] in load_merged().get("notes", []) else 1
     elif cmd == "get":
         print(json.dumps(d.get(rest[0], {}), ensure_ascii=False))
+    elif cmd == "merged-get":
+        m = load_merged()
+        default = [] if rest[0] in LIST_SECTIONS else {}
+        print(json.dumps(m.get(rest[0], default), ensure_ascii=False))
     elif cmd == "dump":
         print(json.dumps(d, indent=2, ensure_ascii=False))
     else:

@@ -85,7 +85,7 @@ if [ "$MODE" = "--all" ]; then
   else
     echo "${MSG[v_chrome_pending]}"
   fi
-  if python3 lib/manifest.py has-note "gdm-installed" 2>/dev/null; then
+  if python3 lib/manifest.py merged-has-note "gdm-installed" 2>/dev/null; then
     chk "${MSG[v_gdm]}" test -f "/usr/share/gnome-shell/theme/Yaru/gnome-shell-theme.gresource.bak"
   else
     echo "${MSG[v_gdm_pending]}"
