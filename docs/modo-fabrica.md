@@ -337,3 +337,76 @@ cuidado (es el único activo crítico) y mantener un libro simple de lotes emiti
    claves SSH de host y logs es sensible; un error afecta a todos los equipos del lote. Debe ser explícito,
    idempotente y probado con `FAKE_ROOT` antes de tocar un Mac. Añadir a esto que la licencia OEM no se puede
    revocar ni contar.
+
+---
+
+## 6. Estado de implementación (2026-10-01)
+
+Esta sección es la bitácora de lo ya construido sobre este diseño. La Parte 1 (partición sistema/usuario) y
+la Parte 2 (semilla de fábrica, entrega y licencia OEM) están implementadas y cubiertas por tests que corren
+en el Taller, sin root y sin red. Lo que sigue pendiente es lo que solo se puede probar o completar en el
+MacBook Air real.
+
+### 6.1 Hecho
+
+| Área | Archivos |
+|---|---|
+| Partición y fases (Parte 1) | `install.sh` (`--factory`/`--user-only`, `SW_PHASE`), `usb/firstboot/second-wind-firstboot.sh`, `lib/common.sh`, `lib/manifest.py` |
+| Semilla de fábrica (3.1) | `scripts/make-usb.sh` (`--factory` y el transform `seed_factory_transform`) |
+| Entrega (3.5) | `bin/second-wind-factory-deliver`, `factory/second-wind-factory-reset`, `factory/second-wind-factory-reset.service` |
+| Licencia OEM (3.6, 4.1) | `scripts/oem-license.py`, `lib/oem_license.py`, `assets/oem-pub.pem`, `bin/second-wind-experience` |
+| Tests | `tests/factory/test_factory_seed.sh`, `test_factory_reset.sh`, `test_factory_deliver.sh`, `test_oem_license.sh` |
+
+La variante de fábrica de la semilla se genera aplicando un transform sobre `usb/seed/user-data`, no
+duplicándolo. Así las guardas P0 (`early-commands`) y el `storage` se heredan intactos y no pueden
+desincronizarse entre las dos semillas (un test lo verifica comparando los bloques).
+
+### 6.2 Decisiones distintas del diseño original
+
+1. **Formato de la licencia OEM: clave de una línea.** El diseño (4.1) propone un bloque multilínea con
+   `batch`, `issued`, `kind` y `sig`. Se implementó una **clave corta de una línea**
+   (`SWOEM1:<lote>:<numero>:<firma>`) porque el técnico la escribe a mano. El mensaje firmado (canónico) es
+   el mismo concepto: `SWOEM1\nbatch=<lote>\nserial=<numero>\nkind=oem`. La firma sigue siendo Ed25519 vía
+   OpenSSL, la verificación sigue siendo offline y la separación respecto de Lemon se mantiene.
+2. **La limpieza no vuelve a apagar.** El diseño (2.c) acepta "se apaga sola" o "arranca directo al
+   asistente". Se eligió lo segundo: el reset limpia y deja que GDM arranque con 0 usuarios para que GNOME
+   Initial Setup cree la cuenta del comprador (un solo apagado, el de "Preparar para entrega").
+3. **La unidad de limpieza la instala el comando de entrega**, no `install.sh --factory` (el diseño permitía
+   ambas). Así la fase de fábrica queda con menos archivos de sistema y el comando de entrega la puede
+   reinstalar de forma idempotente si hace falta.
+4. **Ruta de la llave pública en ejecución:** `assets/oem-pub.pem` dentro del payload (bajo `SW_ROOT`), no
+   `/usr/share/second-wind/oem-pub.pem`, para no introducir otra ruta de instalación.
+5. **El placeholder de la llave pública no es una llave válida**: cualquier licencia falla la verificación
+   hasta que se genere el par real y se copie la mitad pública a `assets/oem-pub.pem`.
+6. **`oem_active` re-verifica en cada corrida.** Un estado `oem` guardado en el home se revalida contra el
+   archivo de licencia; si la licencia desaparece o se rompe, el equipo vuelve a `trial` en lugar de quedar
+   abierto.
+
+### 6.3 Qué falta en el Creator (macOS, Swift)
+
+No se tocó `creator/macos`. Para que el reacondicionador genera el pendrive de fábrica desde la app gráfica,
+el Creator todavía necesita:
+
+- **Un modo "fábrica" en la interfaz** (un interruptor o una segunda acción "Crear USB de fábrica") que
+  elija la variante de semilla de fábrica en lugar de la normal.
+- **Aplicar el mismo transform de semilla que hace `scripts/make-usb.sh --factory`** (o empaquetar el
+  `user-data` de fábrica ya transformado) dentro del motor que arma el volumen `CIDATA`. Hoy el Creator
+  arma la semilla por su cuenta en Swift, así que hay que replicar allí la transformación, o mover el
+  transform a un punto común que el Creator pueda invocar.
+- **Una revisión de textos**: la app hoy describe las 4 pantallas del comprador (idioma, teclado, WiFi,
+  nombre/contraseña); en modo fábrica solo se piden idioma, teclado y WiFi.
+- **La clave OEM** no la maneja el Creator: se ingresa en la máquina con
+  `second-wind-factory-deliver license <CLAVE-OEM>` después de instalar.
+
+### 6.4 Qué queda por probar solo en el MacBook Air real
+
+- Arranque real del pendrive de fábrica y que la instalación no pida la identidad del comprador.
+- Que GDM, con la máquina sin usuarios tras la limpieza, muestre GNOME Initial Setup con la página de
+  creación de cuenta, y que `/etc/skel` (con el autostart de Second Wind) se copie a esa cuenta nueva.
+- Que el orden `Before=display-manager.service` de la unidad de limpieza se respete y que la limpieza
+  borre de verdad el usuario técnico, los WiFi del taller y el `machine-id`.
+- Que el reloj del `machine-id` regenerado no rompa la licencia OEM (no debería: la licencia no se ata al
+  `machine-id`).
+- Que la activación OEM por `/etc/second-wind/license-oem` quede activa para el comprador sin oferta de
+  compra ni llamada a Lemon.
+- La corrida real de `install.sh --factory` y `--user-only` (duración y el bloque de Toshy).
