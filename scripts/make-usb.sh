@@ -21,6 +21,46 @@ source versions.lock
 STAGE="$SW_STATE/usb/seed"
 ISO="$SW_CACHE/iso/$(basename "$UBUNTU_ISO_URL")"
 
+# Seed variant: "normal" (the buyer answers name/password) or "factory" (the
+# workshop stick, docs/modo-fabrica.md 3.1). --factory sets it; SW_SEED_MODE lets
+# a later --write reuse the same choice.
+MODE="${SW_SEED_MODE:-normal}"
+export MODE
+
+# >>> factory-seed (tests/factory/test_factory_seed.sh reads this block)
+# Factory seed variant (docs/modo-fabrica.md 3.1). It is the SAME autoinstall as
+# the normal seed, so the P0 guards and the storage layout are inherited
+# untouched; the transform only drops the buyer identity screen, fixes a
+# temporary technician user, and adds a late-command that drops the factory
+# marker. That way the two seeds can never drift apart.
+seed_factory_transform() {   # normal user-data on stdin -> factory user-data on stdout
+  # -c (not `python3 -`) so the program does not eat the piped stdin.
+  python3 -c '
+import sys
+out, done = [], False
+for line in sys.stdin.read().splitlines(keepends=True):
+    stripped = line.rstrip("\n")
+    if stripped == "  late-commands:" and not done:
+        done = True
+        out.append(line)
+        out.append("    # Factory marker (docs/modo-fabrica.md 3.1): this is the workshop\n")
+        out.append("    # stick, so firstboot runs install.sh --factory on first login.\n")
+        out.append("    - |\n")
+        out.append("      mkdir -p /target/etc/second-wind\n")
+        out.append("      : > /target/etc/second-wind/factory\n")
+        continue
+    if stripped == "    - identity":
+        continue                                   # no buyer identity screen
+    if stripped == "    username: wind":
+        out.append("    username: technician\n"); continue
+    if stripped == "    realname: Second Wind":
+        out.append("    realname: Second Wind (fábrica)\n"); continue
+    out.append(line)
+sys.stdout.write("".join(out))
+'
+}
+# <<< factory-seed
+
 build() {
   info "Ubuntu ISO: verifying (downloads ~6 GB the first time)…"
   mkdir -p "$(dirname "$ISO")"
@@ -36,7 +76,12 @@ build() {
   mkdir -p "$STAGE/firstboot" "$STAGE/autoinstall"
   local HASH
   HASH="$(openssl passwd -6 secondwind)"
-  sed "s|@PASSWORD_HASH@|$HASH|" usb/seed/user-data > "$STAGE/user-data"
+  if [ "$MODE" = factory ]; then
+    info "Factory seed: technician user, no buyer identity, /etc/second-wind/factory marker."
+    sed "s|@PASSWORD_HASH@|$HASH|" usb/seed/user-data | seed_factory_transform > "$STAGE/user-data"
+  else
+    sed "s|@PASSWORD_HASH@|$HASH|" usb/seed/user-data > "$STAGE/user-data"
+  fi
   cp usb/seed/meta-data "$STAGE/meta-data"
   # Same file where the Desktop installer's folder-scan expects it:
   cp "$STAGE/user-data" "$STAGE/autoinstall/user-data"
@@ -96,6 +141,20 @@ write_usb() {
 
   echo
   ok "USB ready!"
+  if [ "$MODE" = factory ]; then
+    cat <<'EOF'
+
+  Factory stick ready. On the Mac to convert:
+    1. Plug the stick in, power on HOLDING the Option (⌥/Alt) key.
+    2. Pick the orange "EFI Boot" disk.
+    3. Choose "Try or Install Ubuntu". The installer asks only language,
+       keyboard and network — then it WIPES the disk and installs by itself,
+       creating the temporary "technician" user (☕ ~20-30 min).
+    4. At first login, Second Wind runs the SYSTEM phase by itself. Then finish
+       with: second-wind-factory-deliver license <CLAVE-OEM>  and  --yes.
+EOF
+    return 0
+  fi
   cat <<'EOF'
 
   Next, on the Mac to convert:
@@ -221,10 +280,24 @@ gui() {
   fi
 }
 
-case "${1:-}" in
-  --write) shift; [ $# -ge 1 ] || die "--write needs the device (e.g. /dev/sdb)"; build; write_usb "$1" ;;
-  --write-core) shift; write_core "$1" ;;
-  --gui) gui ;;
-  ""|--build) build ;;
-  *) die "Unknown option: $1" ;;
+ACTION=build
+DEV=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --factory) MODE=factory; export MODE ;;
+    --build)   : ;;
+    --gui)     ACTION=gui ;;
+    --write)   ACTION=write; shift; [ $# -ge 1 ] || die "--write needs the device (e.g. /dev/sdb)"; DEV="$1" ;;
+    --write-core) ACTION=write-core; shift; [ $# -ge 1 ] || die "--write-core needs the device"; DEV="$1" ;;
+    "") : ;;
+    *) die "Unknown option: $1" ;;
+  esac
+  shift
+done
+
+case "$ACTION" in
+  write)      build; write_usb "$DEV" ;;
+  write-core) write_core "$DEV" ;;
+  gui)        gui ;;
+  build)      build ;;
 esac
