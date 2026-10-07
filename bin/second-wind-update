@@ -28,6 +28,8 @@ SW_STATE="$HOME/.local/state/second-wind"
 LOGDIR="$SW_STATE/logs"
 UPD="$SW_STATE/updates"
 REPO="secondwindformac/second-wind"
+# Set by refresh_user_level when the user-level step still needs a logout.
+RELOGIN=""
 
 case "${LANG:-en}" in
   es*)
@@ -35,6 +37,7 @@ case "${LANG:-en}" in
     T_NOW="Actualizar ahora"; T_LATER="Después"
     T_WORKING="Actualizando Second Wind… puedes seguir usando el Mac."
     T_DONE="Second Wind se actualizó a la versión %s. Todo en orden ✓"
+    T_RELOGIN="Para ver todos los cambios, cierra sesión y vuelve a entrar cuando puedas."
     T_ROLLED="La mejora no quedó bien a la primera, así que volvimos a la versión anterior. Tu Mac sigue como estaba; lo intentaremos de nuevo más adelante."
     T_UPTODATE="Ya tienes la versión más reciente de Second Wind (%s) ✓"
     T_FAILED="La mejora no se pudo instalar esta vez (¿se cortó internet o se canceló la contraseña?). Tu Mac sigue igual; puedes intentarlo de nuevo."
@@ -45,6 +48,7 @@ case "${LANG:-en}" in
     T_NOW="Update now"; T_LATER="Later"
     T_WORKING="Updating Second Wind… you can keep using the Mac."
     T_DONE="Second Wind updated to version %s. All good ✓"
+    T_RELOGIN="To see every change, log out and back in when you can."
     T_ROLLED="The improvement didn't land right on the first try, so we went back to the previous version. Your Mac is unchanged; we'll try again later."
     T_UPTODATE="You already have the latest Second Wind (%s) ✓"
     T_FAILED="The improvement couldn't be installed this time (internet dropped, or the password was cancelled?). Your Mac is unchanged; you can try again."
@@ -102,13 +106,23 @@ verify_failures() {
 }
 
 refresh_user_level() {
+  local log="$LOGDIR/updater-refresh.log" before
+  before="$(wc -l < "$log" 2>/dev/null || echo 0)"
   (cd "$MANAGED_ROOT" && ./install.sh --yes --no-hardware) \
-    >>"$LOGDIR/updater-refresh.log" 2>&1
+    >>"$log" 2>&1
+  # The refresh states whether a logout is still needed to see every change
+  # (installer i18n: logout_manual / m30_relogin). Carry that to the final
+  # notice so it never claims everything is already visible when it is not.
+  if tail -n "+$((before + 1))" "$log" 2>/dev/null \
+       | grep -qiE 'log out and back in|logging out and back in|cierra sesión y vuelve a entrar'; then
+    RELOGIN=1
+  fi
 }
 
 apply_update() {
   local version="$1" tarball_url="$2" sums_url="$3"
   local tarball="$UPD/second-wind-$version.tar.gz"
+  RELOGIN=""
 
   notify-send -a "Second Wind" -i software-update-available "Second Wind" "$T_WORKING" 2>/dev/null || true
 
@@ -139,8 +153,11 @@ apply_update() {
   fi
 
   rm -f "$tarball"
+  local done_text
   # shellcheck disable=SC2059
-  notify-send -a "Second Wind" -i emblem-ok-symbolic "Second Wind" "$(printf "$T_DONE" "$version")" 2>/dev/null || true
+  done_text="$(printf "$T_DONE" "$version")"
+  [ -n "$RELOGIN" ] && done_text="$done_text $T_RELOGIN"
+  notify-send -a "Second Wind" -i emblem-ok-symbolic "Second Wind" "$done_text" 2>/dev/null || true
   log "updated to $version"
 }
 
