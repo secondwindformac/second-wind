@@ -43,10 +43,20 @@ dconf_track /org/gnome/shell/extensions/user-theme/name "'SecondWind-$SW_SHELL_V
 # in a stale shell; the firstboot reboot makes it apply reliably.) The icon
 # matches the bar: white strokes on the dark bar, dark on the light one.
 # White ⌘ in both variants: the bar is dark either way (see 20-look).
+# The white icon's file name carries a short content hash, so an update that
+# changes the icon writes a NEW path into the dconf key below. Logo Menu reloads
+# the icon when that key changes, so the new ⌘ shows with no logout needed. An
+# unchanged icon keeps the same path, and nothing is touched.
+LOGO_ICON_SRC="$SW_ROOT/assets/command-symbolic-white.svg"
 LOGO_ICON="command-symbolic-white.svg"
 if [ "$DRY_RUN" != 1 ]; then
   install -d "$SW_SHARE"
-  cp "$SW_ROOT/assets/command-symbolic.svg" "$SW_ROOT/assets/command-symbolic-white.svg" "$SW_SHARE/"
+  LOGO_ICON="command-symbolic-white-$(sha256sum "$LOGO_ICON_SRC" | cut -c1-12).svg"
+  cp "$SW_ROOT/assets/command-symbolic.svg" "$SW_SHARE/"
+  cp "$LOGO_ICON_SRC" "$SW_SHARE/$LOGO_ICON"
+  # Drop superseded copies of this icon (the old hashless name, prior hashes).
+  find "$SW_SHARE" -maxdepth 1 -type f -name 'command-symbolic-white*.svg' \
+    ! -name "$LOGO_ICON" -delete 2>/dev/null || true
   track_new_file "$SW_SHARE"
 fi
 dconf_track /org/gnome/shell/extensions/Logo-menu/use-custom-icon true
